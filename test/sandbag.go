@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/arkinjo/evodevo3"
+	"github.com/arkinjo/evodevo3/multicell"
 )
 
 func main() {

@@ -1,4 +1,4 @@
-package evodevo3
+package multicell
 
 import (
 	"gonum.org/v1/gonum/stat/distuv"

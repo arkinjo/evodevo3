@@ -1,4 +1,4 @@
-package evodevo3
+package multicell
 
 type Setting struct {
 	basename       string
