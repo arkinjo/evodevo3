@@ -1,100 +1,69 @@
 package multicell
 
 import (
-	"gonum.org/v1/gonum/stat/distuv"
+	// "gonum.org/v1/gonum/stat/distuv"
 	"math/rand"
 )
 
-type Spmat struct {
-	Ncol int // number of columns
-	Mat  [](map[int]float64)
-}
-
-func NewSpmat(nrow, ncol int) Spmat {
-	mat := make([](map[int]float64), nrow)
+// Create a new sparse matrix
+func NewSpMat(nrow int) SpMat {
+	mat := make(SpMat, nrow)
 	for i := range mat {
-		mate[i] = make(map[int]float64)
+		mat[i] = make(map[int]float64)
 	}
-	return Spmat{ncol, mat}
+	return mat
 }
 
-func (sp *Spmat) Copy() Spmat {
-	nsp := NewSpmat(len(sp.Mat), sp.Ncol)
-	for i, m := range sp.Mat {
+// copy a sparse matrix
+func CopySpMat(sp SpMat) SpMat {
+	nsp := NewSpMat(len(sp))
+	for i, m := range sp {
 		for j, d := range m {
-			nsp.Mat[i][j] = d
+			nsp[i][j] = d
 		}
 	}
 	return nsp
 }
 
-// Randomize entries of sparse matrix
-func (sp *Spmat) Randomize(density float64) {
-	if density == 0 {
-		return
+// multiply a sparse matrix to a vector
+func MultSpMatVec(sp SpMat, v, vout Vec) {
+	for i, ri := range sp {
+		vout[i] = 0.0
+		for j, a := range ri {
+			vout[i] += a * v[j]
+		}
 	}
+}
 
-	density2 := density / 2
-	for i := range sp.Mat {
-		for j := 0; j < sp.Ncol; j++ {
+// random matrix
+func RandomizeSpMat(sp SpMat, ncol int, density float64) {
+	d2 := density / 2
+	for _, ri := range sp {
+		for j := 0; j < ncol; j++ {
 			r := rand.Float64()
-			if r < density2 {
-				sp.Mat[i][j] = 1
+			if r < d2 {
+				ri[j] = 1
 			} else if r < density {
-				sp.Mat[i][j] = -1
+				ri[j] = -1
 			}
 		}
 	}
 }
 
-// Apply an sparse matrix to a vector.
-func MultMatVec(vout Vec, mat Spmat, vin Vec) { //Matrix multiplication
-	for i := range vout {
-		vout[i] = 0.0
+func ApplyFVec(f func(float64) float64, omega float64, vin, vout Vec) {
+	for i, v := range vin {
+		vout[i] = f(v * omega)
 	}
-
-	for i, m := range mat.Mat {
-		for j, d := range m {
-			vout[i] += d * vin[j]
-		}
-	}
-	return
 }
 
-// mutating a sparse matrix
-// Note: This implementation has non-zero probability of choosing same element to be mutated twice.
-func (mat *Spmat) mutateSpmat(density, mutrate float64) {
-	if density == 0.0 {
-		return
+func AddVecs(v0, v1, vout Vec) {
+	for i, v := range v0 {
+		vout[i] = v + v1[i]
 	}
-
-	nrow := len(mat.Mat)
-	lambda := mutrate * float64(nrow*mat.Ncol)
-	dist := distuv.Poisson{Lambda: lambda}
-	nmut := int(dist.Rand())
-	density2 := density * 0.5
-	for n := 0; n < nmut; n++ {
-		i := rand.Intn(nrow)
-		j := rand.Intn(mat.Ncol)
-		r := rand.Float64()
-		delete(mat.Mat[i], j)
-		if r < density2 {
-			mat.Mat[i][j] = 1.0
-		} else if r < density {
-			mat.Mat[i][j] = -1.0
-		}
-	}
-
-	return
 }
 
-func CrossoverSpmats(mat0, mat1 Spmat) {
-	for i, ri := range mat0.Mat {
-		r := rand.Float64()
-		if r < 0.5 {
-			mat0.Mat[i] = mat1.Mat[i]
-			mat1.Mat[i] = ri
-		}
+func DiffVecs(v0, v1, vout Vec) {
+	for i, v := range v0 {
+		vout[i] = v - v1[i]
 	}
-
 }
