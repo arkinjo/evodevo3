@@ -95,6 +95,7 @@ func (s *Setting) MateGenomes(gen0, gen1 Genome) (Genome, Genome) {
 			kid1[l][k] = nmat1
 		}
 	}
-
+	s.MutateGenome(kid0)
+	s.MutateGenome(kid1)
 	return kid0, kid1
 }

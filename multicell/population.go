@@ -11,6 +11,32 @@ type Population struct {
 	Indivs []Individual
 }
 
+type PopStats struct {
+	Mismatch float64
+	Fitness  float64
+	Ndev     float64
+	Nparents int
+}
+
+func (pop *Population) Get_popstats() PopStats {
+	mismatch := 0.0
+	fitness := 0.0
+	ndev := 0.0
+	npop := float64(len(pop.Indivs))
+	npar := make(map[int]bool)
+	for _, indiv := range pop.Indivs {
+		mismatch += indiv.Mismatch
+		fitness += indiv.Fitness
+		ndev += float64(indiv.Ndev)
+		npar[indiv.Id] = true
+	}
+	return PopStats{
+		Mismatch: mismatch / npop,
+		Fitness:  fitness / npop,
+		Ndev:     ndev / npop,
+		Nparents: len(npar)}
+}
+
 func (s *Setting) NewPopulation(env Environment) Population {
 	var indivs []Individual
 	for id := range s.Max_pop {
@@ -31,13 +57,13 @@ func (pop *Population) Get_max_fitness() float64 {
 	return f
 }
 
-func (pop *Population) Develop(s *Setting, igen int, env Environment) {
+func (pop *Population) Develop(s *Setting, igen int, selenv Environment) {
 	pop.Igen = igen
 	ch := make(chan Individual)
 
 	for _, indiv := range pop.Indivs {
 		go func(indiv Individual) {
-			ch <- indiv.Develop(s, env)
+			ch <- indiv.Develop(s, selenv)
 		}(indiv)
 	}
 
@@ -88,12 +114,15 @@ func (pop *Population) Reproduce(s *Setting, env Environment) Population {
 		Indivs: kids}
 }
 
-func (pop0 *Population) Evolve(s *Setting, maxgen int, env Environment) Population {
+func (pop0 *Population) Evolve(s *Setting, env Environment, maxgen int) Population {
 	pop := *pop0
+	selenv := s.Selecting_env(env)
 	for igen := range maxgen {
-		fmt.Println("Evolve: ", igen)
-		pop.Develop(s, igen, env)
+		pop.Develop(s, igen+1, selenv)
 		pop = pop.Select(s, env)
+		stats := pop.Get_popstats()
+		fmt.Printf("%d\t%e\t%e\t%e\t%d\n",
+			pop.Igen, stats.Mismatch, stats.Fitness, stats.Ndev, stats.Nparents)
 		pop = pop.Reproduce(s, env)
 	}
 	return pop

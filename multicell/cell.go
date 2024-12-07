@@ -1,5 +1,9 @@
 package multicell
 
+import (
+	"math"
+)
+
 type Cell struct {
 	States [][]float64
 	Pave   []float64
@@ -37,15 +41,33 @@ func (s *Setting) NewCell() Cell {
 	}
 }
 
+func (c *Cell) Initialize() {
+	for l, state := range c.States {
+		for i := range state {
+			c.States[l][i] = 1.0
+		}
+	}
+}
+
 func (c *Cell) Dev_step(s *Setting, g Genome, istep int, env Vec) float64 {
 	for l := 1; l < s.Num_layers; l++ {
 		va := make(Vec, s.Num_components[l])
 		vt := make(Vec, s.Num_components[l])
 		for k, mat := range g[l] {
-			MultSpMatVec(mat, c.States[k], vt)
+			vu := make(Vec, s.Num_components[k])
+			if l == 1 && k == 0 {
+				DiffVecs(c.States[k], c.Pave, vu)
+			} else {
+				vu = c.States[k]
+			}
+			MultSpMatVec(mat, vu, vt)
 			AddVecs(va, vt, va)
 		}
-		ApplyFVec(s.Afuncs[l], s.Omega[l], va, c.States[l])
+		if l < s.Num_layers-1 {
+			ApplyFVec(LCatan, s.Omega[l], va, c.States[l])
+		} else {
+			ApplyFVec(math.Tanh, s.Omega[l], va, c.States[l])
+		}
 	}
 	if istep == 0 {
 		for i, p := range c.States[s.Num_layers-1] {

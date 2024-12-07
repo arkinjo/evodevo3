@@ -1,45 +1,36 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/arkinjo/evodevo3/multicell"
+	"log"
+	"os"
+	//	"strings"
 	//	"math"
 )
 
-type Hoge interface {
-	Gaga() float64
-}
-
-type Cl1 struct {
-	a float64
-}
-
-func (c Cl1) Gaga() float64 {
-	return c.a
-}
-
-type Cl2 struct {
-	b string
-}
-
-func (c Cl2) Gaga() float64 {
-	return float64(len(c.b))
+func dumpjson(js []byte) {
+	fmt.Println(len(js))
+	os.Stdout.Write(js)
 }
 
 func main() {
 	s := multicell.Get_default_setting("hoge", 5, 15)
 	s.Set_omega()
-	for i, tl := range s.Topology {
-		for j, d := range tl {
-			fmt.Println("Topology ", i, " ", j, " ", d)
-		}
-	}
-	s.Max_pop = 500
+	s.Max_pop = 100
+
 	env := s.NewEnvironment()
 	pop := s.NewPopulation(env)
-	pop.Evolve(s, 200, env)
-	fmt.Println(pop)
+
+	js, err := json.Marshal(pop)
+	if err != nil {
+		log.Fatal(err)
+	}
+	dumpjson(js)
+
+	pop.Evolve(s, env, 200)
 	fmt.Println(s.Selecting_env(env))
-	fmt.Println(pop.Indivs[0].Selected_pheno(s))
+	fmt.Println(pop.Indivs[0].Selected_pheno())
 
 }

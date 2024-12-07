@@ -81,6 +81,6 @@ func (s *Setting) NewCell_envs(env Environment) Cell_envs {
 	}
 }
 
-func (s *Setting) Selecting_env(env Environment) Vec {
+func (s *Setting) Selecting_env(env Environment) Environment {
 	return env[0 : s.Num_components[0]*s.Num_cell_y/4]
 }

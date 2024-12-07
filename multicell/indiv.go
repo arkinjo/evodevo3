@@ -36,31 +36,37 @@ func (s *Setting) NewIndividual(id int, env Environment) Individual {
 		Cells:    cells,
 		Envs:     envs,
 		Ndev:     0,
-		Mismatch: math.Inf(0),
-		Fitness:  0,
-	}
+		Mismatch: 100000.0,
+		Fitness:  0}
 }
 
-func (indiv *Individual) Selected_pheno(s *Setting) Vec {
+func (indiv *Individual) Selected_pheno() Vec {
 	var p Vec
-	for j := range s.Num_cell_y {
-		p = append(p, indiv.Cells[0][j].Left()...)
+	for _, cell := range indiv.Cells[0] {
+		p = append(p, cell.Left()...)
 	}
 
 	return p
 }
 
+func (indiv *Individual) Initialize() {
+	for i, cs := range indiv.Cells {
+		for j := range cs {
+			indiv.Cells[i][j].Initialize()
+		}
+	}
+}
 func (indiv *Individual) Get_cell_env(s *Setting, i, j int) Vec {
 	var left, right, top, bottom Vec
 
 	for j := range s.Num_cell_y {
 		if i == 0 {
-			left = append(left, indiv.Envs.Rights[j]...)
+			left = append(left, indiv.Envs.Lefts[j]...)
 		} else {
 			left = append(left, indiv.Cells[i-1][j].Right()...)
 		}
 		if i == s.Num_cell_x-1 {
-			right = append(right, indiv.Envs.Lefts[j]...)
+			right = append(right, indiv.Envs.Rights[j]...)
 		} else {
 			right = append(right, indiv.Cells[i+1][j].Left()...)
 		}
@@ -68,12 +74,12 @@ func (indiv *Individual) Get_cell_env(s *Setting, i, j int) Vec {
 
 	for i := range s.Num_cell_x {
 		if j == 0 {
-			bottom = append(bottom, indiv.Envs.Tops[i]...)
+			bottom = append(bottom, indiv.Envs.Bottoms[i]...)
 		} else {
 			bottom = append(bottom, indiv.Cells[i][j].Top()...)
 		}
 		if j == s.Num_cell_y-1 {
-			top = append(top, indiv.Envs.Bottoms[i]...)
+			top = append(top, indiv.Envs.Tops[i]...)
 		} else {
 			top = append(top, indiv.Cells[i][j].Bottom()...)
 		}
@@ -81,18 +87,17 @@ func (indiv *Individual) Get_cell_env(s *Setting, i, j int) Vec {
 	return slices.Concat(left, top, right, bottom)
 }
 
-func (indiv *Individual) Get_mismatch(s *Setting, env Environment) float64 {
-	selenv := s.Selecting_env(env)
-	selphen := indiv.Selected_pheno(s)
+func (indiv *Individual) Get_mismatch(s *Setting, selenv Environment) float64 {
+	selphen := indiv.Selected_pheno()
 	dev := 0.0
-	for i, e := range selenv {
-		dev += math.Abs(e - selphen[i])
+	for i, e := range selphen {
+		dev += math.Abs(e - selenv[i])
 	}
 
 	return dev / float64(len(selenv))
 }
 
-func (indiv *Individual) Develop(s *Setting, env Environment) Individual {
+func (indiv *Individual) Develop(s *Setting, selenv Environment) Individual {
 	istep := 0
 	for istep = range s.Num_dev {
 		dev := 0.0
@@ -108,7 +113,7 @@ func (indiv *Individual) Develop(s *Setting, env Environment) Individual {
 	}
 
 	indiv.Ndev = istep
-	indiv.Mismatch = indiv.Get_mismatch(s, env)
+	indiv.Mismatch = indiv.Get_mismatch(s, selenv)
 
 	if istep < s.Num_dev {
 		indiv.Fitness = math.Exp(-indiv.Mismatch * s.Selstrength)
