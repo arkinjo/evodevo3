@@ -1,7 +1,7 @@
 package multicell
 
 import (
-	"fmt"
+	//	"fmt"
 	"math"
 	"slices"
 )
@@ -44,7 +44,7 @@ func (s *Setting) NewIndividual(id int, env Environment) Individual {
 func (indiv *Individual) Selected_pheno(s *Setting) Vec {
 	var p Vec
 	for j := range s.Num_cell_y {
-		p = append(p, s.Left(&indiv.Cells[0][j])...)
+		p = append(p, indiv.Cells[0][j].Left()...)
 	}
 
 	return p
@@ -57,12 +57,12 @@ func (indiv *Individual) Get_cell_env(s *Setting, i, j int) Vec {
 		if i == 0 {
 			left = append(left, indiv.Envs.Rights[j]...)
 		} else {
-			left = append(left, s.Right(&indiv.Cells[i-1][j])...)
+			left = append(left, indiv.Cells[i-1][j].Right()...)
 		}
 		if i == s.Num_cell_x-1 {
 			right = append(right, indiv.Envs.Lefts[j]...)
 		} else {
-			right = append(right, s.Left(&indiv.Cells[i+1][j])...)
+			right = append(right, indiv.Cells[i+1][j].Left()...)
 		}
 	}
 
@@ -70,12 +70,12 @@ func (indiv *Individual) Get_cell_env(s *Setting, i, j int) Vec {
 		if j == 0 {
 			bottom = append(bottom, indiv.Envs.Tops[i]...)
 		} else {
-			bottom = append(bottom, s.Top(&indiv.Cells[i][j])...)
+			bottom = append(bottom, indiv.Cells[i][j].Top()...)
 		}
 		if j == s.Num_cell_y-1 {
 			top = append(top, indiv.Envs.Bottoms[i]...)
 		} else {
-			top = append(top, s.Bottom(&indiv.Cells[i][j])...)
+			top = append(top, indiv.Cells[i][j].Bottom()...)
 		}
 	}
 	return slices.Concat(left, top, right, bottom)
@@ -92,7 +92,7 @@ func (indiv *Individual) Get_mismatch(s *Setting, env Environment) float64 {
 	return dev / float64(len(selenv))
 }
 
-func (indiv *Individual) Develop(s *Setting, env Environment) {
+func (indiv *Individual) Develop(s *Setting, env Environment) Individual {
 	istep := 0
 	for istep = range s.Num_dev {
 		dev := 0.0
@@ -102,7 +102,6 @@ func (indiv *Individual) Develop(s *Setting, env Environment) {
 				dev += indiv.Cells[i][j].Dev_step(s, indiv.Genome, istep, env)
 			}
 		}
-		fmt.Println("dev=", dev)
 		if dev < s.Conv_dev {
 			break
 		}
@@ -110,9 +109,27 @@ func (indiv *Individual) Develop(s *Setting, env Environment) {
 
 	indiv.Ndev = istep
 	indiv.Mismatch = indiv.Get_mismatch(s, env)
+
 	if istep < s.Num_dev {
 		indiv.Fitness = math.Exp(-indiv.Mismatch * s.Selstrength)
 	} else {
-		indiv.Fitness = -100.0
+		indiv.Fitness = 0
 	}
+	return *indiv
+}
+
+func (s *Setting) MateIndividuals(indiv0, indiv1 Individual, env Environment) (Individual, Individual) {
+	geno0, geno1 := s.MateGenomes(indiv0.Genome, indiv1.Genome)
+	kid0 := s.NewIndividual(-1, env)
+	kid1 := s.NewIndividual(-2, env)
+
+	kid0.Genome = geno0
+	kid0.Mom_id = indiv0.Id
+	kid0.Dad_id = indiv1.Id
+
+	kid1.Genome = geno1
+	kid0.Mom_id = indiv1.Id
+	kid0.Dad_id = indiv0.Id
+
+	return kid0, kid1
 }

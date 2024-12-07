@@ -59,7 +59,7 @@ func Get_default_setting(basename string, num_layers int, seed int) *Setting {
 		num_components[i] = 200
 		if i > 0 {
 			topology[i][i-1] = default_density
-			if i < num_layers {
+			if i < num_layers-1 {
 				topology[i][i] = default_density
 				afuncs[i] = LCatan
 			} else {

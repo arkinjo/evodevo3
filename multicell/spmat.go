@@ -5,6 +5,15 @@ import (
 	"math/rand"
 )
 
+// Create a vector with initial values of "v".
+func NewVec(n int, v float64) Vec {
+	vec := make([]float64, n)
+	for i := range n {
+		vec[i] = v
+	}
+	return vec
+}
+
 // Create a new sparse matrix
 func NewSpMat(nrow int) SpMat {
 	mat := make(SpMat, nrow)

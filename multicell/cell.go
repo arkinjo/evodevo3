@@ -6,29 +6,26 @@ type Cell struct {
 	Pvar   []float64
 }
 
-func (s *Setting) Left(c *Cell) Vec {
-	return c.States[s.Num_layers-1][0 : s.Num_components[0]/4]
+func (c *Cell) Left() Vec {
+	return c.Pave[0 : len(c.Pave)/4]
 }
 
-func (s *Setting) Top(c *Cell) Vec {
-	return c.States[s.Num_layers-1][s.Num_components[0]/4 : s.Num_components[0]/2]
+func (c *Cell) Top() Vec {
+	return c.Pave[len(c.Pave)/4 : len(c.Pave)/2]
 }
 
-func (s *Setting) Right(c *Cell) Vec {
-	return c.States[s.Num_layers-1][s.Num_components[0]/2 : s.Num_components[0]*3/4]
+func (c *Cell) Right() Vec {
+	return c.Pave[len(c.Pave)/2 : len(c.Pave)*3/4]
 }
 
-func (s *Setting) Bottom(c *Cell) Vec {
-	return c.States[s.Num_layers-1][s.Num_components[0]*3/4:]
+func (c *Cell) Bottom() Vec {
+	return c.Pave[len(c.Pave)*3/4:]
 }
 
 func (s *Setting) NewCell() Cell {
 	states := make([][]float64, s.Num_layers)
 	for i, nc := range s.Num_components {
-		states[i] = make([]float64, nc)
-		for j, _ := range states[i] {
-			states[i][j] = 1.0
-		}
+		states[i] = NewVec(nc, 1.0)
 	}
 	pave := make([]float64, s.Num_components[s.Num_layers-1])
 	pvar := make([]float64, s.Num_components[s.Num_layers-1])

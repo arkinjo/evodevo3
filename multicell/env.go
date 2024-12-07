@@ -39,7 +39,13 @@ func (s *Setting) Add_noise(env Environment) Environment {
 }
 
 func (s *Setting) NewCell_envs(env Environment) Cell_envs {
-	nenv := s.Add_noise(env)
+	var env0 Vec
+	if s.With_cue {
+		env0 = env
+	} else {
+		env0 = NewVec(s.Num_env, 1.0)
+	}
+	nenv := s.Add_noise(env0)
 	lenv := s.Num_components[0] / 4
 	lenx := lenv * s.Num_cell_x
 	leny := lenv * s.Num_cell_y
@@ -51,6 +57,7 @@ func (s *Setting) NewCell_envs(env Environment) Cell_envs {
 
 	lenx1 := lenx / s.Num_cell_x
 	leny1 := leny / s.Num_cell_x
+
 	lefts := make([]Vec, s.Num_cell_y)
 	rights := make([]Vec, s.Num_cell_y)
 	tops := make([]Vec, s.Num_cell_x)
