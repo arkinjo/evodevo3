@@ -1,13 +1,16 @@
 package multicell
 
 import (
+	"compress/gzip"
+	"encoding/gob"
 	"fmt"
 	"math/rand/v2"
+	"os"
 )
 
 type Population struct {
+	Iepoch int // epoch
 	Igen   int // generation
-	Env    Environment
 	Indivs []Individual
 }
 
@@ -43,6 +46,7 @@ func (s *Setting) NewPopulation(env Environment) Population {
 		indivs = append(indivs, s.NewIndividual(id, env))
 	}
 	return Population{
+		Iepoch: 0,
 		Igen:   0,
 		Indivs: indivs}
 }
@@ -72,7 +76,7 @@ func (pop *Population) Develop(s *Setting, igen int, selenv Environment) {
 	}
 }
 
-func (pop *Population) Select(s *Setting, env Environment) Population {
+func (pop *Population) Select(s *Setting) Population {
 	var indivs []Individual
 	maxfit := pop.Get_max_fitness()
 	npop := 0
@@ -89,8 +93,8 @@ func (pop *Population) Select(s *Setting, env Environment) Population {
 		}
 	}
 	return Population{
+		Iepoch: pop.Iepoch,
 		Igen:   pop.Igen,
-		Env:    pop.Env,
 		Indivs: indivs}
 }
 
@@ -109,21 +113,77 @@ func (pop *Population) Reproduce(s *Setting, env Environment) Population {
 	}
 
 	return Population{
+		Iepoch: pop.Iepoch,
 		Igen:   pop.Igen + 1,
-		Env:    env,
 		Indivs: kids}
 }
 
-func (pop0 *Population) Evolve(s *Setting, env Environment, maxgen int) Population {
+func (pop0 *Population) Evolve(s *Setting, maxgen int, env Environment) Population {
 	pop := *pop0
+
 	selenv := s.Selecting_env(env)
 	for igen := range maxgen {
 		pop.Develop(s, igen+1, selenv)
-		pop = pop.Select(s, env)
+		pop = pop.Select(s)
 		stats := pop.Get_popstats()
-		fmt.Printf("%d\t%e\t%e\t%e\t%d\n",
-			pop.Igen, stats.Mismatch, stats.Fitness, stats.Ndev, stats.Nparents)
+		fmt.Printf("%d\t%d\t%e\t%e\t%e\t%d\n",
+			pop.Iepoch, pop.Igen,
+			stats.Mismatch, stats.Fitness, stats.Ndev, stats.Nparents)
+		if s.ProductionRun {
+			pop.Dump(s)
+		}
 		pop = pop.Reproduce(s, env)
 	}
+	pop.Develop(s, maxgen, selenv)
+	return pop
+}
+
+func (pop *Population) Initialize(s *Setting, env Environment) {
+	for i := range pop.Indivs {
+		pop.Indivs[i].Initialize(s, env)
+	}
+}
+
+func (pop *Population) RunEpochs(s *Setting, nepochs, ngen int, env Environment) Population {
+	for range nepochs {
+		env = s.ChangeEnv(env)
+		pop.Iepoch += 1
+		*pop = pop.Evolve(s, ngen, env)
+	}
+	return *pop
+}
+
+func (s *Setting) TrajectoryFilename(iepoch, igen int) string {
+	filename := fmt.Sprintf("%s/%s_%2.2d_%3.3d.traj.gz", s.Outdir, s.Basename, iepoch, igen)
+	return filename
+}
+
+func (pop *Population) Dump(s *Setting) string {
+	filename := s.TrajectoryFilename(pop.Iepoch, pop.Igen)
+	fout, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	JustFail(err)
+	defer fout.Close()
+	foutz, err := gzip.NewWriterLevel(fout, gzip.BestSpeed)
+	JustFail(err)
+	defer foutz.Close()
+
+	encoder := gob.NewEncoder(foutz)
+	encoder.Encode(pop)
+	return filename
+}
+
+func (s *Setting) LoadPopulation(filename string, env Environment) Population {
+	pop := s.NewPopulation(env)
+	fin, err := os.Open(filename)
+	JustFail(err)
+	defer fin.Close()
+
+	finz, err := gzip.NewReader(fin)
+	JustFail(err)
+	defer finz.Close()
+
+	decoder := gob.NewDecoder(finz)
+	err = decoder.Decode(&pop)
+	JustFail(err)
 	return pop
 }

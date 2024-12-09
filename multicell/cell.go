@@ -1,6 +1,7 @@
 package multicell
 
 import (
+	//	"fmt"
 	"math"
 )
 
@@ -8,22 +9,13 @@ type Cell struct {
 	States [][]float64
 	Pave   []float64
 	Pvar   []float64
-}
 
-func (c *Cell) Left() Vec {
-	return c.Pave[0 : len(c.Pave)/4]
-}
+	El Vec // -> cell[i-1][j].Pr || Envs.Lefts[j]
+	Et Vec // -> cell[i][j+1].Pb || Envs.Tops[i]
+	Er Vec // -> cell[i+1][j].Pl || Envs.Rights[j]
+	Eb Vec // -> cell[i][j-1].Pt || Envs.Bottoms[i]
 
-func (c *Cell) Top() Vec {
-	return c.Pave[len(c.Pave)/4 : len(c.Pave)/2]
-}
-
-func (c *Cell) Right() Vec {
-	return c.Pave[len(c.Pave)/2 : len(c.Pave)*3/4]
-}
-
-func (c *Cell) Bottom() Vec {
-	return c.Pave[len(c.Pave)*3/4:]
+	Pl, Pt, Pr, Pb Vec // -> parts of Pave
 }
 
 func (s *Setting) NewCell() Cell {
@@ -31,25 +23,55 @@ func (s *Setting) NewCell() Cell {
 	for i, nc := range s.Num_components {
 		states[i] = NewVec(nc, 1.0)
 	}
-	pave := make([]float64, s.Num_components[s.Num_layers-1])
-	pvar := make([]float64, s.Num_components[s.Num_layers-1])
 
-	return Cell{
+	lenP := s.Num_components[s.Num_layers-1]
+	pave := make([]float64, lenP)
+	pvar := make([]float64, lenP)
+
+	cell := Cell{
 		States: states,
 		Pave:   pave,
 		Pvar:   pvar,
 	}
+	cell.Initialize(s)
+	return cell
 }
 
-func (c *Cell) Initialize() {
-	for l, state := range c.States {
-		for i := range state {
-			c.States[l][i] = 1.0
-		}
+func (c *Cell) Initialize(s *Setting) {
+	for l := range c.States {
+		SetVec(c.States[l], 1.0)
+	}
+	SetVec(c.Pave, 1.0)
+	SetVec(c.Pvar, 1.0)
+	lenP4 := s.Num_components[s.Num_layers-1] / 4
+	c.Pl = c.Pave[:lenP4]
+	c.Pt = c.Pave[lenP4 : lenP4*2]
+	c.Pr = c.Pave[lenP4*2 : lenP4*3]
+	c.Pb = c.Pave[lenP4*3:]
+}
+
+func (c *Cell) Set_env() {
+	k := 0
+	for _, v := range c.El {
+		c.States[0][k] = v
+		k++
+	}
+	for _, v := range c.Et {
+		c.States[0][k] = v
+		k++
+	}
+	for _, v := range c.Er {
+		c.States[0][k] = v
+		k++
+	}
+	for _, v := range c.Eb {
+		c.States[0][k] = v
+		k++
 	}
 }
 
-func (c *Cell) Dev_step(s *Setting, g Genome, istep int, env Vec) float64 {
+func (c *Cell) Dev_step(s *Setting, g Genome, istep int) float64 {
+	c.Set_env()
 	for l := 1; l < s.Num_layers; l++ {
 		va := make(Vec, s.Num_components[l])
 		vt := make(Vec, s.Num_components[l])

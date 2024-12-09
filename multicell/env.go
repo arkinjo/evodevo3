@@ -1,7 +1,9 @@
 package multicell
 
 import (
+	"encoding/json"
 	"math/rand/v2"
+	"os"
 )
 
 type Environment []float64
@@ -83,4 +85,44 @@ func (s *Setting) NewCell_envs(env Environment) Cell_envs {
 
 func (s *Setting) Selecting_env(env Environment) Environment {
 	return env[0 : s.Num_components[0]*s.Num_cell_y/4]
+}
+
+func (s *Setting) ChangeEnv(env Environment) Environment {
+	ndenv := int(s.Denv * float64(s.Num_env))
+	nenv := make(Environment, s.Num_env)
+	copy(nenv, env)
+
+	indices := make([]int, s.Num_env)
+	for i := range indices {
+		indices[i] = i
+	}
+	rand.Shuffle(len(indices), func(i, j int) {
+		indices[i], indices[j] = indices[j], indices[i]
+	})
+
+	for _, i := range indices[:ndenv] {
+		nenv[i] *= -1
+	}
+	return nenv
+}
+
+func (s *Setting) SaveEnvs(filename string, nepochs int) {
+	env := s.NewEnvironment()
+	envs := make([]Environment, nepochs)
+	for i := range nepochs {
+		env = s.ChangeEnv(env)
+		envs[i] = env
+	}
+	json, err := json.Marshal(envs)
+	JustFail(err)
+	os.WriteFile(filename, json, 0644)
+}
+
+func (s *Setting) LoadEnvs(filename string) []Environment {
+	var envs []Environment
+	buffer, err := os.ReadFile(filename)
+	JustFail(err)
+	err = json.Unmarshal(buffer, &envs)
+	JustFail(err)
+	return envs
 }

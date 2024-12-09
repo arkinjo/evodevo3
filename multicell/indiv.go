@@ -3,7 +3,6 @@ package multicell
 import (
 	//	"fmt"
 	"math"
-	"slices"
 )
 
 type Individual struct {
@@ -12,15 +11,49 @@ type Individual struct {
 	Dad_id   int
 	Genome   Genome
 	Cells    [][]Cell
-	Envs     Cell_envs
 	Ndev     int
 	Mismatch float64
 	Fitness  float64
 }
 
+func (s *Setting) Set_cell_env(cells [][]Cell, env Environment) {
+	envs := s.NewCell_envs(env)
+
+	var left, right, top, bottom Vec
+	for i, cs := range cells {
+		for j := range cs {
+			if i == 0 {
+				left = envs.Lefts[j]
+			} else {
+				left = cells[i-1][j].Pr
+			}
+			if i == s.Num_cell_x-1 {
+				right = envs.Rights[j]
+			} else {
+				right = cells[i+1][j].Pl
+			}
+
+			if j == 0 {
+				bottom = envs.Bottoms[i]
+			} else {
+				bottom = cells[i][j-1].Pt
+			}
+			if j == s.Num_cell_y-1 {
+				top = envs.Tops[i]
+			} else {
+				top = cells[i][j+1].Pb
+			}
+
+			cells[i][j].El = left
+			cells[i][j].Et = top
+			cells[i][j].Er = right
+			cells[i][j].Eb = bottom
+		}
+	}
+}
+
 func (s *Setting) NewIndividual(id int, env Environment) Individual {
 	cells := make([][]Cell, s.Num_cell_x)
-	envs := s.NewCell_envs(env)
 	for i := range s.Num_cell_x {
 		cells[i] = make([]Cell, s.Num_cell_y)
 		for j := range s.Num_cell_y {
@@ -28,13 +61,14 @@ func (s *Setting) NewIndividual(id int, env Environment) Individual {
 		}
 	}
 
+	s.Set_cell_env(cells, env)
+
 	return Individual{
 		Id:       id,
 		Mom_id:   -1,
 		Dad_id:   -1,
 		Genome:   s.NewGenome(),
 		Cells:    cells,
-		Envs:     envs,
 		Ndev:     0,
 		Mismatch: 100000.0,
 		Fitness:  0}
@@ -43,48 +77,19 @@ func (s *Setting) NewIndividual(id int, env Environment) Individual {
 func (indiv *Individual) Selected_pheno() Vec {
 	var p Vec
 	for _, cell := range indiv.Cells[0] {
-		p = append(p, cell.Left()...)
+		p = append(p, cell.Pl...)
 	}
 
 	return p
 }
 
-func (indiv *Individual) Initialize() {
+func (indiv *Individual) Initialize(s *Setting, env Environment) {
 	for i, cs := range indiv.Cells {
 		for j := range cs {
-			indiv.Cells[i][j].Initialize()
+			indiv.Cells[i][j].Initialize(s)
 		}
 	}
-}
-func (indiv *Individual) Get_cell_env(s *Setting, i, j int) Vec {
-	var left, right, top, bottom Vec
-
-	for j := range s.Num_cell_y {
-		if i == 0 {
-			left = append(left, indiv.Envs.Lefts[j]...)
-		} else {
-			left = append(left, indiv.Cells[i-1][j].Right()...)
-		}
-		if i == s.Num_cell_x-1 {
-			right = append(right, indiv.Envs.Rights[j]...)
-		} else {
-			right = append(right, indiv.Cells[i+1][j].Left()...)
-		}
-	}
-
-	for i := range s.Num_cell_x {
-		if j == 0 {
-			bottom = append(bottom, indiv.Envs.Bottoms[i]...)
-		} else {
-			bottom = append(bottom, indiv.Cells[i][j].Top()...)
-		}
-		if j == s.Num_cell_y-1 {
-			top = append(top, indiv.Envs.Tops[i]...)
-		} else {
-			top = append(top, indiv.Cells[i][j].Bottom()...)
-		}
-	}
-	return slices.Concat(left, top, right, bottom)
+	s.Set_cell_env(indiv.Cells, env)
 }
 
 func (indiv *Individual) Get_mismatch(s *Setting, selenv Environment) float64 {
@@ -99,12 +104,11 @@ func (indiv *Individual) Get_mismatch(s *Setting, selenv Environment) float64 {
 
 func (indiv *Individual) Develop(s *Setting, selenv Environment) Individual {
 	istep := 0
-	for istep = range s.Num_dev {
+	for istep = range s.Max_dev {
 		dev := 0.0
 		for i := range s.Num_cell_x {
 			for j := range s.Num_cell_y {
-				env := indiv.Get_cell_env(s, i, j)
-				dev += indiv.Cells[i][j].Dev_step(s, indiv.Genome, istep, env)
+				dev += indiv.Cells[i][j].Dev_step(s, indiv.Genome, istep)
 			}
 		}
 		if dev < s.Conv_dev {
@@ -112,10 +116,10 @@ func (indiv *Individual) Develop(s *Setting, selenv Environment) Individual {
 		}
 	}
 
-	indiv.Ndev = istep
+	indiv.Ndev = istep + 1
 	indiv.Mismatch = indiv.Get_mismatch(s, selenv)
 
-	if istep < s.Num_dev {
+	if istep < s.Max_dev {
 		indiv.Fitness = math.Exp(-indiv.Mismatch * s.Selstrength)
 	} else {
 		indiv.Fitness = 0

@@ -5,12 +5,16 @@ import (
 	"math/rand"
 )
 
+func SetVec(vec Vec, v float64) {
+	for i := range vec {
+		vec[i] = v
+	}
+}
+
 // Create a vector with initial values of "v".
 func NewVec(n int, v float64) Vec {
 	vec := make([]float64, n)
-	for i := range n {
-		vec[i] = v
-	}
+	SetVec(vec, v)
 	return vec
 }
 
