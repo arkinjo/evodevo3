@@ -1,5 +1,9 @@
 package multicell
 
+import (
+	"log"
+)
+
 func (s *Setting) FullModel() {
 	s.Basename = "Full"
 }
@@ -52,4 +56,29 @@ func (s *Setting) NullHieModel() {
 	s.With_cue = false
 	s.Max_dev = 1
 	s.Basename = "NullHie"
+}
+
+func (s *Setting) SetModel(model string) {
+	switch model {
+	case "Full":
+		s.FullModel()
+	case "NoHie":
+		s.NoHieModel()
+	case "NoCue":
+		s.NoCueModel()
+	case "NoDev":
+		s.NoDevModel()
+	case "Null":
+		s.NullModel()
+	case "NullCue":
+		s.NullCueModel()
+	case "NullHie":
+		s.NullHieModel()
+	case "NullDev":
+		s.NullDevModel()
+	default:
+		log.Println("SetModel: invalid model name. Must be one of Full, NoCue, NoHie, NoDev, Null, NullCue, NullHie, NullDev\n")
+		log.Fatal("Invalid model")
+
+	}
 }

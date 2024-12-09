@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log"
 	"math"
-	"math/rand/v2"
 	"os"
 )
 
@@ -25,7 +24,6 @@ type SpMat = [](map[int]float64)
 type Setting struct {
 	Basename       string  // name of the model
 	Outdir         string  // output directory for trajectory
-	Seed           int     // random seed
 	With_cue       bool    // with cue or not
 	Max_pop        int     // maximum population size
 	Num_cell_x     int     // number of cells in the x-axis
@@ -50,10 +48,8 @@ func LCatan(x float64) float64 {
 	return 6.0 * math.Atan(x/sqrt3) / math.Pi
 }
 
-func GetDefaultSetting(basename string, num_layers int, seed int) *Setting {
-	for range seed {
-		rand.IntN(2)
-	}
+func GetDefaultSetting() *Setting {
+	num_layers := 5
 	num_components := make([]int, num_layers)
 	omega := make(Vec, num_layers)
 	topology := NewSpMat(num_layers)
@@ -72,9 +68,8 @@ func GetDefaultSetting(basename string, num_layers int, seed int) *Setting {
 	}
 
 	return &Setting{
-		Basename:       basename,
+		Basename:       "Full",
 		Outdir:         ".",
-		Seed:           seed,
 		With_cue:       true,
 		Max_pop:        500,
 		Num_cell_x:     ncx,
@@ -121,7 +116,7 @@ func (s *Setting) Dump(filename string) {
 func LoadSetting(filename string) *Setting {
 	buffer, err := os.ReadFile(filename)
 	JustFail(err)
-	s := GetDefaultSetting("", 1, 1)
+	s := GetDefaultSetting()
 	err = json.Unmarshal(buffer, s)
 	JustFail(err)
 

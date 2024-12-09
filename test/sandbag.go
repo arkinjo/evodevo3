@@ -27,7 +27,7 @@ func main() {
 	env := envs[0]
 	pop := s.NewPopulation(env)
 	fmt.Println("#With_cue= ", s.With_cue)
-	pop.RunEpochs(s, 1, 10, env)
+	pop.Evolve(s, 10, env)
 	ofilename := pop.Dump(s)
 	pop = s.LoadPopulation(ofilename, env)
 	fmt.Println(s.Selecting_env(env))

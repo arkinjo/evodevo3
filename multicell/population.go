@@ -134,7 +134,8 @@ func (pop0 *Population) Evolve(s *Setting, maxgen int, env Environment) Populati
 		}
 		pop = pop.Reproduce(s, env)
 	}
-	pop.Develop(s, maxgen, selenv)
+	pop.Develop(s, maxgen+1, selenv)
+	pop.Dump(s)
 	return pop
 }
 
@@ -142,15 +143,6 @@ func (pop *Population) Initialize(s *Setting, env Environment) {
 	for i := range pop.Indivs {
 		pop.Indivs[i].Initialize(s, env)
 	}
-}
-
-func (pop *Population) RunEpochs(s *Setting, nepochs, ngen int, env Environment) Population {
-	for range nepochs {
-		env = s.ChangeEnv(env)
-		pop.Iepoch += 1
-		*pop = pop.Evolve(s, ngen, env)
-	}
-	return *pop
 }
 
 func (s *Setting) TrajectoryFilename(iepoch, igen int) string {
