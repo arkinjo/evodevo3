@@ -76,11 +76,11 @@ func GetSetting() Simulation {
 func main() {
 	t0 := time.Now()
 	sim := GetSetting()
-	fmt.Println(sim.Setting, sim.Estart, sim.Eend)
 	pop := sim.Setting.NewPopulation(sim.Envs[0])
+	sim.Setting.Dump()
 	for iepoch := sim.Estart; iepoch < sim.Eend; iepoch++ {
-		pop.Iepoch += 1
-		pop = pop.Evolve(sim.Setting, sim.Ngen, sim.Envs[iepoch])
+		pop.Iepoch = iepoch + 1
+		pop.Evolve(sim.Setting, sim.Ngen, sim.Envs[iepoch])
 	}
 	fmt.Println("Time: ", time.Since(t0))
 }
