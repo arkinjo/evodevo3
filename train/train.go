@@ -27,12 +27,14 @@ func GetSetting() Simulation {
 	trajDirP := flag.String("trajdir", "traj", "Directory for trajectory files")
 	envStartP := flag.Int("env_start", 0, "starting environment (0, 1, ...)")
 	envEndP := flag.Int("env_end", 20, "ending environment")
+	seedP := flag.Uint64("seed", 13, "random seed for environments")
 	ngenP := flag.Int("ngen", 200, "number of generations per epoch")
 	prodP := flag.Bool("production", false, "true if production run")
 
 	flag.Parse()
 
 	s := multicell.GetDefaultSetting()
+	s.Seed = *seedP
 	s.MaxPopulation = *maxpopP
 	s.Outdir = *trajDirP
 	s.SetModel(*modelP)

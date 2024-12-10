@@ -34,6 +34,7 @@ const (
 // various set-ups
 type Setting struct {
 	Basename      string  // name of the model
+	Seed          uint64  // random seed
 	Outdir        string  // output directory for trajectory
 	WithCue       bool    // with cue or not
 	MaxPopulation int     // maximum population size
@@ -79,6 +80,7 @@ func GetDefaultSetting() *Setting {
 
 	return &Setting{
 		Basename:      "Full",
+		Seed:          13,
 		Outdir:        ".",
 		WithCue:       true,
 		MaxPopulation: 500,

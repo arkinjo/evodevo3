@@ -19,10 +19,10 @@ func (s *Setting) LenEnv() int {
 	return s.LenFace * (s.NumCellX + s.NumCellY) * 2 * NumFaces
 }
 
-func (s *Setting) NewEnvironment() Environment {
+func (s *Setting) NewEnvironment(rng *rand.Rand) Environment {
 	lenenv := s.LenEnv()
 	env := make([]float64, lenenv)
-	for i, j := range rand.Perm(lenenv) {
+	for i, j := range rng.Perm(lenenv) {
 		if i < lenenv/2 {
 			env[j] = 1
 		} else {
@@ -92,7 +92,7 @@ func (s *Setting) SelectingEnv(env Environment) Environment {
 	return env[0 : s.LenFace*s.NumCellY]
 }
 
-func (s *Setting) ChangeEnv(env Environment) Environment {
+func (s *Setting) ChangeEnv(env Environment, rng *rand.Rand) Environment {
 	ndenv := int(s.Denv * float64(s.LenEnv()))
 	nenv := make(Environment, s.LenEnv())
 	copy(nenv, env)
@@ -101,7 +101,7 @@ func (s *Setting) ChangeEnv(env Environment) Environment {
 	for i := range indices {
 		indices[i] = i
 	}
-	rand.Shuffle(len(indices), func(i, j int) {
+	rng.Shuffle(len(indices), func(i, j int) {
 		indices[i], indices[j] = indices[j], indices[i]
 	})
 
@@ -112,10 +112,11 @@ func (s *Setting) ChangeEnv(env Environment) Environment {
 }
 
 func (s *Setting) SaveEnvs(filename string, nepochs int) {
-	env := s.NewEnvironment()
+	rng := rand.New(rand.NewPCG(s.Seed, s.Seed+1397))
+	env := s.NewEnvironment(rng)
 	envs := make([]Environment, nepochs)
 	for i := range nepochs {
-		env = s.ChangeEnv(env)
+		env = s.ChangeEnv(env, rng)
 		envs[i] = env
 	}
 	json, err := json.Marshal(envs)
