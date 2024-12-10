@@ -16,8 +16,8 @@ type Individual struct {
 	Fitness  float64
 }
 
-func (s *Setting) Set_cell_env(cells [][]Cell, env Environment) {
-	envs := s.NewCell_envs(env)
+func (s *Setting) SetCellEnv(cells [][]Cell, env Environment) {
+	envs := s.NewCellEnvs(env)
 
 	var left, right, top, bottom Vec
 	for i, cs := range cells {
@@ -25,43 +25,43 @@ func (s *Setting) Set_cell_env(cells [][]Cell, env Environment) {
 			if i == 0 {
 				left = envs.Lefts[j]
 			} else {
-				left = cells[i-1][j].Pr
+				left = cells[i-1][j].Pave[Right]
 			}
-			if i == s.Num_cell_x-1 {
+			if i == s.NumCellX-1 {
 				right = envs.Rights[j]
 			} else {
-				right = cells[i+1][j].Pl
+				right = cells[i+1][j].Pave[Left]
 			}
 
 			if j == 0 {
 				bottom = envs.Bottoms[i]
 			} else {
-				bottom = cells[i][j-1].Pt
+				bottom = cells[i][j-1].Pave[Top]
 			}
-			if j == s.Num_cell_y-1 {
+			if j == s.NumCellY-1 {
 				top = envs.Tops[i]
 			} else {
-				top = cells[i][j+1].Pb
+				top = cells[i][j+1].Pave[Bottom]
 			}
 
-			cells[i][j].El = left
-			cells[i][j].Et = top
-			cells[i][j].Er = right
-			cells[i][j].Eb = bottom
+			cells[i][j].E[Left] = left
+			cells[i][j].E[Top] = top
+			cells[i][j].E[Right] = right
+			cells[i][j].E[Bottom] = bottom
 		}
 	}
 }
 
 func (s *Setting) NewIndividual(id int, env Environment) Individual {
-	cells := make([][]Cell, s.Num_cell_x)
-	for i := range s.Num_cell_x {
-		cells[i] = make([]Cell, s.Num_cell_y)
-		for j := range s.Num_cell_y {
+	cells := make([][]Cell, s.NumCellX)
+	for i := range s.NumCellX {
+		cells[i] = make([]Cell, s.NumCellY)
+		for j := range s.NumCellY {
 			cells[i][j] = s.NewCell()
 		}
 	}
 
-	s.Set_cell_env(cells, env)
+	s.SetCellEnv(cells, env)
 
 	return Individual{
 		Id:       id,
@@ -74,10 +74,10 @@ func (s *Setting) NewIndividual(id int, env Environment) Individual {
 		Fitness:  0}
 }
 
-func (indiv *Individual) Selected_pheno() Vec {
+func (indiv *Individual) SelectedPhenotype() Vec {
 	var p Vec
 	for _, cell := range indiv.Cells[0] {
-		p = append(p, cell.Pl...)
+		p = append(p, cell.Pave[Left]...)
 	}
 
 	return p
@@ -89,11 +89,11 @@ func (indiv *Individual) Initialize(s *Setting, env Environment) {
 			indiv.Cells[i][j].Initialize(s)
 		}
 	}
-	s.Set_cell_env(indiv.Cells, env)
+	s.SetCellEnv(indiv.Cells, env)
 }
 
-func (indiv *Individual) Get_mismatch(s *Setting, selenv Environment) float64 {
-	selphen := indiv.Selected_pheno()
+func (indiv *Individual) GetMismatch(s *Setting, selenv Environment) float64 {
+	selphen := indiv.SelectedPhenotype()
 	dev := 0.0
 	for i, e := range selphen {
 		dev += math.Abs(e - selenv[i])
@@ -104,22 +104,22 @@ func (indiv *Individual) Get_mismatch(s *Setting, selenv Environment) float64 {
 
 func (indiv *Individual) Develop(s *Setting, selenv Environment) Individual {
 	istep := 0
-	for istep = range s.Max_dev {
+	for istep = range s.MaxDevelop {
 		dev := 0.0
-		for i := range s.Num_cell_x {
-			for j := range s.Num_cell_y {
-				dev += indiv.Cells[i][j].Dev_step(s, indiv.Genome, istep)
+		for i := range s.NumCellX {
+			for j := range s.NumCellY {
+				dev += indiv.Cells[i][j].DevStep(s, indiv.Genome, istep)
 			}
 		}
-		if dev < s.Conv_dev {
+		if dev < s.ConvDevelop {
 			break
 		}
 	}
 
 	indiv.Ndev = istep + 1
-	indiv.Mismatch = indiv.Get_mismatch(s, selenv)
+	indiv.Mismatch = indiv.GetMismatch(s, selenv)
 
-	if istep < s.Max_dev {
+	if istep < s.MaxDevelop {
 		indiv.Fitness = math.Exp(-indiv.Mismatch * s.Selstrength)
 	} else {
 		indiv.Fitness = 0
@@ -128,15 +128,15 @@ func (indiv *Individual) Develop(s *Setting, selenv Environment) Individual {
 }
 
 func (s *Setting) MateIndividuals(indiv0, indiv1 Individual, env Environment) (Individual, Individual) {
-	geno0, geno1 := s.MateGenomes(indiv0.Genome, indiv1.Genome)
+	g0, g1 := s.MateGenomes(indiv0.Genome, indiv1.Genome)
 	kid0 := s.NewIndividual(-1, env)
 	kid1 := s.NewIndividual(-2, env)
 
-	kid0.Genome = geno0
+	kid0.Genome = g0
 	kid0.Mom_id = indiv0.Id
 	kid0.Dad_id = indiv1.Id
 
-	kid1.Genome = geno1
+	kid1.Genome = g1
 	kid0.Mom_id = indiv1.Id
 	kid0.Dad_id = indiv0.Id
 

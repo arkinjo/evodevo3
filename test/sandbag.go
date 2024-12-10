@@ -16,23 +16,20 @@ func dumpjson(js []byte) {
 }
 
 func main() {
-	s := multicell.GetDefaultSetting("hoge", 5, 15)
+	s := multicell.GetDefaultSetting()
 	s.SetOmega()
-	s.Max_pop = 500
-	s.ProductionRun = true
+	s.MaxPopulation = 100
+	s.ProductionRun = false
 	s.Outdir = "traj"
 	s.FullModel()
 	s.SaveEnvs("envs.json", 50)
 	envs := s.LoadEnvs("envs.json")
 	env := envs[0]
 	pop := s.NewPopulation(env)
-	fmt.Println("#With_cue= ", s.With_cue)
+	fmt.Println("#With_cue= ", s.WithCue)
 	pop.Evolve(s, 10, env)
 	ofilename := pop.Dump(s)
 	pop = s.LoadPopulation(ofilename, env)
-	fmt.Println(s.Selecting_env(env))
-	fmt.Println(pop.Indivs[0].Selected_pheno())
-	s.Dump("mysetting.json")
-	s2 := multicell.LoadSetting("mysetting.json")
-	s2.Dump("mysetting2.json")
+	fmt.Println(s.SelectingEnv(env))
+	fmt.Println(pop.Indivs[0].SelectedPhenotype())
 }

@@ -39,7 +39,7 @@ func CopySpMat(sp SpMat) SpMat {
 }
 
 // multiply a sparse matrix to a vector
-func MultSpMatVec(sp SpMat, v, vout Vec) {
+func MultSpMatVec(vout Vec, sp SpMat, v Vec) {
 	for i, ri := range sp {
 		vout[i] = 0.0
 		for j, a := range ri {
@@ -63,19 +63,19 @@ func RandomizeSpMat(sp SpMat, ncol int, density float64) {
 	}
 }
 
-func ApplyFVec(f func(float64) float64, omega float64, vin, vout Vec) {
+func ApplyFVec(vout Vec, f func(float64) float64, omega float64, vin Vec) {
 	for i, v := range vin {
 		vout[i] = f(v * omega)
 	}
 }
 
-func AddVecs(v0, v1, vout Vec) {
+func AddVecs(vout, v0, v1 Vec) {
 	for i, v := range v0 {
 		vout[i] = v + v1[i]
 	}
 }
 
-func DiffVecs(v0, v1, vout Vec) {
+func DiffVecs(vout, v0, v1 Vec) {
 	for i, v := range v0 {
 		vout[i] = v - v1[i]
 	}

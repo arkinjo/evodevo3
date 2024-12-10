@@ -10,51 +10,50 @@ func (s *Setting) FullModel() {
 
 func (s *Setting) NoCueModel() {
 	s.Basename = "NoCue"
-	s.With_cue = false
+	s.WithCue = false
 }
 
 func (s *Setting) NoDevModel() {
 	s.Basename = "NoDev"
-	s.Max_dev = 1
+	s.MaxDevelop = 1
 }
 
 func (s *Setting) NoHieModel() {
 	s.Basename = "NoHie"
-	s.Num_layers = 3
-	s.Num_components = []int{200, 600, 200}
-	topology := NewSpMat(3)
+	s.NumLayers = 1
+	s.LenLayer = []int{600}
+	topology := NewSpMat(s.NumLayers)
 
-	topology[1][0] = default_density * 2.0 / 3.0 //(1,0) and (2,1) in Full
-	topology[1][1] = default_density / 3.0       // (1,1), (2,2), (3,3) in Full
-	topology[2][1] = default_density * 2.0 / 3.0 //(3,2), (4,3) in Full
+	s.DensityEM = default_density * 2.0 / 3.0 //(1,0) and (2,1) in Full
+	topology[0][0] = default_density / 3.0    // (1,1), (2,2), (3,3) in Full
+	s.DensityMP = default_density * 2.0 / 3.0 //(3,2), (4,3) in Full
 	s.Topology = topology
-	s.Omega = make(Vec, 3)
 	s.SetOmega()
 }
 
 func (s *Setting) NullModel() {
 	s.NoHieModel()
-	s.With_cue = false
-	s.Max_dev = 1
+	s.WithCue = false
+	s.MaxDevelop = 1
 	s.Basename = "Null"
 	s.SetOmega()
 }
 
 func (s *Setting) NullCueModel() {
 	s.NullModel()
-	s.With_cue = true
+	s.WithCue = true
 	s.Basename = "NullCue"
 }
 
 func (s *Setting) NullDevModel() {
 	s.NullModel()
-	s.Max_dev = 200
+	s.MaxDevelop = 200
 	s.Basename = "NullDev"
 }
 
 func (s *Setting) NullHieModel() {
-	s.With_cue = false
-	s.Max_dev = 1
+	s.WithCue = false
+	s.MaxDevelop = 1
 	s.Basename = "NullHie"
 }
 

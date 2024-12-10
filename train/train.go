@@ -33,7 +33,7 @@ func GetSetting() Simulation {
 	flag.Parse()
 
 	s := multicell.GetDefaultSetting()
-	s.Max_pop = *maxpopP
+	s.MaxPopulation = *maxpopP
 	s.Outdir = *trajDirP
 	s.SetModel(*modelP)
 	s.ProductionRun = *prodP

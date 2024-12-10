@@ -6,107 +6,98 @@ import (
 )
 
 type Cell struct {
-	States [][]float64
-	Pave   []float64
-	Pvar   []float64
-
-	El Vec // -> cell[i-1][j].Pr || Envs.Lefts[j]
-	Et Vec // -> cell[i][j+1].Pb || Envs.Tops[i]
-	Er Vec // -> cell[i+1][j].Pl || Envs.Rights[j]
-	Eb Vec // -> cell[i][j-1].Pt || Envs.Bottoms[i]
-
-	Pl, Pt, Pr, Pb Vec // -> parts of Pave
+	E    []Vec       // points to neighboring cell face or environment
+	M    [][]float64 // middle layers
+	P    []Vec       // output layer
+	Pave []Vec
+	Pvar []Vec
 }
 
 func (s *Setting) NewCell() Cell {
-	states := make([][]float64, s.Num_layers)
-	for i, nc := range s.Num_components {
-		states[i] = NewVec(nc, 1.0)
+	e := make([]Vec, NumFaces) //
+	p := make([]Vec, NumFaces)
+	pave := make([]Vec, NumFaces)
+	pvar := make([]Vec, NumFaces)
+
+	for i := range NumFaces {
+		p[i] = NewVec(s.LenFace, 1.0)
+		pave[i] = NewVec(s.LenFace, 1.0)
+		pvar[i] = NewVec(s.LenFace, 1.0)
 	}
 
-	lenP := s.Num_components[s.Num_layers-1]
-	pave := make([]float64, lenP)
-	pvar := make([]float64, lenP)
-
-	cell := Cell{
-		States: states,
-		Pave:   pave,
-		Pvar:   pvar,
+	m := make([][]float64, s.NumLayers)
+	for i, nc := range s.LenLayer {
+		m[i] = NewVec(nc, 1.0)
 	}
-	cell.Initialize(s)
-	return cell
+
+	return Cell{
+		E:    e,
+		M:    m,
+		P:    p,
+		Pave: pave,
+		Pvar: pvar}
 }
 
 func (c *Cell) Initialize(s *Setting) {
-	for l := range c.States {
-		SetVec(c.States[l], 1.0)
+	for i := range NumFaces {
+		SetVec(c.E[i], 1.0)
+		SetVec(c.P[i], 1.0)
+		SetVec(c.Pave[i], 1.0)
+		SetVec(c.Pvar[i], 1.0)
 	}
-	SetVec(c.Pave, 1.0)
-	SetVec(c.Pvar, 1.0)
-	lenP4 := s.Num_components[s.Num_layers-1] / 4
-	c.Pl = c.Pave[:lenP4]
-	c.Pt = c.Pave[lenP4 : lenP4*2]
-	c.Pr = c.Pave[lenP4*2 : lenP4*3]
-	c.Pb = c.Pave[lenP4*3:]
-}
-
-func (c *Cell) Set_env() {
-	k := 0
-	for _, v := range c.El {
-		c.States[0][k] = v
-		k++
-	}
-	for _, v := range c.Et {
-		c.States[0][k] = v
-		k++
-	}
-	for _, v := range c.Er {
-		c.States[0][k] = v
-		k++
-	}
-	for _, v := range c.Eb {
-		c.States[0][k] = v
-		k++
+	for l := range s.NumLayers {
+		SetVec(c.M[l], 1.0)
 	}
 }
 
-func (c *Cell) Dev_step(s *Setting, g Genome, istep int) float64 {
-	c.Set_env()
-	for l := 1; l < s.Num_layers; l++ {
-		va := make(Vec, s.Num_components[l])
-		vt := make(Vec, s.Num_components[l])
-		for k, mat := range g[l] {
-			vu := make(Vec, s.Num_components[k])
-			if l == 1 && k == 0 {
-				DiffVecs(c.States[k], c.Pave, vu)
-			} else {
-				vu = c.States[k]
-			}
-			MultSpMatVec(mat, vu, vt)
-			AddVecs(va, vt, va)
+func (c *Cell) DevStep(s *Setting, g Genome, istep int) float64 {
+	v0 := make(Vec, s.LenFace)
+	v1 := make(Vec, s.LenLayer[0])
+	s0 := make(Vec, s.LenLayer[0])
+	for i, vi := range c.E {
+		DiffVecs(v0, vi, c.Pave[i])
+		MultSpMatVec(v1, g.E[i], v0)
+		AddVecs(s0, s0, v1)
+	}
+
+	for l := 0; l < s.NumLayers; l++ {
+		va := make(Vec, s.LenLayer[l])
+		vt := make(Vec, s.LenLayer[l])
+		if l == 0 {
+			AddVecs(va, va, s0)
 		}
-		if l < s.Num_layers-1 {
-			ApplyFVec(LCatan, s.Omega[l], va, c.States[l])
-		} else {
-			ApplyFVec(math.Tanh, s.Omega[l], va, c.States[l])
+		for k, mat := range g.M[l] {
+			MultSpMatVec(vt, mat, c.M[k])
+			AddVecs(va, va, vt)
 		}
+		ApplyFVec(c.M[l], LCatan, s.Omega[l], va)
+	}
+
+	w0 := make(Vec, s.LenFace)
+	for i := range c.P {
+		MultSpMatVec(w0, g.P[i], c.M[s.NumLayers-1])
+		ApplyFVec(c.P[i], math.Tanh, s.OmegaP, w0)
 	}
 	if istep == 0 {
-		for i, p := range c.States[s.Num_layers-1] {
-			c.Pave[i] = p
-			c.Pvar[i] = 1.0
+		for i, p := range c.P {
+			copy(c.Pave[i], p)
+			SetVec(c.Pvar[i], 1.0)
 		}
 	} else { // exponential moving average/variance
-		for i, p := range c.States[s.Num_layers-1] {
-			d := p - c.Pave[i]
-			incr := s.Alpha * d
-			c.Pave[i] += incr
-			c.Pvar[i] = (1 - s.Alpha) * (c.Pvar[i] + d*incr)
+		for i, p := range c.P {
+			for j, v := range p {
+				d := v - c.Pave[i][j]
+				incr := s.Alpha * d
+				c.Pave[i][j] += incr
+				c.Pvar[i][j] = (1 - s.Alpha) * (c.Pvar[i][j] + d*incr)
+			}
 		}
 	}
 	dev := 0.0
-	for _, d := range c.Pvar {
-		dev += d
+	for _, p := range c.Pvar {
+		for _, d := range p {
+			dev += d
+		}
 	}
-	return dev / float64(s.Num_components[s.Num_layers-1])
+	return dev / float64(s.LenFace*NumFaces)
 }

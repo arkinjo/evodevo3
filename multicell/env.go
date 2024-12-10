@@ -8,17 +8,22 @@ import (
 
 type Environment []float64
 
-type Cell_envs struct {
+type CellEnvs struct {
 	Tops    []Vec
 	Bottoms []Vec
 	Rights  []Vec
 	Lefts   []Vec
 }
 
+func (s *Setting) LenEnv() int {
+	return s.LenFace * (s.NumCellX + s.NumCellY) * 2 * NumFaces
+}
+
 func (s *Setting) NewEnvironment() Environment {
-	env := make([]float64, s.Num_env)
-	for i, j := range rand.Perm(s.Num_env) {
-		if i < s.Num_env/2 {
+	lenenv := s.LenEnv()
+	env := make([]float64, lenenv)
+	for i, j := range rand.Perm(lenenv) {
+		if i < lenenv/2 {
 			env[j] = 1
 		} else {
 			env[j] = -1
@@ -27,10 +32,10 @@ func (s *Setting) NewEnvironment() Environment {
 	return env
 }
 
-func (s *Setting) Add_noise(env Environment) Environment {
-	nenv := make([]float64, s.Num_env)
+func (s *Setting) AddNoise(env Environment) Environment {
+	nenv := make([]float64, s.LenEnv())
 	for i, v := range env {
-		if rand.Float64() < s.Env_noise {
+		if rand.Float64() < s.EnvNoise {
 			nenv[i] = -v
 		} else {
 			nenv[i] = v
@@ -40,42 +45,42 @@ func (s *Setting) Add_noise(env Environment) Environment {
 	return nenv
 }
 
-func (s *Setting) NewCell_envs(env Environment) Cell_envs {
+func (s *Setting) NewCellEnvs(env Environment) CellEnvs {
 	var env0 Vec
-	if s.With_cue {
+	if s.WithCue {
 		env0 = env
 	} else {
-		env0 = NewVec(s.Num_env, 1.0)
+		env0 = NewVec(s.LenEnv(), 1.0)
 	}
-	nenv := s.Add_noise(env0)
-	lenv := s.Num_components[0] / 4
-	lenx := lenv * s.Num_cell_x
-	leny := lenv * s.Num_cell_y
+	nenv := s.AddNoise(env0)
+	lenv := s.LenFace
+	lenx := lenv * s.NumCellX
+	leny := lenv * s.NumCellY
 
 	left := nenv[0:leny]
 	top := nenv[leny : leny+lenx]
 	right := nenv[leny+lenx : leny*2+lenx]
 	bottom := nenv[leny*2:]
 
-	lenx1 := lenx / s.Num_cell_x
-	leny1 := leny / s.Num_cell_x
+	lenx1 := lenx / s.NumCellX
+	leny1 := leny / s.NumCellY
 
-	lefts := make([]Vec, s.Num_cell_y)
-	rights := make([]Vec, s.Num_cell_y)
-	tops := make([]Vec, s.Num_cell_x)
-	bottoms := make([]Vec, s.Num_cell_x)
+	lefts := make([]Vec, s.NumCellY)
+	rights := make([]Vec, s.NumCellY)
+	tops := make([]Vec, s.NumCellX)
+	bottoms := make([]Vec, s.NumCellX)
 
-	for i := 0; i < s.Num_cell_x; i++ {
+	for i := 0; i < s.NumCellX; i++ {
 		tops[i] = top[i*lenx1 : (i+1)*lenx1]
 		bottoms[i] = bottom[i*lenx1 : (i+1)*lenx1]
 	}
 
-	for i := 0; i < s.Num_cell_y; i++ {
+	for i := 0; i < s.NumCellY; i++ {
 		lefts[i] = left[i*leny1 : (i+1)*leny1]
 		rights[i] = right[i*leny1 : (i+1)*leny1]
 	}
 
-	return Cell_envs{
+	return CellEnvs{
 		Tops:    tops,
 		Bottoms: bottoms,
 		Rights:  rights,
@@ -83,16 +88,16 @@ func (s *Setting) NewCell_envs(env Environment) Cell_envs {
 	}
 }
 
-func (s *Setting) Selecting_env(env Environment) Environment {
-	return env[0 : s.Num_components[0]*s.Num_cell_y/4]
+func (s *Setting) SelectingEnv(env Environment) Environment {
+	return env[0 : s.LenFace*s.NumCellY]
 }
 
 func (s *Setting) ChangeEnv(env Environment) Environment {
-	ndenv := int(s.Denv * float64(s.Num_env))
-	nenv := make(Environment, s.Num_env)
+	ndenv := int(s.Denv * float64(s.LenEnv()))
+	nenv := make(Environment, s.LenEnv())
 	copy(nenv, env)
 
-	indices := make([]int, s.Num_env)
+	indices := make([]int, s.LenEnv())
 	for i := range indices {
 		indices[i] = i
 	}
