@@ -143,3 +143,44 @@ func (s *Setting) MateGenomes(g0, g1 Genome) (Genome, Genome) {
 	kid1.MutateGenome(s)
 	return kid0, kid1
 }
+
+func (g *Genome) ToVec(s *Setting) Vec {
+	var vec Vec
+	for _, e := range g.E {
+		for _, ei := range e { // i in [0:s.LenLayer[0]]
+			for j := range s.LenFace {
+				v, ok := ei[j]
+				if !ok {
+					v = 0.0
+				}
+				vec = append(vec, v)
+			}
+		}
+	}
+	for _, ml := range g.M {
+		for k, m := range ml {
+			for _, mi := range m {
+				for j := range s.LenLayer[k] {
+					v, ok := mi[j]
+					if !ok {
+						v = 0.0
+					}
+					vec = append(vec, v)
+				}
+			}
+		}
+	}
+	for _, p := range g.P {
+		for _, pi := range p {
+			for j := range s.LenLayer[s.NumLayers-1] {
+				v, ok := pi[j]
+				if !ok {
+					v = 0.0
+				}
+				vec = append(vec, v)
+			}
+		}
+	}
+
+	return vec
+}
