@@ -85,10 +85,10 @@ func (s *Setting) NewIndividual(id int, env Environment) Individual {
 	s.SetCellEnv(cells, env)
 
 	return Individual{
-		Id:       id,
-		Mom_id:   -1,
-		Dad_id:   -1,
-		Genome:   s.NewGenome(),
+		Id:     id,
+		Mom_id: -1,
+		Dad_id: -1,
+		//Genome:   s.NewGenome(), given later
 		Cells:    cells,
 		Ndev:     0,
 		Mismatch: 100000.0,

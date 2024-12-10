@@ -43,7 +43,9 @@ func (pop *Population) GetPopStats() PopStats {
 func (s *Setting) NewPopulation(env Environment) Population {
 	var indivs []Individual
 	for id := range s.MaxPopulation {
-		indivs = append(indivs, s.NewIndividual(id, env))
+		indiv := s.NewIndividual(id, env)
+		indiv.Genome = s.NewGenome()
+		indivs = append(indivs, indiv)
 	}
 	return Population{
 		Iepoch: 0,
