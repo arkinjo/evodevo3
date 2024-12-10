@@ -100,11 +100,12 @@ func (pop *Population) Select(s *Setting) Population {
 func (pop *Population) Reproduce(s *Setting, env Environment) Population {
 	var kids []Individual
 
-	for i := range len(pop.Indivs) {
+	for i, indiv := range pop.Indivs {
 		if i == 0 {
 			continue
 		}
-		kid0, kid1 := s.MateIndividuals(pop.Indivs[i-1], pop.Indivs[i], env)
+
+		kid0, kid1 := s.MateIndividuals(pop.Indivs[i-1], indiv, env)
 		kid0.Id = i - 1
 		kid1.Id = i
 		kids = append(kids, kid0)
@@ -122,7 +123,7 @@ func (pop0 *Population) Evolve(s *Setting, maxgen int, env Environment) Populati
 
 	selenv := s.SelectingEnv(env)
 	for igen := range maxgen {
-		pop.Igen = igen + 1
+		pop.Igen = igen
 		pop.Develop(s, selenv)
 		pop = pop.Select(s)
 		stats := pop.GetPopStats()
@@ -134,7 +135,7 @@ func (pop0 *Population) Evolve(s *Setting, maxgen int, env Environment) Populati
 		}
 		pop = pop.Reproduce(s, env)
 	}
-	pop.Igen = maxgen + 1
+	pop.Igen = maxgen
 	pop.Develop(s, selenv)
 	pop.Dump(s)
 	return pop

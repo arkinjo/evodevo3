@@ -79,7 +79,7 @@ func main() {
 	pop := sim.Setting.NewPopulation(sim.Envs[0])
 	sim.Setting.Dump()
 	for iepoch := sim.Estart; iepoch < sim.Eend; iepoch++ {
-		pop.Iepoch = iepoch + 1
+		pop.Iepoch = iepoch
 		pop.Evolve(sim.Setting, sim.Ngen, sim.Envs[iepoch])
 	}
 	fmt.Println("Time: ", time.Since(t0))
