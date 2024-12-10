@@ -2,6 +2,7 @@ package multicell
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"math"
 	"os"
@@ -64,18 +65,15 @@ func LCatan(x float64) float64 {
 func GetDefaultSetting() *Setting {
 	num_layers := 3
 	num_components := make([]int, num_layers)
-	omega := make(Vec, num_layers)
 	topology := NewSpMat(num_layers)
 	ncx := default_num_cell_x
 	ncy := default_num_cell_y
 
 	for i := 0; i < num_layers; i++ {
 		num_components[i] = 200
+		topology[i][i] = default_density
 		if i > 0 {
 			topology[i][i-1] = default_density
-			if i < num_layers-1 {
-				topology[i][i] = default_density
-			}
 		}
 	}
 
@@ -93,8 +91,6 @@ func GetDefaultSetting() *Setting {
 		DensityEM:     default_density,
 		DensityMP:     default_density,
 		Topology:      topology,
-		Omega:         omega,
-		OmegaP:        1.0,
 		EnvNoise:      0.05,
 		MutRate:       0.001,
 		ConvDevelop:   1e-5,
@@ -102,6 +98,7 @@ func GetDefaultSetting() *Setting {
 		Selstrength:   20.0,
 		Alpha:         1.0 / 3.0,
 		ProductionRun: false}
+	// Omega and OmegaP are set in SetOmega().
 }
 
 func (s *Setting) SetOmega() {
@@ -128,7 +125,9 @@ func JustFail(err error) {
 	}
 }
 
-func (s *Setting) Dump(filename string) {
+func (s *Setting) Dump() {
+	filename := fmt.Sprintf("%s/Setting_%s.json", s.Outdir, s.Basename)
+	log.Printf("Setting file saved in: %s\n", filename)
 	json, err := json.MarshalIndent(s, "", "    ")
 	JustFail(err)
 	os.WriteFile(filename, json, 0644)
