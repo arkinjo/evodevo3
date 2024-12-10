@@ -27,6 +27,13 @@ func (s *Setting) SetCellEnv(cells [][]Cell, env Environment) {
 			} else {
 				left = cells[i-1][j].Pave[Right]
 			}
+
+			if j == s.NumCellY-1 {
+				top = envs.Tops[i]
+			} else {
+				top = cells[i][j+1].Pave[Bottom]
+			}
+
 			if i == s.NumCellX-1 {
 				right = envs.Rights[j]
 			} else {
@@ -38,11 +45,6 @@ func (s *Setting) SetCellEnv(cells [][]Cell, env Environment) {
 			} else {
 				bottom = cells[i][j-1].Pave[Top]
 			}
-			if j == s.NumCellY-1 {
-				top = envs.Tops[i]
-			} else {
-				top = cells[i][j+1].Pave[Bottom]
-			}
 
 			cells[i][j].E[Left] = left
 			cells[i][j].E[Top] = top
@@ -50,6 +52,25 @@ func (s *Setting) SetCellEnv(cells [][]Cell, env Environment) {
 			cells[i][j].E[Bottom] = bottom
 		}
 	}
+}
+
+func (indiv *Individual) CueVec(s *Setting) Vec {
+	var vec Vec
+
+	for j := range s.NumCellY {
+		vec = append(vec, indiv.Cells[0][j].E[Left]...)
+	}
+	for i := range s.NumCellX {
+		vec = append(vec, indiv.Cells[i][s.NumCellY-1].E[Top]...)
+	}
+	for j := range s.NumCellY {
+		vec = append(vec, indiv.Cells[s.NumCellX-1][j].E[Right]...)
+	}
+	for i := range s.NumCellX {
+		vec = append(vec, indiv.Cells[i][0].E[Bottom]...)
+	}
+
+	return vec
 }
 
 func (s *Setting) NewIndividual(id int, env Environment) Individual {
