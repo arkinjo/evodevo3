@@ -80,4 +80,6 @@ func (s *Setting) SetModel(model string) {
 		log.Fatal("Invalid model")
 
 	}
+
+	s.SetOmega()
 }
