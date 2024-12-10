@@ -61,8 +61,7 @@ func (pop *Population) GetMaxFitness() float64 {
 	return f
 }
 
-func (pop *Population) Develop(s *Setting, igen int, selenv Environment) {
-	pop.Igen = igen
+func (pop *Population) Develop(s *Setting, selenv Environment) {
 	ch := make(chan Individual)
 
 	for _, indiv := range pop.Indivs {
@@ -123,7 +122,8 @@ func (pop0 *Population) Evolve(s *Setting, maxgen int, env Environment) Populati
 
 	selenv := s.SelectingEnv(env)
 	for igen := range maxgen {
-		pop.Develop(s, igen+1, selenv)
+		pop.Igen = igen + 1
+		pop.Develop(s, selenv)
 		pop = pop.Select(s)
 		stats := pop.GetPopStats()
 		fmt.Printf("%d\t%d\t%e\t%e\t%e\t%d\n",
@@ -134,7 +134,8 @@ func (pop0 *Population) Evolve(s *Setting, maxgen int, env Environment) Populati
 		}
 		pop = pop.Reproduce(s, env)
 	}
-	pop.Develop(s, maxgen+1, selenv)
+	pop.Igen = maxgen + 1
+	pop.Develop(s, selenv)
 	pop.Dump(s)
 	return pop
 }
@@ -178,4 +179,28 @@ func (s *Setting) LoadPopulation(filename string, env Environment) Population {
 	err = decoder.Decode(&pop)
 	JustFail(err)
 	return pop
+}
+
+func (pop *Population) GenomeVecs(s *Setting) []Vec {
+	vecs := make([]Vec, len(pop.Indivs))
+	for i, indiv := range pop.Indivs {
+		vecs[i] = indiv.Genome.ToVec(s)
+	}
+	return vecs
+}
+
+func (pop *Population) CueVecs(s *Setting) []Vec {
+	vecs := make([]Vec, len(pop.Indivs))
+	for i, indiv := range pop.Indivs {
+		vecs[i] = indiv.CueVec(s)
+	}
+	return vecs
+}
+
+func (pop *Population) PhenoVecs() []Vec {
+	vecs := make([]Vec, len(pop.Indivs))
+	for i, indiv := range pop.Indivs {
+		vecs[i] = indiv.SelectedPhenotype()
+	}
+	return vecs
 }
