@@ -17,7 +17,7 @@ func dumpjson(js []byte) {
 
 func main() {
 	s := multicell.GetDefaultSetting()
-	s.SetOmega()
+	s.SetModel("NoHie")
 	s.MaxPopulation = 100
 	s.ProductionRun = false
 	s.Outdir = "traj"
@@ -32,4 +32,5 @@ func main() {
 	pop = s.LoadPopulation(ofilename, env)
 	fmt.Println(s.SelectingEnv(env))
 	fmt.Println(pop.Indivs[0].SelectedPhenotype())
+	fmt.Println(len(pop.Indivs[0].Genome.ToVec(s)))
 }
