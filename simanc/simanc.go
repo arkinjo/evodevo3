@@ -3,6 +3,7 @@ package main
 // Develop a population under an arbitrary environment,
 // where the population has evolved under a different environment
 // whose trajectory files are available.
+// Environments must be also saved beforehand.
 
 import (
 	"flag"
