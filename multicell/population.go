@@ -40,7 +40,8 @@ func (pop *Population) GetPopStats() PopStats {
 		mismatch += indiv.Mismatch
 		fitness += indiv.Fitness
 		ndev += float64(indiv.Ndev)
-		npar[indiv.Id] = true
+		npar[indiv.MomId] = true
+		npar[indiv.DadId] = true
 	}
 	return PopStats{
 		Mismatch: mismatch / npop,
@@ -143,12 +144,12 @@ func (pop0 *Population) Evolve(s *Setting, env Environment) Population {
 	for igen := range s.MaxGeneration {
 		pop.Igen = igen
 		pop.Develop(s, selenv)
+		stats := pop.GetPopStats()
+		stats.Print(pop.Iepoch, pop.Igen)
 		if s.ProductionRun { // Dump before Selection
 			pop.Dump(s)
 		}
 		pop = pop.Select(s)
-		stats := pop.GetPopStats()
-		stats.Print(pop.Iepoch, pop.Igen)
 		pop = pop.Reproduce(s, env)
 	}
 	pop.Igen = s.MaxGeneration
