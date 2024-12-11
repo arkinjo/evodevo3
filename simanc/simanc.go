@@ -1,8 +1,11 @@
 package main
 
+// Develop a population under an arbitrary environment,
+// where the population has evolved under a different environment
+// whose trajectory files are available.
+
 import (
 	"flag"
-	//	"fmt"
 	"log"
 	"time"
 
