@@ -7,8 +7,8 @@ import (
 
 type Individual struct {
 	Id       int
-	Mom_id   int
-	Dad_id   int
+	MomId    int
+	DadId    int
 	Genome   Genome
 	Cells    [][]Cell
 	Ndev     int
@@ -85,9 +85,9 @@ func (s *Setting) NewIndividual(id int, env Environment) Individual {
 	s.SetCellEnv(cells, env)
 
 	return Individual{
-		Id:     id,
-		Mom_id: -1,
-		Dad_id: -1,
+		Id:    id,
+		MomId: -1,
+		DadId: -1,
 		//Genome:   s.NewGenome(), given later
 		Cells:    cells,
 		Ndev:     0,
@@ -155,12 +155,12 @@ func (s *Setting) MateIndividuals(indiv0, indiv1 Individual, env Environment) (I
 	kid1 := s.NewIndividual(-2, env)
 
 	kid0.Genome = g0
-	kid0.Mom_id = indiv0.Id
-	kid0.Dad_id = indiv1.Id
+	kid0.MomId = indiv0.Id
+	kid0.DadId = indiv1.Id
 
 	kid1.Genome = g1
-	kid0.Mom_id = indiv1.Id
-	kid0.Dad_id = indiv0.Id
+	kid0.MomId = indiv1.Id
+	kid0.DadId = indiv0.Id
 
 	return kid0, kid1
 }
