@@ -17,19 +17,24 @@ func dumpjson(js []byte) {
 
 func main() {
 	s := multicell.GetDefaultSetting()
-	s.SetModel("NoHie")
+	s.EnvNoise = 0.0
 	s.MaxPopulation = 100
+	s.MaxGeneration = 10
 	s.ProductionRun = false
+	s.SetModel("Full")
 	s.Outdir = "traj"
-	s.FullModel()
-	s.SaveEnvs("envs.json", 50)
+	fmt.Println("#With_cue= ", s.WithCue)
+	//	s.SaveEnvs("envs.json", 50)
 	envs := s.LoadEnvs("envs.json")
 	env := envs[0]
-	pop := s.NewPopulation(env)
-	fmt.Println("#With_cue= ", s.WithCue)
-	pop.Evolve(s, 10, env)
-	ofilename := pop.Dump(s)
-	pop = s.LoadPopulation(ofilename, env)
+	//	pop := s.NewPopulation(env)
+	//pop.Evolve(s, env)
+	//ofilename := pop.Dump(s)
+	ofilename := "traj/Full_00_010.traj.gz"
+	env = envs[1]
+	pop := s.LoadPopulation(ofilename, env)
+	pop.DumpJSON(s)
+	fmt.Println("nindiv= ", len(pop.Indivs))
 	fmt.Println(s.SelectingEnv(env))
 	fmt.Println(pop.Indivs[0].SelectedPhenotype())
 	fmt.Println(len(pop.Indivs[0].Genome.ToVec(s)))

@@ -36,8 +36,9 @@ type Setting struct {
 	Basename      string  // name of the model
 	Seed          uint64  // random seed
 	Outdir        string  // output directory for trajectory
-	WithCue       bool    // with cue or not
 	MaxPopulation int     // maximum population size
+	MaxGeneration int     // maximum number of generations per epoch
+	WithCue       bool    // with cue or not
 	NumCellX      int     // number of cells in the x-axis
 	NumCellY      int     // number of cells in the y-axis
 	LenFace       int     // face length
@@ -82,6 +83,7 @@ func GetDefaultSetting() *Setting {
 		Basename:      "Full",
 		Seed:          13,
 		Outdir:        ".",
+		MaxGeneration: 200,
 		WithCue:       true,
 		MaxPopulation: 500,
 		NumCellX:      ncx,

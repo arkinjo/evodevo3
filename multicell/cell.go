@@ -40,7 +40,6 @@ func (s *Setting) NewCell() Cell {
 
 func (c *Cell) Initialize(s *Setting) {
 	for i := range NumFaces {
-		SetVec(c.E[i], 1.0)
 		SetVec(c.P[i], 1.0)
 		SetVec(c.Pave[i], 1.0)
 		SetVec(c.Pvar[i], 1.0)

@@ -3,9 +3,12 @@ package multicell
 import (
 	"compress/gzip"
 	"encoding/gob"
+	"encoding/json"
 	"fmt"
+	"log"
 	"math/rand/v2"
 	"os"
+	"sort"
 )
 
 type Population struct {
@@ -19,6 +22,12 @@ type PopStats struct {
 	Fitness  float64
 	Ndev     float64
 	Nparents int
+}
+
+func (stats PopStats) Print(iepoch, igen int) {
+	fmt.Printf("%d\t%d\t%e\t%e\t%e\t%d\n",
+		iepoch, igen,
+		stats.Mismatch, stats.Fitness, stats.Ndev, stats.Nparents)
 }
 
 func (pop *Population) GetPopStats() PopStats {
@@ -100,18 +109,25 @@ func (pop *Population) Select(s *Setting) Population {
 }
 
 func (pop *Population) Reproduce(s *Setting, env Environment) Population {
+	ch := make(chan Individual, 2)
+
+	for i := 1; i < len(pop.Indivs); i += 2 {
+		go func(mom, dad Individual) {
+			kid0, kid1 := s.MateIndividuals(mom, dad, env)
+			ch <- kid0
+			ch <- kid1
+		}(pop.Indivs[i-1], pop.Indivs[i])
+	}
+
 	var kids []Individual
+	for i := 1; i < len(pop.Indivs); i += 2 {
+		kid := <-ch
+		kid.Id = i - 1
+		kids = append(kids, kid)
 
-	for i, indiv := range pop.Indivs {
-		if i == 0 {
-			continue
-		}
-
-		kid0, kid1 := s.MateIndividuals(pop.Indivs[i-1], indiv, env)
-		kid0.Id = i - 1
-		kid1.Id = i
-		kids = append(kids, kid0)
-		kids = append(kids, kid1)
+		kid = <-ch
+		kid.Id = i
+		kids = append(kids, kid)
 	}
 
 	return Population{
@@ -120,24 +136,22 @@ func (pop *Population) Reproduce(s *Setting, env Environment) Population {
 		Indivs: kids}
 }
 
-func (pop0 *Population) Evolve(s *Setting, maxgen int, env Environment) Population {
+func (pop0 *Population) Evolve(s *Setting, env Environment) Population {
 	pop := *pop0
 
 	selenv := s.SelectingEnv(env)
-	for igen := range maxgen {
+	for igen := range s.MaxGeneration {
 		pop.Igen = igen
 		pop.Develop(s, selenv)
-		pop = pop.Select(s)
-		stats := pop.GetPopStats()
-		fmt.Printf("%d\t%d\t%e\t%e\t%e\t%d\n",
-			pop.Iepoch, pop.Igen,
-			stats.Mismatch, stats.Fitness, stats.Ndev, stats.Nparents)
-		if s.ProductionRun {
+		if s.ProductionRun { // Dump before Selection
 			pop.Dump(s)
 		}
+		pop = pop.Select(s)
+		stats := pop.GetPopStats()
+		stats.Print(pop.Iepoch, pop.Igen)
 		pop = pop.Reproduce(s, env)
 	}
-	pop.Igen = maxgen
+	pop.Igen = s.MaxGeneration
 	pop.Develop(s, selenv)
 	pop.Dump(s)
 	return pop
@@ -150,12 +164,13 @@ func (pop *Population) Initialize(s *Setting, env Environment) {
 }
 
 func (s *Setting) TrajectoryFilename(iepoch, igen int) string {
-	filename := fmt.Sprintf("%s/%s_%2.2d_%3.3d.traj.gz", s.Outdir, s.Basename, iepoch, igen)
+	filename := fmt.Sprintf("%s/%s_%2.2d_%3.3d.traj", s.Outdir, s.Basename, iepoch, igen)
 	return filename
 }
 
+// Dump the Population in a gzipped binary file.
 func (pop *Population) Dump(s *Setting) string {
-	filename := s.TrajectoryFilename(pop.Iepoch, pop.Igen)
+	filename := s.TrajectoryFilename(pop.Iepoch, pop.Igen) + ".gz"
 	fout, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	JustFail(err)
 	defer fout.Close()
@@ -165,11 +180,21 @@ func (pop *Population) Dump(s *Setting) string {
 
 	encoder := gob.NewEncoder(foutz)
 	encoder.Encode(pop)
+	log.Printf("Trajectory Dump saved in: %s\n", filename)
+	return filename
+}
+
+func (pop *Population) DumpJSON(s *Setting) string {
+	filename := s.TrajectoryFilename(pop.Iepoch, pop.Igen) + ".json"
+	json, err := json.MarshalIndent(pop, "", "  ")
+	JustFail(err)
+	os.WriteFile(filename, json, 0644)
+	log.Printf("Trajectory JSON saved in: %s\n", filename)
 	return filename
 }
 
 func (s *Setting) LoadPopulation(filename string, env Environment) Population {
-	pop := s.NewPopulation(env)
+	log.Printf("Load population from: %s\n", filename)
 	fin, err := os.Open(filename)
 	JustFail(err)
 	defer fin.Close()
@@ -179,7 +204,26 @@ func (s *Setting) LoadPopulation(filename string, env Environment) Population {
 	defer finz.Close()
 
 	decoder := gob.NewDecoder(finz)
+
+	var pop Population
 	err = decoder.Decode(&pop)
+	JustFail(err)
+
+	sort.SliceStable(pop.Indivs, func(i, j int) bool {
+		return pop.Indivs[i].Id < pop.Indivs[j].Id
+	})
+
+	s.MaxPopulation = len(pop.Indivs)
+	pop.Initialize(s, env)
+	return pop
+}
+
+func (s *Setting) LoadPopulationJSON(filename string, env Environment) Population {
+	log.Printf("Load population JSON from: %s\n", filename)
+	buffer, err := os.ReadFile(filename)
+	JustFail(err)
+	var pop Population
+	err = json.Unmarshal(buffer, &pop)
 	JustFail(err)
 	return pop
 }

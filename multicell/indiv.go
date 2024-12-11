@@ -110,6 +110,7 @@ func (indiv *Individual) Initialize(s *Setting, env Environment) {
 			indiv.Cells[i][j].Initialize(s)
 		}
 	}
+	indiv.Ndev = 0
 	s.SetCellEnv(indiv.Cells, env)
 }
 
