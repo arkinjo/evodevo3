@@ -17,20 +17,15 @@ import (
 type Genome struct {
 	E []SpMat
 	M [](map[int]SpMat)
-	P []SpMat
 }
 
 func (s *Setting) NewGenome() Genome {
 	E := make([]SpMat, NumFaces)
-	P := make([]SpMat, NumFaces)
 	M := make([](map[int]SpMat), s.NumLayers)
 
 	for i := range NumFaces {
 		E[i] = NewSpMat(s.LenLayer[0])
 		RandomizeSpMat(E[i], s.LenFace, s.DensityEM)
-
-		P[i] = NewSpMat(s.LenFace)
-		RandomizeSpMat(P[i], s.LenLayer[s.NumLayers-1], s.DensityMP)
 	}
 
 	for l, rl := range s.Topology {
@@ -41,7 +36,7 @@ func (s *Setting) NewGenome() Genome {
 			M[l][k] = m
 		}
 	}
-	return Genome{E: E, M: M, P: P}
+	return Genome{E: E, M: M}
 }
 
 func MutateSpMat(sp SpMat, ncol int, density float64) {
@@ -67,13 +62,6 @@ func (genome *Genome) MutateGenome(s *Setting) {
 		nmut = int(dist.Rand())
 		for n := 0; n < nmut; n++ {
 			MutateSpMat(genome.E[i], s.LenFace, s.DensityEM)
-		}
-
-		nk = s.LenLayer[s.NumLayers-1]
-		dist.Lambda = s.MutRate * float64(s.LenFace*nk)
-		nmut = int(dist.Rand())
-		for n := 0; n < nmut; n++ {
-			MutateSpMat(genome.P[i], nk, s.DensityMP)
 		}
 	}
 
@@ -119,14 +107,11 @@ func MateSpMats(mat0, mat1 SpMat) (SpMat, SpMat) {
 func (s *Setting) MateGenomes(g0, g1 Genome) (Genome, Genome) {
 	E0 := make([]SpMat, NumFaces)
 	E1 := make([]SpMat, NumFaces)
-	P0 := make([]SpMat, NumFaces)
-	P1 := make([]SpMat, NumFaces)
 	M0 := make([](map[int]SpMat), s.NumLayers)
 	M1 := make([](map[int]SpMat), s.NumLayers)
 
 	for i := range NumFaces {
 		E0[i], E1[i] = MateSpMats(g0.E[i], g1.E[i])
-		P0[i], P1[i] = MateSpMats(g0.P[i], g1.P[i])
 	}
 	for l, rl := range g0.M {
 		M0[l] = make(map[int]SpMat)
@@ -137,8 +122,8 @@ func (s *Setting) MateGenomes(g0, g1 Genome) (Genome, Genome) {
 			M1[l][k] = nmat1
 		}
 	}
-	kid0 := Genome{E: E0, M: M0, P: P0}
-	kid1 := Genome{E: E1, M: M1, P: P1}
+	kid0 := Genome{E: E0, M: M0}
+	kid1 := Genome{E: E1, M: M1}
 	kid0.MutateGenome(s)
 	kid1.MutateGenome(s)
 	return kid0, kid1
@@ -167,17 +152,6 @@ func (g *Genome) ToVec(s *Setting) Vec {
 					}
 					vec = append(vec, v)
 				}
-			}
-		}
-	}
-	for _, p := range g.P {
-		for _, pi := range p {
-			for j := range s.LenLayer[s.NumLayers-1] {
-				v, ok := pi[j]
-				if !ok {
-					v = 0.0
-				}
-				vec = append(vec, v)
 			}
 		}
 	}

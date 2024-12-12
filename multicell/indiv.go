@@ -23,25 +23,25 @@ func (s *Setting) SetCellEnv(cells [][]Cell, env Environment) {
 			if i == 0 {
 				left = env.Left(s)
 			} else {
-				left = cells[i-1][j].Pave[Right]
+				left = cells[i-1][j].Right(s)
 			}
 
 			if j == s.NumCellY-1 {
 				top = env.Top(s)
 			} else {
-				top = cells[i][j+1].Pave[Bottom]
+				top = cells[i][j+1].Bottom(s)
 			}
 
 			if i == s.NumCellX-1 {
 				right = env.Right(s)
 			} else {
-				right = cells[i+1][j].Pave[Left]
+				right = cells[i+1][j].Left(s)
 			}
 
 			if j == 0 {
 				bottom = env.Bottom(s)
 			} else {
-				bottom = cells[i][j-1].Pave[Top]
+				bottom = cells[i][j-1].Top(s)
 			}
 
 			cells[i][j].E[Left] = left
@@ -93,10 +93,10 @@ func (s *Setting) NewIndividual(id int, env Environment) Individual {
 		Fitness:  0}
 }
 
-func (indiv *Individual) SelectedPhenotype() Vec {
+func (indiv *Individual) SelectedPhenotype(s *Setting) Vec {
 	var p Vec
 	for _, cell := range indiv.Cells[0] {
-		p = append(p, cell.Pave[Left]...)
+		p = append(p, cell.Left(s)...)
 	}
 
 	return p
@@ -113,7 +113,7 @@ func (indiv *Individual) Initialize(s *Setting, env Environment) {
 }
 
 func (indiv *Individual) GetMismatch(s *Setting, selenv Vec) float64 {
-	selphen := indiv.SelectedPhenotype()
+	selphen := indiv.SelectedPhenotype(s)
 	dev := 0.0
 	for i, e := range selphen {
 		dev += math.Abs(e - selenv[i])

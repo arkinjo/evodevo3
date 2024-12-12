@@ -46,10 +46,8 @@ type Setting struct {
 	MaxDevelop    int     // maximum number of developmental steps
 	LenLayer      []int   // Length of each state vector
 	DensityEM     float64 // input -> middle layer genome density
-	DensityMP     float64 // middle -> output layer genome density
 	Topology      SpMat   // densities of genome matrices
 	Omega         Vec     // scaling factors of activation function inputs
-	OmegaP        float64 // scaling factor of the output layer
 	EnvNoise      float64 // noise level
 	MutRate       float64 // mutation rate
 	ConvDevelop   float64 // convergence limit
@@ -65,7 +63,7 @@ func LCatan(x float64) float64 {
 }
 
 func GetDefaultSetting() *Setting {
-	num_layers := 3
+	num_layers := 4
 	num_components := make([]int, num_layers)
 	topology := NewSpMat(num_layers)
 	ncx := default_num_cell_x
@@ -93,7 +91,6 @@ func GetDefaultSetting() *Setting {
 		MaxDevelop:    200,
 		LenLayer:      num_components,
 		DensityEM:     default_density,
-		DensityMP:     default_density,
 		Topology:      topology,
 		EnvNoise:      0.05,
 		MutRate:       0.001,
@@ -102,7 +99,7 @@ func GetDefaultSetting() *Setting {
 		Selstrength:   20.0,
 		Alpha:         1.0 / 3.0,
 		ProductionRun: false}
-	// Omega and OmegaP are set in SetOmega().
+	// Omega is set in SetOmega().
 }
 
 func (s *Setting) SetOmega() {
@@ -119,8 +116,6 @@ func (s *Setting) SetOmega() {
 			s.Omega[l] = 1.0 / math.Sqrt(omega)
 		}
 	}
-	s.OmegaP = 1.0 /
-		math.Sqrt(s.DensityMP*float64(s.LenLayer[s.NumLayers-1]))
 }
 
 func JustFail(err error) {

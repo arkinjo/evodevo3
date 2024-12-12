@@ -2,28 +2,21 @@ package multicell
 
 import (
 	//	"fmt"
+	"log"
 	"math"
 )
 
 type Cell struct {
 	E    []Vec       // points to neighboring cell face or environment
-	M    [][]float64 // middle layers
-	P    []Vec       // output layer
-	Pave []Vec
-	Pvar []Vec
+	S    [][]float64 // middle and output layers
+	Pave Vec
+	Pvar Vec
 }
 
 func (s *Setting) NewCell() Cell {
 	e := make([]Vec, NumFaces) //
-	p := make([]Vec, NumFaces)
-	pave := make([]Vec, NumFaces)
-	pvar := make([]Vec, NumFaces)
-
-	for i := range NumFaces {
-		p[i] = NewVec(s.LenFace, 1.0)
-		pave[i] = NewVec(s.LenFace, 1.0)
-		pvar[i] = NewVec(s.LenFace, 1.0)
-	}
+	pave := NewVec(s.LenLayer[s.NumLayers-1], 1.0)
+	pvar := NewVec(s.LenLayer[s.NumLayers-1], 1.0)
 
 	m := make([][]float64, s.NumLayers)
 	for i, nc := range s.LenLayer {
@@ -32,21 +25,48 @@ func (s *Setting) NewCell() Cell {
 
 	return Cell{
 		E:    e,
-		M:    m,
-		P:    p,
+		S:    m,
 		Pave: pave,
 		Pvar: pvar}
 }
 
 func (c *Cell) Initialize(s *Setting) {
-	for i := range NumFaces {
-		SetVec(c.P[i], 1.0)
-		SetVec(c.Pave[i], 1.0)
-		SetVec(c.Pvar[i], 1.0)
-	}
 	for l := range s.NumLayers {
-		SetVec(c.M[l], 1.0)
+		SetVec(c.S[l], 1.0)
 	}
+}
+
+func (c *Cell) Left(s *Setting) Vec {
+	return c.Pave[:s.LenFace]
+}
+
+func (c *Cell) Top(s *Setting) Vec {
+	return c.Pave[s.LenFace : s.LenFace*2]
+}
+
+func (c *Cell) Right(s *Setting) Vec {
+	return c.Pave[s.LenFace*2 : s.LenFace*3]
+}
+
+func (c *Cell) Bottom(s *Setting) Vec {
+	return c.Pave[s.LenFace*3:]
+}
+
+func (c *Cell) Face(s *Setting, iface int) Vec {
+	var v Vec
+	switch iface {
+	case Left:
+		v = c.Left(s)
+	case Top:
+		v = c.Top(s)
+	case Right:
+		v = c.Right(s)
+	case Bottom:
+		v = c.Bottom(s)
+	default:
+		log.Fatal("(*cell).Face: Unknown face")
+	}
+	return v
 }
 
 func (c *Cell) DevStep(s *Setting, g Genome, istep int) float64 {
@@ -54,7 +74,7 @@ func (c *Cell) DevStep(s *Setting, g Genome, istep int) float64 {
 	v1 := make(Vec, s.LenLayer[0])
 	s0 := make(Vec, s.LenLayer[0])
 	for i, vi := range c.E {
-		DiffVecs(v0, vi, c.Pave[i])
+		DiffVecs(v0, vi, c.Face(s, i))
 		MultSpMatVec(v1, g.E[i], v0)
 		AddVecs(s0, s0, v1)
 	}
@@ -66,37 +86,30 @@ func (c *Cell) DevStep(s *Setting, g Genome, istep int) float64 {
 			AddVecs(va, va, s0)
 		}
 		for k, mat := range g.M[l] {
-			MultSpMatVec(vt, mat, c.M[k])
+			MultSpMatVec(vt, mat, c.S[k])
 			AddVecs(va, va, vt)
 		}
-		ApplyFVec(c.M[l], LCatan, s.Omega[l], va)
+		if l < s.NumLayers-1 {
+			ApplyFVec(c.S[l], LCatan, s.Omega[l], va)
+		} else {
+			ApplyFVec(c.S[l], math.Tanh, s.Omega[l], va)
+		}
 	}
 
-	w0 := make(Vec, s.LenFace)
-	for i := range c.P {
-		MultSpMatVec(w0, g.P[i], c.M[s.NumLayers-1])
-		ApplyFVec(c.P[i], math.Tanh, s.OmegaP, w0)
-	}
 	if istep == 0 {
-		for i, p := range c.P {
-			copy(c.Pave[i], p)
-			SetVec(c.Pvar[i], 1.0)
-		}
+		copy(c.Pave, c.S[s.NumLayers-1])
+		SetVec(c.Pvar, 1.0)
 	} else { // exponential moving average/variance
-		for i, p := range c.P {
-			for j, v := range p {
-				d := v - c.Pave[i][j]
-				incr := s.Alpha * d
-				c.Pave[i][j] += incr
-				c.Pvar[i][j] = (1 - s.Alpha) * (c.Pvar[i][j] + d*incr)
-			}
+		for i, v := range c.S[s.NumLayers-1] {
+			d := v - c.Pave[i]
+			incr := s.Alpha * d
+			c.Pave[i] += incr
+			c.Pvar[i] = (1 - s.Alpha) * (c.Pvar[i] + d*incr)
 		}
 	}
 	dev := 0.0
-	for _, p := range c.Pvar {
-		for _, d := range p {
-			dev += d
-		}
+	for _, d := range c.Pvar {
+		dev += d
 	}
-	return dev / float64(s.LenFace*NumFaces)
+	return dev / float64(s.LenLayer[s.NumLayers-1])
 }

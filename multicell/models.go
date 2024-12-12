@@ -20,13 +20,13 @@ func (s *Setting) NoDevModel() {
 
 func (s *Setting) NoHieModel() {
 	s.Basename = "NoHie"
-	s.NumLayers = 1
+	s.NumLayers = 2
 	s.LenLayer = []int{600}
 	topology := NewSpMat(s.NumLayers)
 
-	s.DensityEM = default_density * 2.0 / 3.0 //(1,0) and (2,1) in Full
-	topology[0][0] = default_density / 3.0    // (1,1), (2,2), (3,3) in Full
-	s.DensityMP = default_density * 2.0 / 3.0 //(3,2), (4,3) in Full
+	s.DensityEM = default_density * 2.0 / 3.0    //(1,0) and (2,1) in Full
+	topology[0][0] = default_density / 3.0       // (1,1), (2,2), (3,3) in Full
+	topology[1][0] = default_density * 2.0 / 3.0 //(3,2), (4,3) in Full
 	s.Topology = topology
 	s.SetOmega()
 }
