@@ -73,7 +73,7 @@ func (pop *Population) GetMaxFitness() float64 {
 	return f
 }
 
-func (pop *Population) Develop(s *Setting, selenv Environment) {
+func (pop *Population) Develop(s *Setting, selenv Vec) {
 	ch := make(chan Individual)
 
 	for _, indiv := range pop.Indivs {
@@ -140,7 +140,7 @@ func (pop *Population) Reproduce(s *Setting, env Environment) Population {
 func (pop0 *Population) Evolve(s *Setting, env Environment) Population {
 	pop := *pop0
 
-	selenv := s.SelectingEnv(env)
+	selenv := env.SelectingEnv(s)
 	for igen := range s.MaxGeneration {
 		pop.Igen = igen
 		pop.Develop(s, selenv)

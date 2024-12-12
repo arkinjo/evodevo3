@@ -6,7 +6,9 @@ import (
 	"os"
 )
 
-type Environment []float64
+type Environment struct {
+	V []float64
+}
 
 type CellEnvs struct {
 	Tops    []Vec
@@ -15,26 +17,42 @@ type CellEnvs struct {
 	Lefts   []Vec
 }
 
-func (s *Setting) LenEnv() int {
-	return s.LenFace * (s.NumCellX + s.NumCellY) * 2 * NumFaces
+func (env *Environment) LenEnv() int {
+	return len(env.V)
 }
 
-func (s *Setting) NewEnvironment(rng *rand.Rand) Environment {
-	lenenv := s.LenEnv()
+func (s *Setting) NewEnvironment() Environment {
+	lenenv := s.LenFace * 4
 	env := make([]float64, lenenv)
-	for i, j := range rng.Perm(lenenv) {
+	for i := range lenenv {
 		if i < lenenv/2 {
-			env[j] = 1
+			env[i] = 1
 		} else {
-			env[j] = -1
+			env[i] = -1
 		}
 	}
-	return env
+	return Environment{V: env}
 }
 
-func (s *Setting) AddNoise(env Environment) Environment {
-	nenv := make([]float64, s.LenEnv())
-	for i, v := range env {
+func (env *Environment) Left(s *Setting) Vec {
+	return env.V[0:s.LenFace]
+}
+
+func (env *Environment) Top(s *Setting) Vec {
+	return env.V[s.LenFace : s.LenFace*2]
+}
+
+func (env *Environment) Right(s *Setting) Vec {
+	return env.V[s.LenFace*2 : s.LenFace*3]
+}
+
+func (env *Environment) Bottom(s *Setting) Vec {
+	return env.V[s.LenFace*3:]
+}
+
+func (env *Environment) AddNoise(s *Setting) Environment {
+	nenv := make([]float64, env.LenEnv())
+	for i, v := range env.V {
 		if rand.Float64() < s.EnvNoise {
 			nenv[i] = -v
 		} else {
@@ -42,81 +60,33 @@ func (s *Setting) AddNoise(env Environment) Environment {
 		}
 	}
 
-	return nenv
+	return Environment{V: nenv}
 }
 
-func (s *Setting) NewCellEnvs(env Environment) CellEnvs {
-	var env0 Vec
-	if s.WithCue {
-		env0 = env
-	} else {
-		env0 = NewVec(s.LenEnv(), 1.0)
-	}
-	nenv := s.AddNoise(env0)
-	lenv := s.LenFace
-	lenx := lenv * s.NumCellX
-	leny := lenv * s.NumCellY
-
-	left := nenv[0:leny]
-	top := nenv[leny : leny+lenx]
-	right := nenv[leny+lenx : leny*2+lenx]
-	bottom := nenv[leny*2:]
-
-	lenx1 := lenx / s.NumCellX
-	leny1 := leny / s.NumCellY
-
-	lefts := make([]Vec, s.NumCellY)
-	rights := make([]Vec, s.NumCellY)
-	tops := make([]Vec, s.NumCellX)
-	bottoms := make([]Vec, s.NumCellX)
-
-	for i := 0; i < s.NumCellX; i++ {
-		tops[i] = top[i*lenx1 : (i+1)*lenx1]
-		bottoms[i] = bottom[i*lenx1 : (i+1)*lenx1]
-	}
-
-	for i := 0; i < s.NumCellY; i++ {
-		lefts[i] = left[i*leny1 : (i+1)*leny1]
-		rights[i] = right[i*leny1 : (i+1)*leny1]
-	}
-
-	return CellEnvs{
-		Tops:    tops,
-		Bottoms: bottoms,
-		Rights:  rights,
-		Lefts:   lefts,
-	}
+func (env *Environment) SelectingEnv(s *Setting) Vec {
+	return env.Left(s)
 }
 
-func (s *Setting) SelectingEnv(env Environment) Environment {
-	return env[0 : s.LenFace*s.NumCellY]
-}
+func (env *Environment) ChangeEnv(s *Setting, rng *rand.Rand) Environment {
+	lenv := env.LenEnv()
+	nflip := int(s.Denv * float64(lenv))
+	nenv := make(Vec, lenv)
 
-func (s *Setting) ChangeEnv(env Environment, rng *rand.Rand) Environment {
-	ndenv := int(s.Denv * float64(s.LenEnv()))
-	nenv := make(Environment, s.LenEnv())
-	copy(nenv, env)
-
-	indices := make([]int, s.LenEnv())
-	for i := range indices {
-		indices[i] = i
+	for i, j := range rng.Perm(lenv) {
+		nenv[i] = env.V[i]
+		if j < nflip {
+			nenv[i] *= -1
+		}
 	}
-	rng.Shuffle(len(indices), func(i, j int) {
-		indices[i], indices[j] = indices[j], indices[i]
-	})
-
-	for _, i := range indices[:ndenv] {
-		nenv[i] *= -1
-	}
-	return nenv
+	return Environment{V: nenv}
 }
 
 func (s *Setting) SaveEnvs(filename string, nepochs int) {
 	rng := rand.New(rand.NewPCG(s.Seed, s.Seed+1397))
-	env := s.NewEnvironment(rng)
+	env := s.NewEnvironment()
 	envs := make([]Environment, nepochs)
 	for i := range nepochs {
-		env = s.ChangeEnv(env, rng)
+		env = env.ChangeEnv(s, rng)
 		envs[i] = env
 	}
 	json, err := json.Marshal(envs)

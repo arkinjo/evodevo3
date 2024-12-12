@@ -17,31 +17,29 @@ type Individual struct {
 }
 
 func (s *Setting) SetCellEnv(cells [][]Cell, env Environment) {
-	envs := s.NewCellEnvs(env)
-
 	var left, right, top, bottom Vec
 	for i, cs := range cells {
 		for j := range cs {
 			if i == 0 {
-				left = envs.Lefts[j]
+				left = env.Left(s)
 			} else {
 				left = cells[i-1][j].Pave[Right]
 			}
 
 			if j == s.NumCellY-1 {
-				top = envs.Tops[i]
+				top = env.Top(s)
 			} else {
 				top = cells[i][j+1].Pave[Bottom]
 			}
 
 			if i == s.NumCellX-1 {
-				right = envs.Rights[j]
+				right = env.Right(s)
 			} else {
 				right = cells[i+1][j].Pave[Left]
 			}
 
 			if j == 0 {
-				bottom = envs.Bottoms[i]
+				bottom = env.Bottom(s)
 			} else {
 				bottom = cells[i][j-1].Pave[Top]
 			}
@@ -114,7 +112,7 @@ func (indiv *Individual) Initialize(s *Setting, env Environment) {
 	s.SetCellEnv(indiv.Cells, env)
 }
 
-func (indiv *Individual) GetMismatch(s *Setting, selenv Environment) float64 {
+func (indiv *Individual) GetMismatch(s *Setting, selenv Vec) float64 {
 	selphen := indiv.SelectedPhenotype()
 	dev := 0.0
 	for i, e := range selphen {
@@ -124,7 +122,7 @@ func (indiv *Individual) GetMismatch(s *Setting, selenv Environment) float64 {
 	return dev / float64(len(selenv))
 }
 
-func (indiv *Individual) Develop(s *Setting, selenv Environment) Individual {
+func (indiv *Individual) Develop(s *Setting, selenv Vec) Individual {
 	istep := 0
 	for istep = range s.MaxDevelop {
 		dev := 0.0
