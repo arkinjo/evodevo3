@@ -1,18 +1,35 @@
 package multicell_test
 
 import (
+	"fmt"
 	"math"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/arkinjo/evodevo3/multicell"
 )
 
 var ENVSFILE = "envs.json"
+var MODELS = []string{"Full", "NoCue", "NoHie", "NoDev", "Null",
+	"NullCue", "NullHie", "NullDev"}
 
 func cleanup() {
 	os.Remove(ENVSFILE)
-	os.Remove("traj/Full_00_010.traj.gz")
+
+	files, err := filepath.Glob("traj/*")
+	if err != nil {
+		panic("error in traj/*")
+	}
+	for _, f := range files {
+		os.Remove(f)
+	}
+}
+
+func myrecover(t *testing.T, msg string) {
+	if r := recover(); r != nil {
+		t.Errorf(msg)
+	}
 }
 
 func TestMain(m *testing.M) {
@@ -22,9 +39,7 @@ func TestMain(m *testing.M) {
 
 func TestSetting(t *testing.T) {
 	s := multicell.GetDefaultSetting()
-	models := []string{"Full", "NoCue", "NoHie", "NoDev", "Null",
-		"NullCue", "NullHie", "NullDev"}
-	for _, model := range models {
+	for _, model := range MODELS {
 		s.SetModel(model)
 		got := len(s.Topology)
 		if got != s.NumLayers {
@@ -111,20 +126,28 @@ func TestActivation(t *testing.T) {
 
 func TestPopulation(t *testing.T) {
 	s := multicell.GetDefaultSetting()
-	s.SetOmega()
 	s.Outdir = "traj"
+	s.SetOmega()
+
 	envs := s.SaveEnvs(ENVSFILE, 50)
 	pop := s.NewPopulation(envs[0])
 	if len(pop.Indivs) != s.MaxPopulation {
 		t.Errorf("len(pop.Indivs)=%d; want %d", len(pop.Indivs), s.MaxPopulation)
 	}
-	s.MaxGeneration = 10
-	defer func() {
-		if r := recover(); r != nil {
-			t.Errorf("Panic in Evolve")
-		}
-	}()
+}
 
-	pop.Evolve(s, envs[0])
+func TestModels(t *testing.T) {
+	s := multicell.GetDefaultSetting()
+	s.Outdir = "traj"
+	s.MaxGeneration = 10
+	envs := s.LoadEnvs(ENVSFILE)
+	for _, model := range MODELS {
+		fmt.Println("### Testing model: ", model)
+		s.SetModel(model)
+		pop := s.NewPopulation(envs[0])
+		pop.Evolve(s, envs[0])
+		defer myrecover(t, "Panic in Evolve, model: "+model)
+
+	}
 
 }

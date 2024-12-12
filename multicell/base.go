@@ -10,6 +10,8 @@ import (
 
 const (
 	Sqrt3              = 1.732050807568877
+	default_num_layers = 4
+	default_len_state  = 200 // multiple of 4.
 	default_num_cell_x = 1
 	default_num_cell_y = 1
 	default_len_face   = 50
@@ -65,14 +67,14 @@ func Tanh(omega float64) func(float64) float64 {
 }
 
 func GetDefaultSetting() *Setting {
-	num_layers := 4
+	num_layers := default_num_layers
 	num_components := make([]int, num_layers)
 	topology := NewSpMat(num_layers)
 	ncx := default_num_cell_x
 	ncy := default_num_cell_y
 
 	for i := 0; i < num_layers; i++ {
-		num_components[i] = 200
+		num_components[i] = default_len_state
 		if i < num_layers-1 { // no loop for the last layer.
 			topology[i][i] = default_density
 		}
