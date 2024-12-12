@@ -2,6 +2,7 @@ package multicell
 
 import (
 	"encoding/json"
+	"log"
 	"math/rand/v2"
 	"os"
 )
@@ -48,6 +49,24 @@ func (env *Environment) Right(s *Setting) Vec {
 
 func (env *Environment) Bottom(s *Setting) Vec {
 	return env.V[s.LenFace*3:]
+}
+
+func (env *Environment) Face(s *Setting, iface int) Vec {
+	var v Vec
+	switch iface {
+	case Left:
+		v = env.Left(s)
+	case Top:
+		v = env.Top(s)
+	case Right:
+		v = env.Right(s)
+	case Bottom:
+		v = env.Bottom(s)
+	default:
+		log.Fatal("(*env).Face: unknown face")
+	}
+
+	return v
 }
 
 func (env *Environment) AddNoise(s *Setting) Environment {

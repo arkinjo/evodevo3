@@ -10,44 +10,20 @@ type Individual struct {
 	MomId    int
 	DadId    int
 	Genome   Genome
-	Cells    [][]Cell
+	Cells    []Cell
 	Ndev     int
 	Mismatch float64
 	Fitness  float64
 }
 
-func (s *Setting) SetCellEnv(cells [][]Cell, env Environment) {
-	var left, right, top, bottom Vec
-	for i, cs := range cells {
-		for j := range cs {
-			if i == 0 {
-				left = env.Left(s)
+func (s *Setting) SetCellEnv(cells []Cell, env Environment) {
+	for i, c := range cells {
+		for iface, iop := range c.Facing {
+			if iop < 0 {
+				cells[i].E[iface] = env.Face(s, iface)
 			} else {
-				left = cells[i-1][j].Right(s)
+				cells[i].E[iface] = cells[iop].OppositeFace(s, iface)
 			}
-
-			if j == s.NumCellY-1 {
-				top = env.Top(s)
-			} else {
-				top = cells[i][j+1].Bottom(s)
-			}
-
-			if i == s.NumCellX-1 {
-				right = env.Right(s)
-			} else {
-				right = cells[i+1][j].Left(s)
-			}
-
-			if j == 0 {
-				bottom = env.Bottom(s)
-			} else {
-				bottom = cells[i][j-1].Top(s)
-			}
-
-			cells[i][j].E[Left] = left
-			cells[i][j].E[Top] = top
-			cells[i][j].E[Right] = right
-			cells[i][j].E[Bottom] = bottom
 		}
 	}
 }
@@ -55,28 +31,37 @@ func (s *Setting) SetCellEnv(cells [][]Cell, env Environment) {
 func (indiv *Individual) CueVec(s *Setting) Vec {
 	var vec Vec
 
-	for j := range s.NumCellY {
-		vec = append(vec, indiv.Cells[0][j].E[Left]...)
+	for _, c := range indiv.Cells {
+		for iface, iopp := range c.Facing {
+			if iopp < 0 {
+				vec = append(vec, c.E[iface]...)
+			}
+		}
 	}
-	for i := range s.NumCellX {
-		vec = append(vec, indiv.Cells[i][s.NumCellY-1].E[Top]...)
-	}
-	for j := range s.NumCellY {
-		vec = append(vec, indiv.Cells[s.NumCellX-1][j].E[Right]...)
-	}
-	for i := range s.NumCellX {
-		vec = append(vec, indiv.Cells[i][0].E[Bottom]...)
-	}
-
 	return vec
 }
 
+func (s *Setting) CellId(i, j int) int {
+	return i*s.NumCellX + j
+}
 func (s *Setting) NewIndividual(id int, env Environment) Individual {
-	cells := make([][]Cell, s.NumCellX)
+	cells := make([]Cell, s.NumCellX*s.NumCellY)
 	for i := range s.NumCellX {
-		cells[i] = make([]Cell, s.NumCellY)
 		for j := range s.NumCellY {
-			cells[i][j] = s.NewCell()
+			id := s.CellId(i, j)
+			cells[i] = s.NewCell(id)
+			if i > 0 {
+				cells[id].Facing[Left] = s.CellId(i-1, j)
+			}
+			if i < s.NumCellX-1 {
+				cells[id].Facing[Right] = s.CellId(i+1, j)
+			}
+			if j > 0 {
+				cells[id].Facing[Bottom] = s.CellId(i, j-1)
+			}
+			if j < s.NumCellY-1 {
+				cells[id].Facing[Top] = s.CellId(i, j+1)
+			}
 		}
 	}
 
@@ -95,18 +80,18 @@ func (s *Setting) NewIndividual(id int, env Environment) Individual {
 
 func (indiv *Individual) SelectedPhenotype(s *Setting) Vec {
 	var p Vec
-	for _, cell := range indiv.Cells[0] {
-		p = append(p, cell.Left(s)...)
+	for _, c := range indiv.Cells {
+		if c.Facing[Left] < 0 {
+			p = append(p, c.Left(s)...)
+		}
 	}
 
 	return p
 }
 
 func (indiv *Individual) Initialize(s *Setting, env Environment) {
-	for i, cs := range indiv.Cells {
-		for j := range cs {
-			indiv.Cells[i][j].Initialize(s)
-		}
+	for i := range indiv.Cells {
+		indiv.Cells[i].Initialize(s)
 	}
 	indiv.Ndev = 0
 	s.SetCellEnv(indiv.Cells, env)
@@ -126,10 +111,8 @@ func (indiv *Individual) Develop(s *Setting, selenv Vec) Individual {
 	istep := 0
 	for istep = range s.MaxDevelop {
 		dev := 0.0
-		for i := range s.NumCellX {
-			for j := range s.NumCellY {
-				dev += indiv.Cells[i][j].DevStep(s, indiv.Genome, istep)
-			}
+		for i := range indiv.Cells {
+			dev += indiv.Cells[i].DevStep(s, indiv.Genome, istep)
 		}
 		if dev < s.ConvDevelop {
 			break

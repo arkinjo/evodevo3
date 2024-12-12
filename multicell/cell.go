@@ -7,13 +7,19 @@ import (
 )
 
 type Cell struct {
-	E    []Vec       // points to neighboring cell face or environment
-	S    [][]float64 // middle and output layers
-	Pave Vec
-	Pvar Vec
+	Id     int           // Identifier within an individual
+	Facing [NumFaces]int // Facing Cell's Id
+	E      []Vec         // points to neighboring cell face or environment
+	S      [][]float64   // middle and output layers
+	Pave   Vec
+	Pvar   Vec
 }
 
-func (s *Setting) NewCell() Cell {
+func (s *Setting) NewCell(id int) Cell {
+	var facing [NumFaces]int
+	for i := range NumFaces {
+		facing[i] = -1
+	}
 	e := make([]Vec, NumFaces) //
 	pave := NewVec(s.LenLayer[s.NumLayers-1], 1.0)
 	pvar := NewVec(s.LenLayer[s.NumLayers-1], 1.0)
@@ -24,10 +30,12 @@ func (s *Setting) NewCell() Cell {
 	}
 
 	return Cell{
-		E:    e,
-		S:    m,
-		Pave: pave,
-		Pvar: pvar}
+		Id:     id,
+		Facing: facing,
+		E:      e,
+		S:      m,
+		Pave:   pave,
+		Pvar:   pvar}
 }
 
 func (c *Cell) Initialize(s *Setting) {
@@ -65,6 +73,23 @@ func (c *Cell) Face(s *Setting, iface int) Vec {
 		v = c.Bottom(s)
 	default:
 		log.Fatal("(*cell).Face: Unknown face")
+	}
+	return v
+}
+
+func (c *Cell) OppositeFace(s *Setting, iface int) Vec {
+	var v Vec
+	switch iface {
+	case Left:
+		v = c.Right(s)
+	case Top:
+		v = c.Bottom(s)
+	case Right:
+		v = c.Left(s)
+	case Bottom:
+		v = c.Top(s)
+	default:
+		log.Fatal("(*cell).OppositeFace: Unknown face")
 	}
 	return v
 }
