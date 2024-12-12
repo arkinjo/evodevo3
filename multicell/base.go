@@ -9,18 +9,12 @@ import (
 )
 
 const (
-	sqrt3              = 1.732050807568877
+	Sqrt3              = 1.732050807568877
 	default_num_cell_x = 1
 	default_num_cell_y = 1
 	default_len_face   = 50
 	default_density    = 0.02 // genome matrix density
 )
-
-// vector
-type Vec = []float64
-
-// sparse matrix
-type SpMat = [](map[int]float64)
 
 // faces
 const (
@@ -58,8 +52,16 @@ type Setting struct {
 }
 
 // LeCun-inspired arctan function
-func LCatan(x float64) float64 {
-	return 6.0 * math.Atan(x/sqrt3) / math.Pi
+func LCatan(omega float64) func(float64) float64 {
+	return func(x float64) float64 {
+		return 6.0 * math.Atan(omega*x/Sqrt3) / math.Pi
+	}
+}
+
+func Tanh(omega float64) func(float64) float64 {
+	return func(x float64) float64 {
+		return math.Tanh(omega * x)
+	}
 }
 
 func GetDefaultSetting() *Setting {
@@ -71,7 +73,9 @@ func GetDefaultSetting() *Setting {
 
 	for i := 0; i < num_layers; i++ {
 		num_components[i] = 200
-		topology[i][i] = default_density
+		if i < num_layers-1 { // no loop for the last layer.
+			topology[i][i] = default_density
+		}
 		if i > 0 {
 			topology[i][i-1] = default_density
 		}

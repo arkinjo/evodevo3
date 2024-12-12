@@ -6,6 +6,12 @@ import (
 	"math/rand"
 )
 
+// vector
+type Vec = []float64
+
+// sparse matrix
+type SpMat = [](map[int]float64)
+
 func SetVec(vec Vec, v float64) {
 	for i := range vec {
 		vec[i] = v
@@ -64,9 +70,9 @@ func RandomizeSpMat(sp SpMat, ncol int, density float64) {
 	}
 }
 
-func ApplyFVec(vout Vec, f func(float64) float64, omega float64, vin Vec) {
+func ApplyFVec(vout Vec, f func(float64) float64, vin Vec) {
 	for i, v := range vin {
-		vout[i] = f(v * omega)
+		vout[i] = f(v)
 	}
 }
 

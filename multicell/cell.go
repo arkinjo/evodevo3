@@ -3,7 +3,6 @@ package multicell
 import (
 	//	"fmt"
 	"log"
-	"math"
 )
 
 type Cell struct {
@@ -115,9 +114,9 @@ func (c *Cell) DevStep(s *Setting, g Genome, istep int) float64 {
 			AddVecs(va, va, vt)
 		}
 		if l < s.NumLayers-1 {
-			ApplyFVec(c.S[l], LCatan, s.Omega[l], va)
+			ApplyFVec(c.S[l], LCatan(s.Omega[l]), va)
 		} else {
-			ApplyFVec(c.S[l], math.Tanh, s.Omega[l], va)
+			ApplyFVec(c.S[l], Tanh(s.Omega[l]), va)
 		}
 	}
 
