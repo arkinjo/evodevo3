@@ -16,6 +16,10 @@ type Individual struct {
 	Fitness  float64
 }
 
+func (indiv *Individual) NumCells() int {
+	return len(indiv.Cells)
+}
+
 func (s *Setting) SetCellEnv(cells []Cell, env Environment) {
 	for i, c := range cells {
 		for iface, iop := range c.Facing {

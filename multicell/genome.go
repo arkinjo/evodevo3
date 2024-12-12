@@ -8,7 +8,8 @@ import (
 /*
 		Genome is an array of maps of sparse matrices.
 	        g Genome
-	        g[l][k] is the matrix connecting the k-th layer to the l-th layer.
+                g.E[iface] is the matrix connecting cell.E[iface] and cell.S[0]
+	        g.M[l][k] is the matrix connecting cell.S[k] to cell.S[l].
 	        Feedforward if k < l.
 	        Feedbackward if k > l.
 	        Self-loop if l == k.
