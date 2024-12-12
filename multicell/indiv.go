@@ -1,7 +1,7 @@
 package multicell
 
 import (
-	//	"fmt"
+	//	"log"
 	"math"
 )
 
@@ -42,14 +42,15 @@ func (indiv *Individual) CueVec(s *Setting) Vec {
 }
 
 func (s *Setting) CellId(i, j int) int {
-	return i*s.NumCellX + j
+	return i*s.NumCellY + j
 }
+
 func (s *Setting) NewIndividual(id int, env Environment) Individual {
 	cells := make([]Cell, s.NumCellX*s.NumCellY)
 	for i := range s.NumCellX {
 		for j := range s.NumCellY {
 			id := s.CellId(i, j)
-			cells[i] = s.NewCell(id)
+			cells[id] = s.NewCell(id)
 			if i > 0 {
 				cells[id].Facing[Left] = s.CellId(i-1, j)
 			}
@@ -78,11 +79,11 @@ func (s *Setting) NewIndividual(id int, env Environment) Individual {
 		Fitness:  0}
 }
 
-func (indiv *Individual) SelectedPhenotype(s *Setting) Vec {
-	var p Vec
+func (indiv *Individual) SelectedPhenotype(s *Setting) []Vec {
+	var p []Vec
 	for _, c := range indiv.Cells {
 		if c.Facing[Left] < 0 {
-			p = append(p, c.Left(s)...)
+			p = append(p, c.Left(s))
 		}
 	}
 
@@ -99,12 +100,14 @@ func (indiv *Individual) Initialize(s *Setting, env Environment) {
 
 func (indiv *Individual) GetMismatch(s *Setting, selenv Vec) float64 {
 	selphen := indiv.SelectedPhenotype(s)
+	dv := make(Vec, len(selenv))
 	dev := 0.0
-	for i, e := range selphen {
-		dev += math.Abs(e - selenv[i])
+	for _, p := range selphen {
+		DiffVecs(dv, p, selenv)
+		dev += VecNorm1(dv)
 	}
 
-	return dev / float64(len(selenv))
+	return dev / float64(len(selenv)*len(selphen))
 }
 
 func (indiv *Individual) Develop(s *Setting, selenv Vec) Individual {

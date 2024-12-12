@@ -248,7 +248,11 @@ func (pop *Population) CueVecs(s *Setting) []Vec {
 func (pop *Population) PhenoVecs(s *Setting) []Vec {
 	vecs := make([]Vec, len(pop.Indivs))
 	for i, indiv := range pop.Indivs {
-		vecs[i] = indiv.SelectedPhenotype(s)
+		var ps Vec
+		for _, p := range indiv.SelectedPhenotype(s) {
+			ps = append(ps, p...)
+		}
+		vecs[i] = ps
 	}
 	return vecs
 }

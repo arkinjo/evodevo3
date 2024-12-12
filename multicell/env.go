@@ -18,7 +18,7 @@ type CellEnvs struct {
 	Lefts   []Vec
 }
 
-func (env *Environment) LenEnv() int {
+func (env *Environment) Len() int {
 	return len(env.V)
 }
 
@@ -70,7 +70,7 @@ func (env *Environment) Face(s *Setting, iface int) Vec {
 }
 
 func (env *Environment) AddNoise(s *Setting) Environment {
-	nenv := make([]float64, env.LenEnv())
+	nenv := make([]float64, env.Len())
 	for i, v := range env.V {
 		if rand.Float64() < s.EnvNoise {
 			nenv[i] = -v
@@ -87,7 +87,7 @@ func (env *Environment) SelectingEnv(s *Setting) Vec {
 }
 
 func (env *Environment) ChangeEnv(s *Setting, rng *rand.Rand) Environment {
-	lenv := env.LenEnv()
+	lenv := env.Len()
 	nflip := int(s.Denv * float64(lenv))
 	nenv := make(Vec, lenv)
 

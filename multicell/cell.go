@@ -8,7 +8,7 @@ import (
 
 type Cell struct {
 	Id     int           // Identifier within an individual
-	Facing [NumFaces]int // Facing Cell's Id
+	Facing [NumFaces]int // Facing Cell's Id; -1 if none.
 	E      []Vec         // points to neighboring cell face or environment
 	S      [][]float64   // middle and output layers
 	Pave   Vec

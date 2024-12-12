@@ -2,6 +2,7 @@ package multicell
 
 import (
 	// "gonum.org/v1/gonum/stat/distuv"
+	"math"
 	"math/rand"
 )
 
@@ -79,4 +80,20 @@ func DiffVecs(vout, v0, v1 Vec) {
 	for i, v := range v0 {
 		vout[i] = v - v1[i]
 	}
+}
+
+func VecNorm1(v Vec) float64 {
+	d := 0.0
+	for _, x := range v {
+		d += math.Abs(x)
+	}
+	return d
+}
+
+func VecNorm2(v Vec) float64 {
+	d := 0.0
+	for _, x := range v {
+		d += x * x
+	}
+	return math.Sqrt(d)
 }
