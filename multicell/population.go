@@ -85,7 +85,6 @@ func (pop *Population) Develop(s *Setting, selenv Vec) {
 	for i := range pop.Indivs {
 		pop.Indivs[i] = <-ch
 	}
-	pop.Sort()
 }
 
 func (pop *Population) Select(s *Setting) Population {
@@ -165,14 +164,15 @@ func (pop *Population) Initialize(s *Setting, env Environment) {
 	}
 }
 
-func (s *Setting) TrajectoryFilename(iepoch, igen int) string {
-	filename := fmt.Sprintf("%s/%s_%2.2d_%3.3d.traj", s.Outdir, s.Basename, iepoch, igen)
+func (s *Setting) TrajectoryFilename(iepoch, igen int, suffix string) string {
+	filename := fmt.Sprintf("%s/%s_%2.2d_%3.3d.%s",
+		s.Outdir, s.Basename, iepoch, igen, suffix)
 	return filename
 }
 
 // Dump the Population in a gzipped binary file.
 func (pop *Population) Dump(s *Setting) string {
-	filename := s.TrajectoryFilename(pop.Iepoch, pop.Igen) + ".gz"
+	filename := s.TrajectoryFilename(pop.Iepoch, pop.Igen, "traj.gz")
 	fout, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	JustFail(err)
 	defer fout.Close()
@@ -187,7 +187,7 @@ func (pop *Population) Dump(s *Setting) string {
 }
 
 func (pop *Population) DumpJSON(s *Setting) string {
-	filename := s.TrajectoryFilename(pop.Iepoch, pop.Igen) + ".json"
+	filename := s.TrajectoryFilename(pop.Iepoch, pop.Igen, "json")
 	json, err := json.MarshalIndent(pop, "", "  ")
 	JustFail(err)
 	os.WriteFile(filename, json, 0644)
@@ -251,11 +251,7 @@ func (pop *Population) CueVecs(s *Setting) []Vec {
 func (pop *Population) PhenoVecs(s *Setting) []Vec {
 	vecs := make([]Vec, len(pop.Indivs))
 	for i, indiv := range pop.Indivs {
-		var ps Vec
-		for _, p := range indiv.SelectedPhenotype(s) {
-			ps = append(ps, p...)
-		}
-		vecs[i] = ps
+		vecs[i] = indiv.SelectedPhenotypeVec(s)
 	}
 	return vecs
 }

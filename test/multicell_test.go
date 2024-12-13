@@ -151,3 +151,36 @@ func TestModels(t *testing.T) {
 	}
 
 }
+
+func TestProjection(t *testing.T) {
+	s := multicell.GetDefaultSetting()
+	s.SetModel("Full")
+	s.Outdir = "traj"
+	s.MaxGeneration = 30
+	envs := s.SaveEnvs(ENVSFILE, 50)
+
+	env := envs[0]
+	pop := s.NewPopulation(env)
+	pop = pop.Evolve(s, env)
+
+	s.ProductionRun = true
+	env = envs[1]
+	pop.Iepoch = 1
+	pop = pop.Evolve(s, envs[1])
+
+	file00 := s.TrajectoryFilename(1, 0, "traj.gz")
+	pop0 := s.LoadPopulation(file00, env)
+	file10 := s.TrajectoryFilename(1, s.MaxGeneration, "traj.gz")
+	pop1 := s.LoadPopulation(file10, env)
+	g0 := multicell.AverageVecs(pop0.GenomeVecs(s))
+	p0 := envs[0].SelectingEnv(s)
+	gaxis := s.GetGenomeAxis(&pop0, &pop1)
+	paxis := s.GetPhenoAxis(envs[0], env)
+
+	for igen := range s.MaxGeneration {
+		file := s.TrajectoryFilename(1, igen, "traj.gz")
+		pop := s.LoadPopulation(file, env)
+		ofile := s.TrajectoryFilename(1, igen, "gpplot")
+		pop.ProjectGenoPheno(s, ofile, g0, gaxis, p0, paxis)
+	}
+}

@@ -3,6 +3,7 @@ package multicell
 import (
 	//	"log"
 	"math"
+	"slices"
 )
 
 type Individual struct {
@@ -93,6 +94,10 @@ func (indiv *Individual) SelectedPhenotype(s *Setting) []Vec {
 	}
 
 	return p
+}
+
+func (indiv *Individual) SelectedPhenotypeVec(s *Setting) Vec {
+	return slices.Concat(indiv.SelectedPhenotype(s)...)
 }
 
 func (indiv *Individual) Initialize(s *Setting, env Environment) {

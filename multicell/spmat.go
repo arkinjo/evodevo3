@@ -76,6 +76,25 @@ func ApplyFVec(vout Vec, f func(float64) float64, vin Vec) {
 	}
 }
 
+func DotVecs(v0, v1 Vec) float64 {
+	dot := 0.0
+	for i, v := range v0 {
+		dot += v * v1[i]
+	}
+	return dot
+}
+
+func MultVecSca(vout, vin Vec, f float64) {
+	for i, v := range vin {
+		vout[i] = f * v
+	}
+}
+
+func NormalizeVec(v Vec) {
+	mag := VecNorm2(v)
+	MultVecSca(v, v, 1/mag)
+}
+
 func AddVecs(vout, v0, v1 Vec) {
 	for i, v := range v0 {
 		vout[i] = v + v1[i]
