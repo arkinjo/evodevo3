@@ -135,10 +135,11 @@ func (g *Genome) ToVec(s *Setting) Vec {
 		v := SpMatToVec(e, s.LenFace)
 		vec = append(vec, v...)
 	}
+	// Go's map is UNORDERED (random order for every "range").
 	for l := range s.NumLayers {
 		for k := range s.NumLayers {
-			if _, ok := s.Topology[l][k]; ok {
-				v := SpMatToVec(g.M[l][k], s.LenLayer[k])
+			if mat, ok := g.M[l][k]; ok {
+				v := SpMatToVec(mat, s.LenLayer[k])
 				vec = append(vec, v...)
 			}
 		}
