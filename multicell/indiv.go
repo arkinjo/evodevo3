@@ -21,10 +21,11 @@ func (indiv *Individual) NumCells() int {
 }
 
 func (s *Setting) SetCellEnv(cells []Cell, env Environment) {
+	nenv := env.AddNoise(s) // noisy environment.
 	for i, c := range cells {
 		for iface, iop := range c.Facing {
 			if iop < 0 {
-				cells[i].E[iface] = env.Face(s, iface)
+				cells[i].E[iface] = nenv.Face(s, iface)
 			} else {
 				cells[i].E[iface] = cells[iop].OppositeFace(s, iface)
 			}
