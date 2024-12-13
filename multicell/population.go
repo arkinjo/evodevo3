@@ -85,6 +85,7 @@ func (pop *Population) Develop(s *Setting, selenv Vec) {
 	for i := range pop.Indivs {
 		pop.Indivs[i] = <-ch
 	}
+	pop.Sort()
 }
 
 func (pop *Population) Select(s *Setting) Population {
@@ -194,6 +195,12 @@ func (pop *Population) DumpJSON(s *Setting) string {
 	return filename
 }
 
+func (pop *Population) Sort() {
+	sort.SliceStable(pop.Indivs, func(i, j int) bool {
+		return pop.Indivs[i].Id < pop.Indivs[j].Id
+	})
+}
+
 func (s *Setting) LoadPopulation(filename string, env Environment) Population {
 	log.Printf("Load population from: %s\n", filename)
 	fin, err := os.Open(filename)
@@ -209,11 +216,7 @@ func (s *Setting) LoadPopulation(filename string, env Environment) Population {
 	var pop Population
 	err = decoder.Decode(&pop)
 	JustFail(err)
-
-	sort.SliceStable(pop.Indivs, func(i, j int) bool {
-		return pop.Indivs[i].Id < pop.Indivs[j].Id
-	})
-
+	pop.Sort()
 	s.MaxPopulation = len(pop.Indivs)
 	pop.Initialize(s, env)
 	return pop
