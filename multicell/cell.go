@@ -10,7 +10,7 @@ type Cell struct {
 	Facing [NumFaces]int // Facing Cell's Id; -1 if none.
 	E      []Vec         // points to neighboring cell face or environment
 	S      [][]float64   // middle and output layers
-	Pave   Vec
+	P      Vec
 	Pvar   Vec
 }
 
@@ -33,7 +33,7 @@ func (s *Setting) NewCell(id int) Cell {
 		Facing: facing,
 		E:      e,
 		S:      m,
-		Pave:   pave,
+		P:      pave,
 		Pvar:   pvar}
 }
 
@@ -44,19 +44,19 @@ func (c *Cell) Initialize(s *Setting) {
 }
 
 func (c *Cell) Left(s *Setting) Vec {
-	return c.Pave[:s.LenFace]
+	return c.P[:s.LenFace]
 }
 
 func (c *Cell) Top(s *Setting) Vec {
-	return c.Pave[s.LenFace : s.LenFace*2]
+	return c.P[s.LenFace : s.LenFace*2]
 }
 
 func (c *Cell) Right(s *Setting) Vec {
-	return c.Pave[s.LenFace*2 : s.LenFace*3]
+	return c.P[s.LenFace*2 : s.LenFace*3]
 }
 
 func (c *Cell) Bottom(s *Setting) Vec {
-	return c.Pave[s.LenFace*3:]
+	return c.P[s.LenFace*3:]
 }
 
 func (c *Cell) Face(s *Setting, iface int) Vec {
@@ -121,13 +121,13 @@ func (c *Cell) DevStep(s *Setting, g Genome, istep int) float64 {
 	}
 
 	if istep == 0 {
-		copy(c.Pave, c.S[s.NumLayers-1])
+		copy(c.P, c.S[s.NumLayers-1])
 		SetVec(c.Pvar, 1.0)
 	} else { // exponential moving average/variance
 		for i, v := range c.S[s.NumLayers-1] {
-			d := v - c.Pave[i]
+			d := v - c.P[i]
 			incr := s.Alpha * d
-			c.Pave[i] += incr
+			c.P[i] += incr
 			c.Pvar[i] = (1 - s.Alpha) * (c.Pvar[i] + d*incr)
 		}
 	}
