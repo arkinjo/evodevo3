@@ -76,7 +76,7 @@ func GetSetting() Simulation {
 
 	var pop multicell.Population
 	if *resfileP != "" {
-		pop = s.LoadPopulation(*resfileP, envs[*eStartP])
+		pop = s.LoadPopulation(*resfileP)
 	} else {
 		pop = s.NewPopulation(envs[*eStartP])
 	}
