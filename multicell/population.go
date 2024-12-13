@@ -201,7 +201,7 @@ func (pop *Population) Sort() {
 	})
 }
 
-func (s *Setting) LoadPopulation(filename string, env Environment) Population {
+func (s *Setting) LoadPopulation(filename string) Population {
 	log.Printf("Load population from: %s\n", filename)
 	fin, err := os.Open(filename)
 	JustFail(err)
@@ -218,7 +218,6 @@ func (s *Setting) LoadPopulation(filename string, env Environment) Population {
 	JustFail(err)
 	pop.Sort()
 	s.MaxPopulation = len(pop.Indivs)
-	pop.Initialize(s, env)
 	return pop
 }
 
