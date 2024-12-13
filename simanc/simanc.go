@@ -52,7 +52,8 @@ func main() {
 	env := sim.Envs[sim.Iepoch]
 	selenv := env.SelectingEnv(sim.Setting)
 	for _, traj := range sim.Files {
-		pop := sim.Setting.LoadPopulation(traj, env)
+		pop := sim.Setting.LoadPopulation(traj)
+		pop.Initialize(sim.Setting, env)
 		pop.Develop(sim.Setting, selenv)
 		stats := pop.GetPopStats()
 		stats.Print(pop.Iepoch, pop.Igen)

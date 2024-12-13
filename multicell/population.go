@@ -139,7 +139,7 @@ func (pop *Population) Reproduce(s *Setting, env Environment) Population {
 
 func (pop0 *Population) Evolve(s *Setting, env Environment) Population {
 	pop := *pop0
-
+	pop.Initialize(s, env)
 	selenv := env.SelectingEnv(s)
 	for igen := range s.MaxGeneration {
 		pop.Igen = igen
