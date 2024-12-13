@@ -65,9 +65,10 @@ func main() {
 		sim.Setting.Basename, pop0.Iepoch, iepoch)
 	for _, traj := range sim.Files {
 		pop := sim.Setting.LoadPopulation(traj)
-		if iepoch != sim.Iepoch {
+		if iepoch != pop.Iepoch {
 			pop.Initialize(sim.Setting, env)
 			pop.Develop(sim.Setting, selenv)
+			pop.Sort()
 		}
 		ofile := sim.Setting.TrajectoryFilename(pop.Iepoch, pop.Igen, "gpplot")
 		pop.ProjectGenoPheno(sim.Setting, ofile, g0, gaxis, p0, paxis)

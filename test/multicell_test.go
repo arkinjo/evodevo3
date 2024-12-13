@@ -74,9 +74,9 @@ func TestCell(t *testing.T) {
 		}
 	}
 	lp := s.LenLayer[s.NumLayers-1]
-	if len(cell.Pave) != lp {
-		t.Errorf("len(cell.Pave)=%d; want %d",
-			len(cell.Pave), lp)
+	if len(cell.P) != lp {
+		t.Errorf("len(cell.P)=%d; want %d",
+			len(cell.P), lp)
 	}
 	if len(cell.Pvar) != lp {
 		t.Errorf("len(cell.Pvar)=%d; want %d",
@@ -169,9 +169,9 @@ func TestProjection(t *testing.T) {
 	pop = pop.Evolve(s, envs[1])
 
 	file00 := s.TrajectoryFilename(1, 0, "traj.gz")
-	pop0 := s.LoadPopulation(file00, env)
+	pop0 := s.LoadPopulation(file00)
 	file10 := s.TrajectoryFilename(1, s.MaxGeneration, "traj.gz")
-	pop1 := s.LoadPopulation(file10, env)
+	pop1 := s.LoadPopulation(file10)
 	g0 := multicell.AverageVecs(pop0.GenomeVecs(s))
 	p0 := envs[0].SelectingEnv(s)
 	gaxis := s.GetGenomeAxis(&pop0, &pop1)
@@ -179,8 +179,71 @@ func TestProjection(t *testing.T) {
 
 	for igen := range s.MaxGeneration {
 		file := s.TrajectoryFilename(1, igen, "traj.gz")
-		pop := s.LoadPopulation(file, env)
+		pop := s.LoadPopulation(file)
 		ofile := s.TrajectoryFilename(1, igen, "gpplot")
 		pop.ProjectGenoPheno(s, ofile, g0, gaxis, p0, paxis)
+	}
+}
+
+func TestGenomeEqual(t *testing.T) {
+	s := multicell.GetDefaultSetting()
+	s.SetModel("Full")
+	s.Outdir = "traj"
+	s.MaxGeneration = 10
+	envs := s.SaveEnvs(ENVSFILE, 50)
+
+	pop0 := s.NewPopulation(envs[0])
+	pop0 = pop0.Evolve(s, envs[0])
+	pop0.Sort()
+	file := pop0.Dump(s)
+
+	pop1 := s.LoadPopulation(file)
+	pop1.Initialize(s, envs[1])
+	selenv := envs[1].SelectingEnv(s)
+	pop1.Develop(s, selenv)
+	pop1.Sort()
+	for i, indiv := range pop0.Indivs {
+		if !indiv.Genome.Equal(&pop1.Indivs[i].Genome) {
+			t.Errorf("Genomes are not equal")
+		}
+	}
+}
+
+func TestGenomeVecs(t *testing.T) {
+	s := multicell.GetDefaultSetting()
+	s.SetModel("Full")
+	s.Outdir = "traj"
+	s.MaxGeneration = 10
+	envs := s.SaveEnvs(ENVSFILE, 50)
+
+	pop0 := s.NewPopulation(envs[0])
+	pop0 = pop0.Evolve(s, envs[0])
+	pop0.Sort()
+	file := pop0.Dump(s)
+
+	pop1 := s.LoadPopulation(file)
+	pop1.Initialize(s, envs[1])
+	selenv := envs[1].SelectingEnv(s)
+	pop1.Develop(s, selenv)
+	pop1.Sort()
+
+	vecs0 := pop0.GenomeVecs(s)
+	vecs1 := pop1.GenomeVecs(s)
+	dvec := make(multicell.Vec, len(vecs0[0]))
+	for i, v0 := range vecs0 {
+		g0 := pop0.Indivs[i].Genome
+		g1 := pop1.Indivs[i].Genome
+		v1 := vecs1[i]
+		multicell.DiffVecs(dvec, v0, v1)
+		del := multicell.VecNorm1(dvec)
+		if del > 0 {
+			t.Errorf("genome vecs %d differ by %f", i, del)
+			fmt.Printf("genome equality: %d %t\n", i, g0.Equal(&g1))
+			for k, x := range v0 {
+				if x != v1[k] {
+					fmt.Printf("%d\t%d\t%f\t%f\n", i, k, x, v1[k])
+				}
+			}
+		}
 	}
 }

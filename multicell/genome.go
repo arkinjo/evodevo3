@@ -16,12 +16,12 @@ import (
 */
 
 type Genome struct {
-	E []SpMat
+	E [NumFaces]SpMat
 	M [](map[int]SpMat)
 }
 
 func (s *Setting) NewGenome() Genome {
-	E := make([]SpMat, NumFaces)
+	var E [NumFaces]SpMat
 	M := make([](map[int]SpMat), s.NumLayers)
 
 	for i := range NumFaces {
@@ -106,8 +106,7 @@ func MateSpMats(mat0, mat1 SpMat) (SpMat, SpMat) {
 }
 
 func (s *Setting) MateGenomes(g0, g1 Genome) (Genome, Genome) {
-	E0 := make([]SpMat, NumFaces)
-	E1 := make([]SpMat, NumFaces)
+	var E0, E1 [NumFaces]SpMat
 	M0 := make([](map[int]SpMat), s.NumLayers)
 	M1 := make([](map[int]SpMat), s.NumLayers)
 
@@ -133,29 +132,33 @@ func (s *Setting) MateGenomes(g0, g1 Genome) (Genome, Genome) {
 func (g *Genome) ToVec(s *Setting) Vec {
 	var vec Vec
 	for _, e := range g.E {
-		for _, ei := range e { // i in [0:s.LenLayer[0]]
-			for j := range s.LenFace {
-				v, ok := ei[j]
-				if !ok {
-					v = 0.0
-				}
-				vec = append(vec, v)
-			}
-		}
+		v := SpMatToVec(e, s.LenFace)
+		vec = append(vec, v...)
 	}
-	for _, ml := range g.M {
-		for k, m := range ml {
-			for _, mi := range m {
-				for j := range s.LenLayer[k] {
-					v, ok := mi[j]
-					if !ok {
-						v = 0.0
-					}
-					vec = append(vec, v)
-				}
+	for l := range s.NumLayers {
+		for k := range s.NumLayers {
+			if _, ok := s.Topology[l][k]; ok {
+				v := SpMatToVec(g.M[l][k], s.LenLayer[k])
+				vec = append(vec, v...)
 			}
 		}
 	}
 
 	return vec
+}
+
+func (g0 *Genome) Equal(g1 *Genome) bool {
+	for iface, e := range g0.E {
+		if !SpMatEqual(e, g1.E[iface]) {
+			return false
+		}
+	}
+	for l, ml := range g0.M {
+		for k, m := range ml {
+			if !SpMatEqual(m, g1.M[l][k]) {
+				return false
+			}
+		}
+	}
+	return true
 }

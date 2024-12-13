@@ -49,8 +49,8 @@ func (pop *Population) ProjectGenoPheno(s *Setting, filename string,
 		pt := indiv.SelectedPhenotypeVec(s)
 		DiffVecs(gt, gt, g0)
 		DiffVecs(pt, pt, p0)
-		gc := DotVecs(gaxis, gt)
-		pc := DotVecs(paxis, pt)
+		gc := DotVecs(gt, gaxis)
+		pc := DotVecs(pt, paxis)
 		fmt.Fprintf(fout, "%d\t%f\t%f\n", i, gc, pc)
 	}
 }

@@ -12,6 +12,27 @@ type Vec = []float64
 // sparse matrix
 type SpMat = [](map[int]float64)
 
+func SpMatEqual(sp0, sp1 SpMat) bool {
+	if len(sp0) != len(sp1) {
+		return false
+	}
+	for i, vi := range sp0 {
+		for j, v := range vi {
+			if v != sp1[i][j] {
+				return false
+			}
+		}
+	}
+	for i, vi := range sp1 {
+		for j, v := range vi {
+			if v != sp0[i][j] {
+				return false
+			}
+		}
+	}
+	return true
+}
+
 func SetVec(vec Vec, v float64) {
 	for i := range vec {
 		vec[i] = v
@@ -53,6 +74,18 @@ func MultSpMatVec(vout Vec, sp SpMat, v Vec) {
 			vout[i] += a * v[j]
 		}
 	}
+}
+
+func SpMatToVec(sp SpMat, ncol int) Vec {
+	var vec Vec
+
+	for _, vi := range sp {
+		for j := range ncol {
+			vec = append(vec, vi[j])
+		}
+	}
+
+	return vec
 }
 
 // random matrix

@@ -103,6 +103,7 @@ func (pop *Population) Select(s *Setting) Population {
 			break
 		}
 	}
+
 	return Population{
 		Iepoch: pop.Iepoch,
 		Igen:   pop.Igen,
