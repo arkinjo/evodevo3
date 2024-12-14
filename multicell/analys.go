@@ -32,7 +32,7 @@ func (s *Setting) GetGenomeAxis(pop0, pop1 *Population) Vec {
 	g0 := AverageVecs(pop0.GenomeVecs(s))
 	g1 := AverageVecs(pop1.GenomeVecs(s))
 	dg := make(Vec, len(g0))
-	DiffVecs(g0, g1, dg)
+	DiffVecs(g1, g0, dg)
 	mag2 := DotVecs(dg, dg)
 	VecScale(dg, 1/mag2)
 	return dg
