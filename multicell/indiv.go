@@ -136,7 +136,7 @@ func (indiv *Individual) Develop(s *Setting, selenv Vec) Individual {
 	indiv.Mismatch = indiv.GetMismatch(s, selenv)
 
 	if istep < s.MaxDevelop {
-		indiv.Fitness = math.Exp(-indiv.Mismatch * s.Selstrength)
+		indiv.Fitness = math.Exp(-indiv.Mismatch * s.SelStrength)
 	} else {
 		indiv.Fitness = 0
 	}
