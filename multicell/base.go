@@ -76,10 +76,10 @@ func GetDefaultSetting() *Setting {
 	for i := 0; i < num_layers; i++ {
 		num_components[i] = default_len_state
 		if i < num_layers-1 { // no loop for the last layer.
-			topology.SetAt(i, i, default_density)
+			topology.Set(i, i, default_density)
 		}
 		if i > 0 {
-			topology.SetAt(i, i-1, default_density)
+			topology.Set(i, i-1, default_density)
 		}
 	}
 
