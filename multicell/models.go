@@ -24,9 +24,15 @@ func (s *Setting) NoHieModel() {
 	s.LenLayer = []int{600, 200}
 	topology := NewSpMat(s.NumLayers, s.NumLayers)
 
-	s.DensityEM = default_density * 2.0 / 3.0     //(1,0) and (2,1) in Full
-	topology.SetAt(0, 0, default_density/3.0)     // (1,1), (2,2), (3,3) in Full
-	topology.SetAt(1, 0, default_density*2.0/3.0) //(3,2), (4,3) in Full
+	//feedforward (1,0) and (2,1) in Full
+	s.DensityEM = default_density * 2.0 / 3.0
+
+	// self-loops (1,1), (2,2), (3,3) in Full
+	topology.Set(0, 0, default_density/3.0)
+
+	//feedforward (3,2), (4,3) in Full
+	topology.Set(1, 0, default_density*2.0/3.0)
+
 	s.Topology = topology
 	s.SetOmega()
 }
@@ -77,8 +83,7 @@ func (s *Setting) SetModel(model string) {
 		s.NullDevModel()
 	default:
 		log.Println("SetModel: invalid model name. Must be one of Full, NoCue, NoHie, NoDev, Null, NullCue, NullHie, NullDev\n")
-		log.Fatal("Invalid model")
-
+		log.Fatal("Invalid model: " + model)
 	}
 
 	s.SetOmega()
