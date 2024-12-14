@@ -67,7 +67,7 @@ func (sp *SpMat) At(i, j int) float64 {
 	return sp.M[i][j]
 }
 
-func (sp *SpMat) SetAt(i, j int, v float64) {
+func (sp *SpMat) Set(i, j int, v float64) {
 	sp.M[i][j] = v
 }
 
