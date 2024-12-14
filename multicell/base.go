@@ -48,7 +48,7 @@ type Setting struct {
 	MutRate       float64 // mutation rate
 	ConvDevelop   float64 // convergence limit
 	Denv          float64 // size of an environmental change
-	Selstrength   float64 // selection strength
+	SelStrength   float64 // selection strength
 	Alpha         float64 // weight for exponential moving average
 	ProductionRun bool    // true if production run (i.e. "test" phase)
 }
@@ -102,7 +102,7 @@ func GetDefaultSetting() *Setting {
 		MutRate:       0.001,
 		ConvDevelop:   1e-5,
 		Denv:          0.5,
-		Selstrength:   20.0,
+		SelStrength:   20.0,
 		Alpha:         1.0 / 3.0,
 		ProductionRun: false}
 	// Omega is set in SetOmega().
