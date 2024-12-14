@@ -148,13 +148,13 @@ func (s *Setting) MateIndividuals(indiv0, indiv1 Individual, env Environment) (I
 	kid0 := s.NewIndividual(-1, env)
 	kid1 := s.NewIndividual(-2, env)
 
-	kid0.Genome = g0
 	kid0.MomId = indiv0.Id
 	kid0.DadId = indiv1.Id
+	kid0.Genome = g0
 
-	kid1.Genome = g1
 	kid0.MomId = indiv1.Id
 	kid0.DadId = indiv0.Id
+	kid1.Genome = g1
 
 	return kid0, kid1
 }
