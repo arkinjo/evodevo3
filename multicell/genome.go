@@ -21,34 +21,30 @@ type Genome struct {
 
 func (s *Setting) NewGenome() Genome {
 	var E [NumFaces]SpMat
-	M := make([](map[int]SpMat), s.NumLayers)
-
 	for i := range NumFaces {
 		E[i] = NewSpMat(s.LenLayer[0], s.LenFace)
 		E[i].Randomize(s.DensityEM)
 	}
 
+	M := make([](map[int]SpMat), s.NumLayers)
 	for l := range s.NumLayers {
 		M[l] = make(map[int]SpMat)
-		for k := range s.NumLayers {
-			if density := s.Topology.At(l, k); density > 0 {
-				m := NewSpMat(s.LenLayer[l], s.LenLayer[k])
-				m.Randomize(density)
-				M[l][k] = m
-			}
-		}
 	}
+	s.Topology.Do(func(l, k int, density float64) {
+		m := NewSpMat(s.LenLayer[l], s.LenLayer[k])
+		m.Randomize(density)
+		M[l][k] = m
+	})
+
 	return Genome{E: E, M: M}
 }
 
 func (genome *Genome) Mutate(s *Setting) {
-	var nk, nmut int
 	dist := distuv.Poisson{Lambda: 1.0}
 
 	for i := range NumFaces {
-		nk = s.LenLayer[0]
-		dist.Lambda = s.MutRate * float64(s.LenFace*nk)
-		nmut = int(dist.Rand())
+		dist.Lambda = s.MutRate * float64(s.LenLayer[0]*s.LenFace)
+		nmut := int(dist.Rand())
 		for n := 0; n < nmut; n++ {
 			genome.E[i].Mutate(s.DensityEM)
 		}
@@ -66,22 +62,23 @@ func (genome *Genome) Mutate(s *Setting) {
 
 func (s *Setting) MateGenomes(g0, g1 Genome) (Genome, Genome) {
 	var E0, E1 [NumFaces]SpMat
-	M0 := make([](map[int]SpMat), s.NumLayers)
-	M1 := make([](map[int]SpMat), s.NumLayers)
-
 	for i := range NumFaces {
 		E0[i], E1[i] = MateSpMats(g0.E[i], g1.E[i])
 	}
 
-	for l, rl := range g0.M {
+	M0 := make([](map[int]SpMat), s.NumLayers)
+	M1 := make([](map[int]SpMat), s.NumLayers)
+	for l := range s.NumLayers {
 		M0[l] = make(map[int]SpMat)
 		M1[l] = make(map[int]SpMat)
-		for k, sp := range rl {
-			nmat0, nmat1 := MateSpMats(sp, g1.M[l][k])
-			M0[l][k] = nmat0
-			M1[l][k] = nmat1
-		}
 	}
+
+	s.Topology.Do(func(l, k int, _ float64) {
+		nmat0, nmat1 := MateSpMats(g0.M[l][k], g1.M[l][k])
+		M0[l][k] = nmat0
+		M1[l][k] = nmat1
+	})
+
 	kid0 := Genome{E: E0, M: M0}
 	kid1 := Genome{E: E1, M: M1}
 	kid0.Mutate(s)
