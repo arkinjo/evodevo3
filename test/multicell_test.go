@@ -41,7 +41,7 @@ func TestSetting(t *testing.T) {
 	s := multicell.GetDefaultSetting()
 	for _, model := range MODELS {
 		s.SetModel(model)
-		got := len(s.Topology)
+		got := len(s.Topology.M)
 		if got != s.NumLayers {
 			t.Errorf("got len(Topology) = %d; want %d", got, s.NumLayers)
 		}

@@ -2,7 +2,6 @@ package multicell
 
 import (
 	"gonum.org/v1/gonum/stat/distuv"
-	"math/rand/v2"
 )
 
 /*
@@ -17,7 +16,7 @@ import (
 
 type Genome struct {
 	E [NumFaces]SpMat
-	M [](map[int]SpMat)
+	M []map[int]SpMat
 }
 
 func (s *Setting) NewGenome() Genome {
@@ -25,35 +24,24 @@ func (s *Setting) NewGenome() Genome {
 	M := make([](map[int]SpMat), s.NumLayers)
 
 	for i := range NumFaces {
-		E[i] = NewSpMat(s.LenLayer[0])
-		RandomizeSpMat(E[i], s.LenFace, s.DensityEM)
+		E[i] = NewSpMat(s.LenLayer[0], s.LenFace)
+		E[i].Randomize(s.DensityEM)
 	}
 
-	for l, rl := range s.Topology {
+	for l := range s.NumLayers {
 		M[l] = make(map[int]SpMat)
-		for k, density := range rl {
-			m := NewSpMat(s.LenLayer[l])
-			RandomizeSpMat(m, s.LenLayer[k], density)
-			M[l][k] = m
+		for k := range s.NumLayers {
+			if density := s.Topology.At(l, k); density > 0 {
+				m := NewSpMat(s.LenLayer[l], s.LenLayer[k])
+				m.Randomize(density)
+				M[l][k] = m
+			}
 		}
 	}
 	return Genome{E: E, M: M}
 }
 
-func MutateSpMat(sp SpMat, ncol int, density float64) {
-	i := rand.IntN(len(sp))
-	j := rand.IntN(ncol)
-
-	if rand.Float64() >= density {
-		delete(sp[i], j)
-	} else if rand.IntN(2) == 1 {
-		sp[i][j] = 1.0
-	} else {
-		sp[i][j] = -1.0
-	}
-}
-
-func (genome *Genome) MutateGenome(s *Setting) {
+func (genome *Genome) Mutate(s *Setting) {
 	var nk, nmut int
 	dist := distuv.Poisson{Lambda: 1.0}
 
@@ -62,47 +50,18 @@ func (genome *Genome) MutateGenome(s *Setting) {
 		dist.Lambda = s.MutRate * float64(s.LenFace*nk)
 		nmut = int(dist.Rand())
 		for n := 0; n < nmut; n++ {
-			MutateSpMat(genome.E[i], s.LenFace, s.DensityEM)
+			genome.E[i].Mutate(s.DensityEM)
 		}
 	}
 
-	for l, rl := range s.Topology {
-		nl := s.LenLayer[l]
-		for k, density := range rl {
-			nk := s.LenLayer[k]
-			lambda := s.MutRate * float64(nl*nk)
-			dist := distuv.Poisson{Lambda: lambda}
-			nmut := int(dist.Rand())
-			for n := 0; n < nmut; n++ {
-				MutateSpMat(genome.M[l][k], nk, density)
-			}
+	s.Topology.Do(func(l, k int, density float64) {
+		lambda := s.MutRate * float64(s.LenLayer[l]*s.LenLayer[k])
+		dist := distuv.Poisson{Lambda: lambda}
+		nmut := int(dist.Rand())
+		for n := 0; n < nmut; n++ {
+			genome.M[l][k].Mutate(density)
 		}
-	}
-}
-
-func MateSpMats(mat0, mat1 SpMat) (SpMat, SpMat) {
-	nrow := len(mat0)
-	nmat0 := NewSpMat(nrow)
-	nmat1 := NewSpMat(nrow)
-	for i, ri := range mat0 {
-		if rand.IntN(2) == 1 {
-			for j, v := range ri {
-				nmat0[i][j] = v
-			}
-			for j, v := range mat1[i] {
-				nmat1[i][j] = v
-			}
-		} else {
-			for j, v := range ri {
-				nmat1[i][j] = v
-			}
-			for j, v := range mat1[i] {
-				nmat0[i][j] = v
-			}
-		}
-	}
-
-	return nmat0, nmat1
+	})
 }
 
 func (s *Setting) MateGenomes(g0, g1 Genome) (Genome, Genome) {
@@ -113,6 +72,7 @@ func (s *Setting) MateGenomes(g0, g1 Genome) (Genome, Genome) {
 	for i := range NumFaces {
 		E0[i], E1[i] = MateSpMats(g0.E[i], g1.E[i])
 	}
+
 	for l, rl := range g0.M {
 		M0[l] = make(map[int]SpMat)
 		M1[l] = make(map[int]SpMat)
@@ -124,23 +84,21 @@ func (s *Setting) MateGenomes(g0, g1 Genome) (Genome, Genome) {
 	}
 	kid0 := Genome{E: E0, M: M0}
 	kid1 := Genome{E: E1, M: M1}
-	kid0.MutateGenome(s)
-	kid1.MutateGenome(s)
+	kid0.Mutate(s)
+	kid1.Mutate(s)
 	return kid0, kid1
 }
 
 func (g *Genome) ToVec(s *Setting) Vec {
 	var vec Vec
 	for _, e := range g.E {
-		v := SpMatToVec(e, s.LenFace)
-		vec = append(vec, v...)
+		vec = append(vec, e.ToVec()...)
 	}
 	// Go's map is UNORDERED (random order for every "range").
 	for l := range s.NumLayers {
 		for k := range s.NumLayers {
 			if mat, ok := g.M[l][k]; ok {
-				v := SpMatToVec(mat, s.LenLayer[k])
-				vec = append(vec, v...)
+				vec = append(vec, mat.ToVec()...)
 			}
 		}
 	}
@@ -150,13 +108,13 @@ func (g *Genome) ToVec(s *Setting) Vec {
 
 func (g0 *Genome) Equal(g1 *Genome) bool {
 	for iface, e := range g0.E {
-		if !SpMatEqual(e, g1.E[iface]) {
+		if !e.Equal(g1.E[iface]) {
 			return false
 		}
 	}
 	for l, ml := range g0.M {
 		for k, m := range ml {
-			if !SpMatEqual(m, g1.M[l][k]) {
+			if !m.Equal(g1.M[l][k]) {
 				return false
 			}
 		}

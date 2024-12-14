@@ -69,17 +69,17 @@ func Tanh(omega float64) func(float64) float64 {
 func GetDefaultSetting() *Setting {
 	num_layers := default_num_layers
 	num_components := make([]int, num_layers)
-	topology := NewSpMat(num_layers)
+	topology := NewSpMat(num_layers, num_layers)
 	ncx := default_num_cell_x
 	ncy := default_num_cell_y
 
 	for i := 0; i < num_layers; i++ {
 		num_components[i] = default_len_state
 		if i < num_layers-1 { // no loop for the last layer.
-			topology[i][i] = default_density
+			topology.SetAt(i, i, default_density)
 		}
 		if i > 0 {
-			topology[i][i-1] = default_density
+			topology.SetAt(i, i-1, default_density)
 		}
 	}
 
@@ -110,13 +110,13 @@ func GetDefaultSetting() *Setting {
 
 func (s *Setting) SetOmega() {
 	s.Omega = make(Vec, s.NumLayers)
-	for l, tl := range s.Topology {
+	for l := range s.NumLayers {
 		omega := 0.0
 		if l == 0 {
 			omega += s.DensityEM * float64(s.LenFace*NumFaces)
 		}
-		for k, d := range tl {
-			omega += d * float64(s.LenLayer[k])
+		for k := range s.NumLayers {
+			omega += s.Topology.At(l, k) * float64(s.LenLayer[k])
 		}
 		if omega > 0 {
 			s.Omega[l] = 1.0 / math.Sqrt(omega)

@@ -113,7 +113,7 @@ func (indiv *Individual) GetMismatch(s *Setting, selenv Vec) float64 {
 	dv := make(Vec, len(selenv))
 	dev := 0.0
 	for _, p := range selphen {
-		DiffVecs(dv, p, selenv)
+		DiffVecs(p, selenv, dv)
 		dev += VecNorm1(dv)
 	}
 

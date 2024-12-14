@@ -3,29 +3,33 @@ package multicell
 import (
 	// "gonum.org/v1/gonum/stat/distuv"
 	"math"
-	"math/rand"
+	"math/rand/v2"
 )
 
 // vector
 type Vec = []float64
 
 // sparse matrix
-type SpMat = [](map[int]float64)
+type SpMat struct {
+	Nrow int
+	Ncol int
+	M    []map[int]float64
+}
 
-func SpMatEqual(sp0, sp1 SpMat) bool {
-	if len(sp0) != len(sp1) {
+func (sp0 *SpMat) Equal(sp1 SpMat) bool {
+	if sp0.Nrow != sp1.Nrow || sp0.Ncol != sp1.Ncol {
 		return false
 	}
-	for i, vi := range sp0 {
+	for i, vi := range sp0.M {
 		for j, v := range vi {
-			if v != sp1[i][j] {
+			if v != sp1.M[i][j] {
 				return false
 			}
 		}
 	}
-	for i, vi := range sp1 {
+	for i, vi := range sp1.M {
 		for j, v := range vi {
-			if v != sp0[i][j] {
+			if v != sp1.M[i][j] {
 				return false
 			}
 		}
@@ -33,7 +37,7 @@ func SpMatEqual(sp0, sp1 SpMat) bool {
 	return true
 }
 
-func SetVec(vec Vec, v float64) {
+func VecSet(vec Vec, v float64) {
 	for i := range vec {
 		vec[i] = v
 	}
@@ -42,46 +46,58 @@ func SetVec(vec Vec, v float64) {
 // Create a vector with initial values of "v".
 func NewVec(n int, v float64) Vec {
 	vec := make([]float64, n)
-	SetVec(vec, v)
+	VecSet(vec, v)
 	return vec
 }
 
 // Create a new sparse matrix
-func NewSpMat(nrow int) SpMat {
-	mat := make(SpMat, nrow)
-	for i := range mat {
+func NewSpMat(nrow, ncol int) SpMat {
+	mat := make([]map[int]float64, nrow)
+	for i := range nrow {
 		mat[i] = make(map[int]float64)
 	}
-	return mat
+	return SpMat{
+		Nrow: nrow,
+		Ncol: ncol,
+		M:    mat}
+
+}
+
+func (sp *SpMat) At(i, j int) float64 {
+	return sp.M[i][j]
+}
+
+func (sp *SpMat) SetAt(i, j int, v float64) {
+	sp.M[i][j] = v
 }
 
 // copy a sparse matrix
-func CopySpMat(sp SpMat) SpMat {
-	nsp := NewSpMat(len(sp))
-	for i, m := range sp {
-		for j, d := range m {
-			nsp[i][j] = d
+func (sp *SpMat) Copy() SpMat {
+	nsp := NewSpMat(sp.Nrow, sp.Ncol)
+	for i, vi := range sp.M {
+		for j, v := range vi {
+			nsp.M[i][j] = v
 		}
 	}
 	return nsp
 }
 
 // multiply a sparse matrix to a vector
-func MultSpMatVec(vout Vec, sp SpMat, v Vec) {
-	for i, ri := range sp {
+func (sp *SpMat) MultVec(vin, vout Vec) {
+	for i, xi := range sp.M {
 		vout[i] = 0.0
-		for j, a := range ri {
-			vout[i] += a * v[j]
+		for j, x := range xi {
+			vout[i] += x * vin[j]
 		}
 	}
 }
 
-func SpMatToVec(sp SpMat, ncol int) Vec {
+func (sp *SpMat) ToVec() Vec {
 	var vec Vec
 
-	for _, vi := range sp {
-		for j := range ncol {
-			vec = append(vec, vi[j])
+	for i := range sp.Nrow {
+		for j := range sp.Ncol {
+			vec = append(vec, sp.M[i][j])
 		}
 	}
 
@@ -89,21 +105,22 @@ func SpMatToVec(sp SpMat, ncol int) Vec {
 }
 
 // random matrix
-func RandomizeSpMat(sp SpMat, ncol int, density float64) {
+func (sp *SpMat) Randomize(density float64) {
 	d2 := density / 2
-	for _, ri := range sp {
-		for j := 0; j < ncol; j++ {
+	for i := range sp.Nrow {
+		sp.M[i] = make(map[int]float64)
+		for j := range sp.Ncol {
 			r := rand.Float64()
 			if r < d2 {
-				ri[j] = 1
+				sp.M[i][j] = 1
 			} else if r < density {
-				ri[j] = -1
+				sp.M[i][j] = -1
 			}
 		}
 	}
 }
 
-func ApplyFVec(vout Vec, f func(float64) float64, vin Vec) {
+func ApplyFVec(f func(float64) float64, vin, vout Vec) {
 	for i, v := range vin {
 		vout[i] = f(v)
 	}
@@ -117,24 +134,24 @@ func DotVecs(v0, v1 Vec) float64 {
 	return dot
 }
 
-func MultVecSca(vout, vin Vec, f float64) {
+func VecScale(vin Vec, f float64) {
 	for i, v := range vin {
-		vout[i] = f * v
+		vin[i] = f * v
 	}
 }
 
 func NormalizeVec(v Vec) {
 	mag := VecNorm2(v)
-	MultVecSca(v, v, 1/mag)
+	VecScale(v, 1/mag)
 }
 
-func AddVecs(vout, v0, v1 Vec) {
+func AddVecs(v0, v1, vout Vec) {
 	for i, v := range v0 {
 		vout[i] = v + v1[i]
 	}
 }
 
-func DiffVecs(vout, v0, v1 Vec) {
+func DiffVecs(v0, v1, vout Vec) {
 	for i, v := range v0 {
 		vout[i] = v - v1[i]
 	}
@@ -154,4 +171,48 @@ func VecNorm2(v Vec) float64 {
 		d += x * x
 	}
 	return math.Sqrt(d)
+}
+
+func (sp SpMat) Mutate(density float64) {
+	i := rand.IntN(sp.Nrow)
+	j := rand.IntN(sp.Ncol)
+
+	if rand.Float64() >= density {
+		delete(sp.M[i], j)
+	} else if rand.IntN(2) == 1 {
+		sp.M[i][j] = 1.0
+	} else {
+		sp.M[i][j] = -1.0
+	}
+}
+
+func MateSpMats(mat0, mat1 SpMat) (SpMat, SpMat) {
+	nmat0 := NewSpMat(mat0.Nrow, mat0.Ncol)
+	nmat1 := NewSpMat(mat0.Nrow, mat0.Ncol)
+	for i, ri := range mat0.M {
+		if rand.IntN(2) == 1 {
+			for j, v := range ri {
+				nmat0.M[i][j] = v
+			}
+			for j, v := range mat1.M[i] {
+				nmat1.M[i][j] = v
+			}
+		} else {
+			for j, v := range ri {
+				nmat1.M[i][j] = v
+			}
+			for j, v := range mat1.M[i] {
+				nmat0.M[i][j] = v
+			}
+		}
+	}
+	return nmat0, nmat1
+}
+
+func (sp SpMat) Do(f func(i, j int, v float64)) {
+	for i, vi := range sp.M {
+		for j, v := range vi {
+			f(i, j, v)
+		}
+	}
 }

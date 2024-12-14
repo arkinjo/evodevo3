@@ -39,7 +39,7 @@ func (s *Setting) NewCell(id int) Cell {
 
 func (c *Cell) Initialize(s *Setting) {
 	for l := range s.NumLayers {
-		SetVec(c.S[l], 1.0)
+		VecSet(c.S[l], 1.0)
 	}
 }
 
@@ -98,31 +98,31 @@ func (c *Cell) DevStep(s *Setting, g Genome, istep int) float64 {
 	v1 := make(Vec, s.LenLayer[0])
 	s0 := make(Vec, s.LenLayer[0])
 	for i, vi := range c.E {
-		DiffVecs(v0, vi, c.Face(s, i))
-		MultSpMatVec(v1, g.E[i], v0)
-		AddVecs(s0, s0, v1)
+		DiffVecs(vi, c.Face(s, i), v0)
+		g.E[i].MultVec(v0, v1)
+		AddVecs(s0, v1, s0)
 	}
 
 	for l := 0; l < s.NumLayers; l++ {
 		va := make(Vec, s.LenLayer[l])
 		vt := make(Vec, s.LenLayer[l])
 		if l == 0 {
-			AddVecs(va, va, s0)
+			AddVecs(va, s0, va)
 		}
 		for k, mat := range g.M[l] {
-			MultSpMatVec(vt, mat, c.S[k])
-			AddVecs(va, va, vt)
+			mat.MultVec(c.S[k], vt)
+			AddVecs(va, vt, va)
 		}
 		if l < s.NumLayers-1 {
-			ApplyFVec(c.S[l], LCatan(s.Omega[l]), va)
+			ApplyFVec(LCatan(s.Omega[l]), va, c.S[l])
 		} else {
-			ApplyFVec(c.S[l], Tanh(s.Omega[l]), va)
+			ApplyFVec(Tanh(s.Omega[l]), va, c.S[l])
 		}
 	}
 
 	if istep == 0 {
 		copy(c.P, c.S[s.NumLayers-1])
-		SetVec(c.Pvar, 1.0)
+		VecSet(c.Pvar, 1.0)
 	} else { // exponential moving average/variance
 		for i, v := range c.S[s.NumLayers-1] {
 			d := v - c.P[i]
