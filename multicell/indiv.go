@@ -144,17 +144,19 @@ func (indiv *Individual) Develop(s *Setting, selenv Vec) Individual {
 }
 
 func (s *Setting) MateIndividuals(indiv0, indiv1 Individual, env Environment) (Individual, Individual) {
-	g0, g1 := s.MateGenomes(indiv0.Genome, indiv1.Genome)
+	g0, g1 := indiv0.Genome.MateWith(indiv1.Genome)
 	kid0 := s.NewIndividual(-1, env)
 	kid1 := s.NewIndividual(-2, env)
 
 	kid0.MomId = indiv0.Id
 	kid0.DadId = indiv1.Id
 	kid0.Genome = g0
+	kid0.Genome.Mutate(s)
 
 	kid0.MomId = indiv1.Id
 	kid0.DadId = indiv0.Id
 	kid1.Genome = g1
+	kid1.Genome.Mutate(s)
 
 	return kid0, kid1
 }
