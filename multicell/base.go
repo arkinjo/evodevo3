@@ -38,8 +38,8 @@ func NewTopology(n int) Topology_t {
 }
 
 func (top Topology_t) Do(f func(l, k int, v float64)) {
-	for l, ll := range top {
-		for k, v := range ll {
+	for l, tl := range top {
+		for k, v := range tl {
 			f(l, k, v)
 		}
 	}
@@ -128,18 +128,19 @@ func GetDefaultSetting() *Setting {
 
 func (s *Setting) SetOmega() {
 	s.Omega = make(Vec, s.NumLayers)
-	for l, tl := range s.Topology {
-		omega := 0.0
-		if l == 0 {
-			omega += s.DensityEM * float64(s.LenFace*NumFaces)
-		}
-		for k, density := range tl {
-			omega += density * float64(s.LenLayer[k])
-		}
+
+	s.Omega[0] = s.DensityEM * float64(s.LenFace*NumFaces)
+
+	s.Topology.Do(func(l, k int, density float64) {
+		s.Omega[l] += density * float64(s.LenLayer[k])
+	})
+
+	for l, omega := range s.Omega {
 		if omega > 0 {
 			s.Omega[l] = 1.0 / math.Sqrt(omega)
 		}
 	}
+	s.Omega[s.NumLayers-1] *= 2
 }
 
 func JustFail(err error) {
