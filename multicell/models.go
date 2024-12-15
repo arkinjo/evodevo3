@@ -21,7 +21,7 @@ func (s *Setting) NoDevModel() {
 func (s *Setting) NoHieModel() {
 	s.Basename = "NoHie"
 	s.NumLayers = 2
-	s.LenLayer = []int{600, 200}
+	s.LenLayer = []int{3 * 200, 200}
 	topology := NewSpMat(s.NumLayers, s.NumLayers)
 
 	//feedforward (1,0) and (2,1) in Full

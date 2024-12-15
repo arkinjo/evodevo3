@@ -57,7 +57,7 @@ func TestSetting(t *testing.T) {
 	s := multicell.GetDefaultSetting()
 	for _, model := range MODELS {
 		s.SetModel(model)
-		got := len(s.Topology.M)
+		got := s.Topology.Nrow
 		if got != s.NumLayers {
 			t.Errorf("got len(Topology) = %d; want %d", got, s.NumLayers)
 		}
@@ -254,8 +254,8 @@ func TestGenomeVecs(t *testing.T) {
 		g0 := pop0.Indivs[i].Genome
 		g1 := pop1.Indivs[i].Genome
 		v1 := vecs1[i]
-		multicell.DiffVecs(dvec, v0, v1)
-		del := multicell.VecNorm1(dvec)
+		v1.Diff(dvec, v0)
+		del := dvec.Norm1()
 		if del > 0 {
 			t.Errorf("genome vecs %d differ by %f", i, del)
 			fmt.Printf("genome equality: %d %t\n", i, g0.Equal(&g1))

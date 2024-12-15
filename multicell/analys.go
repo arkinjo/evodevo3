@@ -13,9 +13,9 @@ func (s *Setting) GetPhenoAxis(env0, env1 Environment) Vec {
 	senv0 := env0.SelectingEnv(s)
 	senv1 := env1.SelectingEnv(s)
 	dv := make(Vec, len(senv0))
-	DiffVecs(senv1, senv0, dv)
+	dv.Diff(senv1, senv0)
 	mag2 := DotVecs(dv, dv)
-	VecScale(dv, 1/mag2)
+	dv.ScaleBy(1 / mag2)
 
 	return dv
 }
@@ -45,7 +45,7 @@ func AverageVecs(vecs []Vec) Vec {
 		}
 	}
 	n := float64(len(vecs))
-	VecScale(ave, 1/n)
+	ave.ScaleBy(1 / n)
 	return ave
 }
 
@@ -53,9 +53,9 @@ func (s *Setting) GetGenomeAxis(pop0, pop1 *Population) Vec {
 	g0 := AverageVecs(pop0.GenomeVecs(s))
 	g1 := AverageVecs(pop1.GenomeVecs(s))
 	dg := make(Vec, len(g0))
-	DiffVecs(g1, g0, dg)
+	dg.Diff(g1, g0)
 	mag2 := DotVecs(dg, dg)
-	VecScale(dg, 1/mag2)
+	dg.ScaleBy(1 / mag2)
 	return dg
 }
 
@@ -70,8 +70,8 @@ func (pop *Population) ProjectGenoPheno(s *Setting, filename string,
 	for _, indiv := range pop.Indivs {
 		gt := indiv.Genome.ToVec(s)
 		pt := indiv.SelectedPhenotypeVec(s)
-		DiffVecs(gt, g0, gt)
-		DiffVecs(pt, p0, pt)
+		gt.Diff(gt, g0)
+		pt.Diff(pt, p0)
 		gs = append(gs, DotVecs(gt, gaxis))
 		ps = append(ps, DotVecs(pt, paxis))
 		ns = append(ns, float64(indiv.Ndev))
@@ -101,8 +101,8 @@ func CovarianceMatrix(xs []Vec, x0 Vec, ys []Vec, y0 Vec) *mat.Dense {
 	yt := make(Vec, ny)
 	cov := mat.NewDense(nx, ny, nil)
 	for n, x := range xs {
-		DiffVecs(x, x0, xt)
-		DiffVecs(ys[n], y0, yt)
+		xt.Diff(x, x0)
+		yt.Diff(ys[n], y0)
 		for i := range nx {
 			for j := range ny {
 				cov.Set(i, j, xt[i]*yt[j])

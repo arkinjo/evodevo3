@@ -95,9 +95,10 @@ func main() {
 	pop := sim.Pop
 	sim.Setting.Dump()
 	log.Println("pop size: ", len(pop.Indivs))
+	var dumpfile string
 	for iepoch := sim.Estart; iepoch < sim.Eend; iepoch++ {
 		pop.Iepoch = iepoch
-		pop = pop.Evolve(sim.Setting, sim.Envs[iepoch])
+		pop, dumpfile = pop.Evolve(sim.Setting, sim.Envs[iepoch])
 	}
-	log.Println("Time: ", time.Since(t0))
+	log.Printf("Total Time: %v; Dumpifle: %s\n", time.Since(t0), dumpfile)
 }

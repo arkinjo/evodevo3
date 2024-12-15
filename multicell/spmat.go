@@ -3,12 +3,8 @@ package multicell
 import (
 	"gonum.org/v1/gonum/stat/distuv"
 	"log"
-	"math"
 	"math/rand/v2"
 )
-
-// vector
-type Vec = []float64
 
 // index for sparse matrices
 type IntPair struct {
@@ -45,19 +41,6 @@ func (sp0 *SpMat) Equal(sp1 SpMat) bool {
 	return true
 }
 
-func VecSet(vec Vec, v float64) {
-	for i := range vec {
-		vec[i] = v
-	}
-}
-
-// Create a vector with initial values of "v".
-func NewVec(n int, v float64) Vec {
-	vec := make([]float64, n)
-	VecSet(vec, v)
-	return vec
-}
-
 // Create a new sparse matrix
 func NewSpMat(nrow, ncol int) SpMat {
 	mat := make(map[IntPair]float64)
@@ -87,7 +70,7 @@ func (sp *SpMat) Copy() SpMat {
 
 // multiply a sparse matrix to a vector
 func (sp *SpMat) MultVec(vin, vout Vec) {
-	VecSet(vout, 0.0)
+	vout.SetAll(0.0)
 	sp.Do(func(i, j int, x float64) {
 		vout[i] += x * vin[j]
 	})
@@ -118,59 +101,6 @@ func (sp *SpMat) Randomize(density float64) {
 			sp.M[IntPair{i, j}] = -1
 		}
 	}
-}
-
-func ApplyFVec(f func(float64) float64, vin, vout Vec) {
-	for i, v := range vin {
-		vout[i] = f(v)
-	}
-}
-
-func DotVecs(v0, v1 Vec) float64 {
-	dot := 0.0
-	for i, v := range v0 {
-		dot += v * v1[i]
-	}
-	return dot
-}
-
-func VecScale(vin Vec, f float64) {
-	for i, v := range vin {
-		vin[i] = f * v
-	}
-}
-
-func NormalizeVec(v Vec) {
-	mag := VecNorm2(v)
-	VecScale(v, 1/mag)
-}
-
-func AddVecs(v0, v1, vout Vec) {
-	for i, v := range v0 {
-		vout[i] = v + v1[i]
-	}
-}
-
-func DiffVecs(v0, v1, vout Vec) {
-	for i, v := range v0 {
-		vout[i] = v - v1[i]
-	}
-}
-
-func VecNorm1(v Vec) float64 {
-	d := 0.0
-	for _, x := range v {
-		d += math.Abs(x)
-	}
-	return d
-}
-
-func VecNorm2(v Vec) float64 {
-	d := 0.0
-	for _, x := range v {
-		d += x * x
-	}
-	return math.Sqrt(d)
 }
 
 func (sp SpMat) Mutate(density float64) {
