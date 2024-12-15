@@ -37,6 +37,22 @@ func TestMain(m *testing.M) {
 	cleanup()
 }
 
+func TestSpMatMutate(t *testing.T) {
+	m0 := multicell.NewSpMat(10, 10)
+	m0.Randomize(0.1)
+	m1 := m0.Copy()
+	if !m0.Equal(m1) {
+		t.Errorf("Copy failed.")
+	}
+
+	for range 100 {
+		m0.Mutate(0.1)
+	}
+	if m0.Equal(m1) {
+		t.Errorf("Mutation failed.")
+	}
+}
+
 func TestSetting(t *testing.T) {
 	s := multicell.GetDefaultSetting()
 	for _, model := range MODELS {
