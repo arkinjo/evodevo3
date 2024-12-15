@@ -71,10 +71,10 @@ func (genome *Genome) Mutate(s *Setting) {
 	})
 }
 
-func (s *Setting) MateGenomes(g0, g1 Genome) (Genome, Genome) {
+func (g0 *Genome) MateWith(g1 Genome) (Genome, Genome) {
 	var E0, E1 [NumFaces]SpMat
-	for i := range NumFaces {
-		E0[i], E1[i] = MateSpMats(g0.E[i], g1.E[i])
+	for i, e0 := range g0.E {
+		E0[i], E1[i] = MateSpMats(e0, g1.E[i])
 	}
 
 	M0 := make(map[IntPair]SpMat)
@@ -87,8 +87,6 @@ func (s *Setting) MateGenomes(g0, g1 Genome) (Genome, Genome) {
 
 	kid0 := Genome{E: E0, M: M0}
 	kid1 := Genome{E: E1, M: M1}
-	kid0.Mutate(s)
-	kid1.Mutate(s)
 	return kid0, kid1
 }
 
