@@ -52,9 +52,10 @@ func (pop *Population) GetPopStats() PopStats {
 
 func (s *Setting) NewPopulation(env Environment) Population {
 	var indivs []Individual
+	genome := s.NewGenome()
 	for id := range s.MaxPopulation {
 		indiv := s.NewIndividual(id, env)
-		indiv.Genome = s.NewGenome()
+		indiv.Genome = genome.Copy()
 		indivs = append(indivs, indiv)
 	}
 	return Population{
@@ -138,7 +139,7 @@ func (pop *Population) Reproduce(s *Setting, env Environment) Population {
 		Indivs: kids}
 }
 
-func (pop0 *Population) Evolve(s *Setting, env Environment) Population {
+func (pop0 *Population) Evolve(s *Setting, env Environment) (Population, string) {
 	pop := *pop0
 	pop.Initialize(s, env)
 	selenv := env.SelectingEnv(s)
@@ -155,8 +156,8 @@ func (pop0 *Population) Evolve(s *Setting, env Environment) Population {
 	}
 	pop.Igen = s.MaxGeneration
 	pop.Develop(s, selenv)
-	pop.Dump(s)
-	return pop
+	dumpfile := pop.Dump(s)
+	return pop, dumpfile
 }
 
 func (pop *Population) Initialize(s *Setting, env Environment) {
