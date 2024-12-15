@@ -103,15 +103,17 @@ func (c *Cell) DevStep(s *Setting, g Genome, istep int) float64 {
 		AddVecs(s0, v1, s0)
 	}
 
-	for l := 0; l < s.NumLayers; l++ {
+	for l := range s.NumLayers {
 		va := make(Vec, s.LenLayer[l])
 		vt := make(Vec, s.LenLayer[l])
 		if l == 0 {
 			AddVecs(s0, va, va)
 		}
-		for k, mat := range g.M[l] {
-			mat.MultVec(c.S[k], vt)
-			AddVecs(vt, va, va)
+		for k := range s.NumLayers {
+			if mat, ok := g.M[IntPair{l, k}]; ok {
+				mat.MultVec(c.S[k], vt)
+				AddVecs(vt, va, va)
+			}
 		}
 		if l < s.NumLayers-1 {
 			ApplyFVec(LCatan(s.Omega[l]), va, c.S[l])
