@@ -22,16 +22,16 @@ func (s *Setting) NoHieModel() {
 	s.Basename = "NoHie"
 	s.NumLayers = 2
 	s.LenLayer = []int{3 * 200, 200}
-	topology := NewSpMat(s.NumLayers, s.NumLayers)
+	topology := NewTopology(s.NumLayers)
 
 	//feedforward (1,0) and (2,1) in Full
 	s.DensityEM = default_density * 2.0 / 3.0
 
 	// self-loops (1,1), (2,2), (3,3) in Full
-	topology.Set(0, 0, default_density/3.0)
+	topology[0][0] = default_density / 3.0
 
 	//feedforward (3,2), (4,3) in Full
-	topology.Set(1, 0, default_density*2.0/3.0)
+	topology[1][0] = default_density * 2.0 / 3.0
 
 	s.Topology = topology
 	s.SetOmega()

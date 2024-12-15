@@ -57,11 +57,17 @@ func TestSetting(t *testing.T) {
 	s := multicell.GetDefaultSetting()
 	for _, model := range MODELS {
 		s.SetModel(model)
-		got := s.Topology.Nrow
+		got := len(s.Topology)
 		if got != s.NumLayers {
 			t.Errorf("got len(Topology) = %d; want %d", got, s.NumLayers)
 		}
 	}
+}
+
+func TestSettingDump(t *testing.T) {
+	s := multicell.GetDefaultSetting()
+	s.Outdir = "traj"
+	s.Dump()
 }
 
 func TestEnvironment(t *testing.T) {

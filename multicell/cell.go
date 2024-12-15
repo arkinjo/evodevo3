@@ -103,17 +103,16 @@ func (c *Cell) DevStep(s *Setting, g Genome, istep int) float64 {
 		s0.Acc(v1)
 	}
 
-	for l := range s.NumLayers {
+	for l, tl := range s.Topology {
 		va := make(Vec, s.LenLayer[l])
 		vt := make(Vec, s.LenLayer[l])
 		if l == 0 {
 			va.Acc(s0)
 		}
-		for k := range s.NumLayers {
-			if mat, ok := g.M[IntPair{l, k}]; ok {
-				mat.MultVec(c.S[k], vt)
-				va.Acc(vt)
-			}
+		for k := range tl {
+			mat := g.M[IntPair{l, k}]
+			mat.MultVec(c.S[k], vt)
+			va.Acc(vt)
 		}
 		if l < s.NumLayers-1 {
 			c.S[l].ApplyFVec(LCatan(s.Omega[l]), va)

@@ -79,12 +79,11 @@ func (s *Setting) MateGenomes(g0, g1 Genome) (Genome, Genome) {
 
 	M0 := make(map[IntPair]SpMat)
 	M1 := make(map[IntPair]SpMat)
-	s.Topology.Do(func(l, k int, _ float64) {
-		lk := IntPair{I: l, J: k}
-		nmat0, nmat1 := MateSpMats(g0.M[lk], g1.M[lk])
+	for lk, m0 := range g0.M {
+		nmat0, nmat1 := MateSpMats(m0, g1.M[lk])
 		M0[lk] = nmat0
 		M1[lk] = nmat1
-	})
+	}
 
 	kid0 := Genome{E: E0, M: M0}
 	kid1 := Genome{E: E1, M: M1}
