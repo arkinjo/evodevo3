@@ -120,8 +120,14 @@ func TestGenome(t *testing.T) {
 	if len(g.E) != multicell.NumFaces {
 		t.Errorf("len(g.E)=%d; want %d", len(g.E), multicell.NumFaces)
 	}
-	if len(g.M) != s.NumLayers {
-		t.Errorf("len(g.M)=%d; want %d", len(g.M), s.NumLayers)
+	maxL := 0
+	for lk := range g.M {
+		if maxL < lk.I {
+			maxL = lk.I
+		}
+	}
+	if maxL != s.NumLayers-1 {
+		t.Errorf("maxL=%d; want %d", maxL, s.NumLayers-1)
 	}
 
 }
@@ -177,16 +183,16 @@ func TestProjection(t *testing.T) {
 
 	env := envs[0]
 	pop := s.NewPopulation(env)
-	pop = pop.Evolve(s, env)
+	pop, dumpfile := pop.Evolve(s, env)
 
 	s.ProductionRun = true
 	env = envs[1]
 	pop.Iepoch = 1
-	pop = pop.Evolve(s, envs[1])
+	pop, dumpfile = pop.Evolve(s, envs[1])
 
 	file00 := s.TrajectoryFilename(1, 0, "traj.gz")
 	pop0 := s.LoadPopulation(file00)
-	file10 := s.TrajectoryFilename(1, s.MaxGeneration, "traj.gz")
+	file10 := dumpfile
 	pop1 := s.LoadPopulation(file10)
 	g0 := multicell.AverageVecs(pop0.GenomeVecs(s))
 	p0 := envs[0].SelectingEnv(s)
@@ -209,11 +215,10 @@ func TestGenomeEqual(t *testing.T) {
 	envs := s.SaveEnvs(ENVSFILE, 50)
 
 	pop0 := s.NewPopulation(envs[0])
-	pop0 = pop0.Evolve(s, envs[0])
+	pop0, dumpfile := pop0.Evolve(s, envs[0])
 	pop0.Sort()
-	file := pop0.Dump(s)
 
-	pop1 := s.LoadPopulation(file)
+	pop1 := s.LoadPopulation(dumpfile)
 	pop1.Initialize(s, envs[1])
 	selenv := envs[1].SelectingEnv(s)
 	pop1.Develop(s, selenv)
@@ -233,11 +238,10 @@ func TestGenomeVecs(t *testing.T) {
 	envs := s.SaveEnvs(ENVSFILE, 50)
 
 	pop0 := s.NewPopulation(envs[0])
-	pop0 = pop0.Evolve(s, envs[0])
+	pop0, dumpfile := pop0.Evolve(s, envs[0])
 	pop0.Sort()
-	file := pop0.Dump(s)
 
-	pop1 := s.LoadPopulation(file)
+	pop1 := s.LoadPopulation(dumpfile)
 	pop1.Initialize(s, envs[1])
 	selenv := envs[1].SelectingEnv(s)
 	pop1.Develop(s, selenv)
