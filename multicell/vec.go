@@ -7,9 +7,11 @@ import (
 // vector
 type Vec []float64
 
-func (vec Vec) At(i int) float64 {
-	return vec[i]
-}
+/*
+This is different from:	type Vec = []float64
+
+	Note the "=" here! For the latter, methods cannot be defined.
+*/
 
 func (vec Vec) SetAll(v float64) {
 	for i := range vec {

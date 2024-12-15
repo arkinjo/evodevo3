@@ -6,7 +6,7 @@ import (
 	"math/rand/v2"
 )
 
-// index for sparse matrices
+// index for sparse matrices etc.
 type IntPair struct {
 	I, J int
 }
