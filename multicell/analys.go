@@ -72,8 +72,19 @@ func ProjectOnAxis(vecs []Vec, v0 Vec, axis Vec) Vec {
 	return ps
 }
 
-func (pop *Population) Project(s *Setting, filename string,
-	p0, paxis, g0, gaxis, c0, caxis Vec) {
+// Total variance of a matrix
+func MatTotVar(vecs []Vec, mv Vec) float64 {
+	sd2 := 0.0
+	vt := make(Vec, len(mv))
+	for _, vec := range vecs {
+		vt.Diff(vec, mv)
+		sd2 += DotVecs(vt, vt)
+	}
+	return sd2 / float64(len(vecs))
+}
+
+func (pop *Population) Project(s *Setting, p0, paxis, g0, gaxis, c0, caxis Vec) {
+	filename := s.TrajectoryFilename(pop.Iepoch, pop.Igen, "gpplot")
 	fout, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	JustFail(err)
 	defer fout.Close()
@@ -90,6 +101,9 @@ func (pop *Population) Project(s *Setting, filename string,
 
 	mp := MeanVecs(pvecs)
 	mg := MeanVecs(gvecs)
+
+	gvar := MatTotVar(gvecs, mg)
+	pvar := MatTotVar(pvecs, mp)
 
 	// Pheno-Geno Cross-Covariance
 	svGeno, uGeno, vGeno := XPCA(pvecs, mp, paxis, gvecs, mg, gaxis)
@@ -125,15 +139,17 @@ func (pop *Population) Project(s *Setting, filename string,
 	pa, pv := avesd(ps)
 	na, nv := avesd(ns)
 	ma, mv := avesd(ms)
-	fmt.Fprintf(fout, "P\t%d\t%d", pop.Igen, len(gs))
-	fmt.Fprintf(fout, "\t%f\t%f", ga, pa)
-	fmt.Fprintf(fout, "\t%f\t%f", gv, pv)
-	fmt.Fprintf(fout, "\t%f\t%f", na, nv)
-	fmt.Fprintf(fout, "\t%f\t%f", ma, mv)
-	fmt.Fprintf(fout, "\t%f\t%f\t%f", svGeno[0], rsvGeno0, aliG)
-	fmt.Fprintf(fout, "\t%f\t%f\t%f", svCue[0], rsvCue0, aliC)
-	fmt.Fprintf(fout, "\n")
+	fmt.Fprintf(fout, "Proj\t%d\t%d\t%f\t%f\t%f\t%f\n", pop.Igen, len(gs), ga, pa, gv, pv)
+	fmt.Fprintf(fout, "Ndev\t%d\t%f\t%f\n", pop.Igen, na, nv)
+	fmt.Fprintf(fout, "Mis\t%d\t%f\t%f\n", pop.Igen, ma, mv)
+	fmt.Fprintf(fout, "GPvar\t%d\t%f\t%f\n", pop.Igen, gvar, pvar)
+	fmt.Fprintf(fout, "PGcov\t%d\t%f\t%f\t%f\n", pop.Igen, svGeno[0], rsvGeno0, aliG)
+	fmt.Fprintf(fout, "PCcov\t%d\t%f\t%f\t%f\n", pop.Igen, svCue[0], rsvCue0, aliC)
 
+	fmt.Fprintf(fout, "#\t%3s\t%8s\t%8s", "gen", "g", "p")
+	fmt.Fprintf(fout, "\t%8s\t%8s", "Ggeno", "Pgeno")
+	fmt.Fprintf(fout, "\t%8s\t%8s", "Gcue", "Pcue")
+	fmt.Fprintf(fout, "\n")
 	for i := range pop.Indivs {
 		fmt.Fprintf(fout, "I\t%d\t%f\t%f", i, gs[i], ps[i])
 		fmt.Fprintf(fout, "\t%f\t%f", Ggs[i], Pgs[i])
