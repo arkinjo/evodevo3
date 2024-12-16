@@ -18,6 +18,19 @@ func (s *Setting) NoDevModel() {
 	s.MaxDevelop = 1
 }
 
+func (s *Setting) OriginalModel() {
+	s.Basename = "Original"
+	s.NumLayers = 4
+	topology := NewTopology(s.NumLayers)
+	topology[1][0] = default_density
+	topology[2][1] = default_density
+	topology[3][2] = default_density
+	topology[0][1] = default_density
+	topology[2][2] = default_density
+	s.Topology = topology
+	s.SetOmega()
+}
+
 func (s *Setting) NoHieModel() {
 	s.Basename = "NoHie"
 	s.NumLayers = 2
@@ -81,6 +94,8 @@ func (s *Setting) SetModel(model string) {
 		s.NullHieModel()
 	case "NullDev":
 		s.NullDevModel()
+	case "Original":
+		s.OriginalModel()
 	default:
 		log.Println("SetModel: invalid model name. Must be one of Full, NoCue, NoHie, NoDev, Null, NullCue, NullHie, NullDev\n")
 		log.Fatal("Invalid model: " + model)
