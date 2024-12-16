@@ -7,9 +7,7 @@ import (
 	"os"
 )
 
-type Environment struct {
-	V []float64
-}
+type Environment = Vec
 
 type CellEnvs struct {
 	Tops    []Vec
@@ -18,8 +16,8 @@ type CellEnvs struct {
 	Lefts   []Vec
 }
 
-func (env *Environment) Len() int {
-	return len(env.V)
+func (env Environment) Len() int {
+	return len(env)
 }
 
 func (s *Setting) NewEnvironment() Environment {
@@ -32,26 +30,26 @@ func (s *Setting) NewEnvironment() Environment {
 			env[i] = -1
 		}
 	}
-	return Environment{V: env}
+	return env
 }
 
-func (env *Environment) Left(s *Setting) Vec {
-	return env.V[0:s.LenFace]
+func (env Environment) Left(s *Setting) Vec {
+	return env[0:s.LenFace]
 }
 
-func (env *Environment) Top(s *Setting) Vec {
-	return env.V[s.LenFace : s.LenFace*2]
+func (env Environment) Top(s *Setting) Vec {
+	return env[s.LenFace : s.LenFace*2]
 }
 
-func (env *Environment) Right(s *Setting) Vec {
-	return env.V[s.LenFace*2 : s.LenFace*3]
+func (env Environment) Right(s *Setting) Vec {
+	return env[s.LenFace*2 : s.LenFace*3]
 }
 
-func (env *Environment) Bottom(s *Setting) Vec {
-	return env.V[s.LenFace*3:]
+func (env Environment) Bottom(s *Setting) Vec {
+	return env[s.LenFace*3:]
 }
 
-func (env *Environment) Face(s *Setting, iface int) Vec {
+func (env Environment) Face(s *Setting, iface int) Vec {
 	var v Vec
 	switch iface {
 	case Left:
@@ -69,9 +67,9 @@ func (env *Environment) Face(s *Setting, iface int) Vec {
 	return v
 }
 
-func (env *Environment) AddNoise(s *Setting) Environment {
+func (env Environment) AddNoise(s *Setting) Environment {
 	nenv := make([]float64, env.Len())
-	for i, v := range env.V {
+	for i, v := range env {
 		if rand.Float64() < s.EnvNoise {
 			nenv[i] = -v
 		} else {
@@ -79,25 +77,25 @@ func (env *Environment) AddNoise(s *Setting) Environment {
 		}
 	}
 
-	return Environment{V: nenv}
+	return nenv
 }
 
-func (env *Environment) SelectingEnv(s *Setting) Vec {
+func (env Environment) SelectingEnv(s *Setting) Vec {
 	return env.Left(s)
 }
 
-func (env *Environment) ChangeEnv(s *Setting, rng *rand.Rand) Environment {
+func (env Environment) ChangeEnv(s *Setting, rng *rand.Rand) Environment {
 	lenv := env.Len()
 	nflip := int(s.Denv * float64(lenv))
 	nenv := make(Vec, lenv)
 
 	for i, j := range rng.Perm(lenv) {
-		nenv[i] = env.V[i]
+		nenv[i] = env[i]
 		if j < nflip {
 			nenv[i] *= -1
 		}
 	}
-	return Environment{V: nenv}
+	return nenv
 }
 
 func (s *Setting) SaveEnvs(filename string, nepochs int) []Environment {
