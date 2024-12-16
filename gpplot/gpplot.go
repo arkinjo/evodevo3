@@ -6,7 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	//	"sync"
+	"sync"
 	"time"
 
 	"github.com/arkinjo/evodevo3/multicell"
@@ -65,17 +65,25 @@ func main() {
 
 	log.Printf("Plotting %s epoch %d population under env %d\n",
 		sim.Setting.Basename, pop0.Iepoch, iepoch)
-
+	ch := make(chan struct{}, 10)
+	var wg sync.WaitGroup
+	wg.Add(len(sim.Files))
 	for _, traj := range sim.Files {
-		pop := sim.Setting.LoadPopulation(traj)
-		if iepoch != pop.Iepoch {
-			pop.Initialize(sim.Setting, env)
-			pop.Develop(sim.Setting, selenv)
-			pop.Sort()
-		}
-		ofile := sim.Setting.TrajectoryFilename(pop.Iepoch, pop.Igen, "gpplot")
-		pop.Project(sim.Setting, ofile, p0, paxis, g0, gaxis, c0, caxis)
+		ch <- struct{}{}
+		go func(traj string) {
+			defer wg.Done()
+			pop := sim.Setting.LoadPopulation(traj)
+			if iepoch != pop.Iepoch {
+				pop.Initialize(sim.Setting, env)
+				pop.Develop(sim.Setting, selenv)
+				pop.Sort()
+			}
+
+			pop.Project(sim.Setting, p0, paxis, g0, gaxis, c0, caxis)
+			<-ch
+		}(traj)
 	}
 
+	wg.Wait()
 	log.Println("Time: ", time.Since(t0))
 }
