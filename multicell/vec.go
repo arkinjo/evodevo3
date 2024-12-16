@@ -19,6 +19,21 @@ func (vec Vec) SetAll(v float64) {
 	}
 }
 
+func (vec Vec) Copy() Vec {
+	vout := make(Vec, len(vec))
+	copy(vout, vec)
+	return vout
+}
+
+// sum all elements.
+func (vec Vec) Sum() float64 {
+	s := 0.0
+	for _, v := range vec {
+		s += v
+	}
+	return s
+}
+
 // Create a vector with initial values of "v".
 func NewVec(n int, v float64) Vec {
 	vec := make(Vec, n)

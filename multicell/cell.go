@@ -114,11 +114,13 @@ func (c *Cell) DevStep(s *Setting, g Genome, istep int) float64 {
 			mat.MultVec(c.S[k], vt)
 			va.Acc(vt)
 		}
+		var afunc func(float64) float64
 		if l < s.NumLayers-1 {
-			c.S[l].ApplyFVec(LCatan(s.Omega[l]), va)
+			afunc = LCatan(s.Omega[l])
 		} else {
-			c.S[l].ApplyFVec(Tanh(s.Omega[l]), va)
+			afunc = Tanh(s.Omega[l])
 		}
+		c.S[l].ApplyFVec(afunc, va)
 	}
 
 	if istep == 0 {

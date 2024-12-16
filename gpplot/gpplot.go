@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	//	"sync"
 	"time"
 
 	"github.com/arkinjo/evodevo3/multicell"
@@ -48,21 +49,23 @@ func main() {
 	t0 := time.Now()
 	sim := GetSetting()
 
+	iepoch := sim.Iepoch
+	env := sim.Envs[iepoch]
+	selenv := env.SelectingEnv(sim.Setting)
+
 	pop0 := sim.Setting.LoadPopulation(sim.Files[0])
 	pop1 := sim.Setting.LoadPopulation(sim.Files[len(sim.Files)-1])
 
 	env0 := sim.Envs[pop0.Iepoch-1]
 	env1 := sim.Envs[pop0.Iepoch]
-	g0 := multicell.AverageVecs(pop0.GenomeVecs(sim.Setting))
-	p0 := env0.SelectingEnv(sim.Setting)
-	gaxis := sim.Setting.GetGenomeAxis(&pop0, &pop1)
-	paxis := sim.Setting.GetPhenoAxis(env0, env1)
 
-	iepoch := sim.Iepoch
-	env := sim.Envs[iepoch]
-	selenv := env.SelectingEnv(sim.Setting)
+	g0, gaxis := sim.Setting.GetGenomeAxis(pop0, pop1)
+	c0, caxis := sim.Setting.GetCueAxis(env0, env1)
+	p0, paxis := sim.Setting.GetPhenoAxis(env0, env1)
+
 	log.Printf("Plotting %s epoch %d population under env %d\n",
 		sim.Setting.Basename, pop0.Iepoch, iepoch)
+
 	for _, traj := range sim.Files {
 		pop := sim.Setting.LoadPopulation(traj)
 		if iepoch != pop.Iepoch {
@@ -71,7 +74,8 @@ func main() {
 			pop.Sort()
 		}
 		ofile := sim.Setting.TrajectoryFilename(pop.Iepoch, pop.Igen, "gpplot")
-		pop.ProjectGenoPheno(sim.Setting, ofile, g0, gaxis, p0, paxis)
+		pop.Project(sim.Setting, ofile, p0, paxis, g0, gaxis, c0, caxis)
 	}
+
 	log.Println("Time: ", time.Since(t0))
 }

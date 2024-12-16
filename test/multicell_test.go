@@ -2,9 +2,12 @@ package multicell_test
 
 import (
 	"fmt"
+	//	"gonum.org/v1/gonum/blas/blas64"
+	"gonum.org/v1/gonum/mat"
 	"math"
 	"os"
 	"path/filepath"
+	//	"reflect"
 	"testing"
 
 	"github.com/arkinjo/evodevo3/multicell"
@@ -34,7 +37,7 @@ func myrecover(t *testing.T, msg string) {
 
 func TestMain(m *testing.M) {
 	m.Run()
-	cleanup()
+	//	cleanup()
 }
 
 func TestSpMatMutate(t *testing.T) {
@@ -184,32 +187,32 @@ func TestProjection(t *testing.T) {
 	s := multicell.GetDefaultSetting()
 	s.SetModel("Full")
 	s.Outdir = "traj"
-	s.MaxGeneration = 30
+	s.MaxGeneration = 10
 	envs := s.SaveEnvs(ENVSFILE, 50)
 
 	env := envs[0]
 	pop := s.NewPopulation(env)
-	pop, dumpfile := pop.Evolve(s, env)
+	//	pop, dumpfile := pop.Evolve(s, env)
 
 	s.ProductionRun = true
 	env = envs[1]
 	pop.Iepoch = 1
-	pop, dumpfile = pop.Evolve(s, envs[1])
+	//	pop, dumpfile = pop.Evolve(s, envs[1])
 
 	file00 := s.TrajectoryFilename(1, 0, "traj.gz")
 	pop0 := s.LoadPopulation(file00)
-	file10 := dumpfile
+	file10 := s.TrajectoryFilename(1, s.MaxGeneration, "traj.gz")
 	pop1 := s.LoadPopulation(file10)
-	g0 := multicell.AverageVecs(pop0.GenomeVecs(s))
-	p0 := envs[0].SelectingEnv(s)
-	gaxis := s.GetGenomeAxis(&pop0, &pop1)
-	paxis := s.GetPhenoAxis(envs[0], env)
-
+	g0, gaxis := s.GetGenomeAxis(pop0, pop1)
+	sel0 := envs[0].SelectingEnv(s)
+	sel1 := env.SelectingEnv(s)
+	p0, paxis := s.GetPhenoAxis(sel0, sel1)
+	c0, caxis := s.GetCueAxis(env, envs[0])
 	for igen := range s.MaxGeneration {
 		file := s.TrajectoryFilename(1, igen, "traj.gz")
 		pop := s.LoadPopulation(file)
 		ofile := s.TrajectoryFilename(1, igen, "gpplot")
-		pop.ProjectGenoPheno(s, ofile, g0, gaxis, p0, paxis)
+		pop.Project(s, ofile, p0, paxis, g0, gaxis, c0, caxis)
 	}
 }
 
@@ -272,4 +275,20 @@ func TestGenomeVecs(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestSVD(t *testing.T) {
+	M := mat.NewDense(2, 3, []float64{1, 2, 3, 4, 5, 6})
+	var svd mat.SVD
+	ok := svd.Factorize(M, mat.SVDThin)
+	if !ok {
+		t.Errorf("SVD failed")
+	}
+	var u, v mat.Dense
+	sv := svd.Values(nil)
+	svd.UTo(&u)
+	svd.VTo(&v)
+	u0 := u.ColView(0).(*mat.VecDense).RawVector().Data
+	v0 := v.RawRowView(0)
+	fmt.Println(len(sv), u0, v0, v)
 }
