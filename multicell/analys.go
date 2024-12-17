@@ -93,36 +93,67 @@ func (pop *Population) Project(s *Setting, p0, paxis, g0, gaxis, c0, caxis Vec) 
 	punit := paxis.Copy()
 	punit.Normalize()
 
-	gvecs := pop.GenomeVecs(s)
-	pvecs := pop.PhenoVecs(s)
 	// Geno-Pheno Plot
+	gvecs := pop.GenomeVecs(s)
 	gs := ProjectOnAxis(gvecs, g0, gaxis)
-	ps := ProjectOnAxis(pvecs, p0, paxis)
 
-	mp := MeanVecs(pvecs)
+	pvecs := pop.PhenoVecs(s)
+	ps := ProjectOnAxis(pvecs, p0, paxis)
+	ga, gv := avesd(gs)
+	pa, pv := avesd(ps)
+	fmt.Fprintf(fout, "Proj\t%d\t%d\t%f\t%f\t%f\t%f\n",
+		pop.Igen, len(gs), ga, pa, gv, pv)
+
+	var ns, ms, fs Vec
+	for _, indiv := range pop.Indivs {
+		ns = append(ns, float64(indiv.Ndev))
+		ms = append(ms, indiv.Mismatch)
+		fs = append(fs, indiv.Fitness)
+	}
+	na, nv := avesd(ns)
+	ma, mv := avesd(ms)
+	fa, fv := avesd(fs)
+	fmt.Fprintf(fout, "Ndev\t%d\t%f\t%f\n", pop.Igen, na, nv)
+	fmt.Fprintf(fout, "Mis\t%d\t%f\t%f\n", pop.Igen, ma, mv)
+	fmt.Fprintf(fout, "Fit\t%d\t%f\t%f\n", pop.Igen, fa, fv)
+
 	mg := MeanVecs(gvecs)
+	mp := MeanVecs(pvecs)
 
 	gvar := MatTotVar(gvecs, mg)
 	pvar := MatTotVar(pvecs, mp)
+	fmt.Fprintf(fout, "GPvar\t%d\t%f\t%f\n", pop.Igen, gvar, pvar)
+
+	//Pheno-Pheno variance-covariance
+	svPheno, uPheno, _ := XPCA(pvecs, mp, paxis, pvecs, mp, paxis)
+	rsvPheno0 := svPheno[0] / svPheno.Norm2()
+	aliP := DotVecs(uPheno, punit)
+	fmt.Fprintf(fout, "PPcov\t%d\t%f\t%f\t%f\n",
+		pop.Igen, svPheno[0], rsvPheno0, aliP)
+
+	Pps := ProjectOnAxis(pvecs, mp, uPheno)
 
 	// Pheno-Geno Cross-Covariance
 	svGeno, uGeno, vGeno := XPCA(pvecs, mp, paxis, gvecs, mg, gaxis)
 	rsvGeno0 := svGeno[0] / svGeno.Norm2()
-
 	aliG := DotVecs(uGeno, punit)
+	fmt.Fprintf(fout, "PGcov\t%d\t%f\t%f\t%f\n",
+		pop.Igen, svGeno[0], rsvGeno0, aliG)
 
 	Pgs := ProjectOnAxis(pvecs, mp, uGeno)
 	Ggs := ProjectOnAxis(gvecs, mg, vGeno)
 	if DotVecs(Ggs, Pgs) < 0 {
 		Ggs.ScaleBy(-1)
 	}
+
 	// Pheno-Cue Cross-Covariance
 	cvecs := pop.CueVecs(s)
 	mc := c0 //MeanVecs(cvecs)
 	svCue, uCue, vCue := XPCA(pvecs, mp, paxis, cvecs, mc, caxis)
-
 	rsvCue0 := svCue[0] / svCue.Norm2()
 	aliC := DotVecs(uCue, punit)
+	fmt.Fprintf(fout, "PCcov\t%d\t%f\t%f\t%f\n",
+		pop.Igen, svCue[0], rsvCue0, aliC)
 
 	Pcs := ProjectOnAxis(pvecs, mp, uCue)
 	Ccs := ProjectOnAxis(cvecs, mc, vCue)
@@ -130,33 +161,19 @@ func (pop *Population) Project(s *Setting, p0, paxis, g0, gaxis, c0, caxis Vec) 
 		Ccs.ScaleBy(-1)
 	}
 
-	var ns, ms Vec
-	for _, indiv := range pop.Indivs {
-		ns = append(ns, float64(indiv.Ndev))
-		ms = append(ms, indiv.Mismatch)
-	}
-	ga, gv := avesd(gs)
-	pa, pv := avesd(ps)
-	na, nv := avesd(ns)
-	ma, mv := avesd(ms)
-	fmt.Fprintf(fout, "Proj\t%d\t%d\t%f\t%f\t%f\t%f\n", pop.Igen, len(gs), ga, pa, gv, pv)
-	fmt.Fprintf(fout, "Ndev\t%d\t%f\t%f\n", pop.Igen, na, nv)
-	fmt.Fprintf(fout, "Mis\t%d\t%f\t%f\n", pop.Igen, ma, mv)
-	fmt.Fprintf(fout, "GPvar\t%d\t%f\t%f\n", pop.Igen, gvar, pvar)
-	fmt.Fprintf(fout, "PGcov\t%d\t%f\t%f\t%f\n", pop.Igen, svGeno[0], rsvGeno0, aliG)
-	fmt.Fprintf(fout, "PCcov\t%d\t%f\t%f\t%f\n", pop.Igen, svCue[0], rsvCue0, aliC)
-
 	fmt.Fprintf(fout, "#\t%3s\t%8s\t%8s", "gen", "g", "p")
+	fmt.Fprintf(fout, "\t%8s", "Ppheno")
 	fmt.Fprintf(fout, "\t%8s\t%8s", "Ggeno", "Pgeno")
 	fmt.Fprintf(fout, "\t%8s\t%8s", "Gcue", "Pcue")
 	fmt.Fprintf(fout, "\n")
 	for i := range pop.Indivs {
 		fmt.Fprintf(fout, "I\t%d\t%f\t%f", i, gs[i], ps[i])
+		fmt.Fprintf(fout, "\t%f", Pps[i])
 		fmt.Fprintf(fout, "\t%f\t%f", Ggs[i], Pgs[i])
 		fmt.Fprintf(fout, "\t%f\t%f", Ccs[i], Pcs[i])
 		fmt.Fprintf(fout, "\n")
 	}
-	log.Printf("Projection etc. saved in: %s", filename)
+	log.Printf("Projection saved in: %s", filename)
 }
 
 func CovarianceMatrix(xs []Vec, x0 Vec, ys []Vec, y0 Vec) *mat.Dense {
