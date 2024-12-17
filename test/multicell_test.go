@@ -192,12 +192,12 @@ func TestProjection(t *testing.T) {
 
 	env := envs[0]
 	pop := s.NewPopulation(env)
-	pop, dumpfile := pop.Evolve(s, env)
+	pop, _ = pop.Evolve(s, env)
 
 	s.ProductionRun = true
 	env = envs[1]
 	pop.Iepoch = 1
-	pop, dumpfile = pop.Evolve(s, envs[1])
+	pop, _ = pop.Evolve(s, envs[1])
 
 	file00 := s.TrajectoryFilename(1, 0, "traj.gz")
 	pop0 := s.LoadPopulation(file00)
@@ -290,4 +290,18 @@ func TestSVD(t *testing.T) {
 	u0 := u.ColView(0).(*mat.VecDense).RawVector().Data
 	v0 := v.RawRowView(0)
 	fmt.Println(len(sv), u0, v0, v)
+}
+
+func TestGenomeW(t *testing.T) {
+	s := multicell.GetDefaultSetting()
+	s.Outdir = "traj"
+	s.SelStrength = 20
+	s.SetModel("Full")
+	envs := s.SaveEnvs(ENVSFILE, 50)
+	pop := s.NewPopulation(envs[0])
+	pop, _ = pop.Evolve(s, envs[0])
+	for i, indiv := range pop.Indivs {
+		fmt.Println(i, "\t", indiv.Genome.W)
+	}
+
 }

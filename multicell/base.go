@@ -120,7 +120,7 @@ func GetDefaultSetting() *Setting {
 		MutRate:       0.001,
 		ConvDevelop:   1e-5,
 		Denv:          0.5,
-		SelStrength:   20.0,
+		SelStrength:   2.0,
 		Alpha:         1.0 / 3.0,
 		ProductionRun: false}
 	// Omega is set in SetOmega().

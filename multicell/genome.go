@@ -80,9 +80,9 @@ func (genome *Genome) Mutate(s *Setting) {
 	for l := range genome.W {
 		if rand.Float64() < s.MutRate {
 			if rand.IntN(2) == 1 {
-				genome.W[l] += 0.1
+				genome.W[l] *= 1.1
 			} else {
-				genome.W[l] -= 0.1
+				genome.W[l] /= 1.1
 			}
 		}
 	}

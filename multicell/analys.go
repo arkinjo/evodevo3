@@ -156,6 +156,7 @@ func (pop *Population) Project(s *Setting, p0, paxis, g0, gaxis, c0, caxis Vec) 
 		fmt.Fprintf(fout, "\t%f\t%f", Ccs[i], Pcs[i])
 		fmt.Fprintf(fout, "\n")
 	}
+	log.Printf("Projection etc. saved in: %s", filename)
 }
 
 func CovarianceMatrix(xs []Vec, x0 Vec, ys []Vec, y0 Vec) *mat.Dense {
