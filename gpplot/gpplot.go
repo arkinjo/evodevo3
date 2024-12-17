@@ -76,7 +76,6 @@ func main() {
 			if iepoch != pop.Iepoch {
 				pop.Initialize(sim.Setting, env)
 				pop.Develop(sim.Setting, selenv)
-				pop.Sort()
 			}
 
 			pop.Project(sim.Setting, p0, paxis, g0, gaxis, c0, caxis)

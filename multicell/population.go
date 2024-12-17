@@ -84,8 +84,9 @@ func (pop *Population) Develop(s *Setting, selenv Vec) {
 		}(indiv)
 	}
 
-	for i := range pop.Indivs {
-		pop.Indivs[i] = <-ch
+	for range pop.Indivs {
+		indiv := <-ch
+		pop.Indivs[indiv.Id] = indiv
 	}
 }
 
