@@ -116,9 +116,9 @@ func (c *Cell) DevStep(s *Setting, g Genome, istep int) float64 {
 		}
 		var afunc func(float64) float64
 		if l < s.NumLayers-1 {
-			afunc = LCatan(s.Omega[l])
+			afunc = LCatan(g.W[l])
 		} else {
-			afunc = Tanh(s.Omega[l])
+			afunc = Tanh(g.W[l])
 		}
 		c.S[l].ApplyFVec(afunc, va)
 	}

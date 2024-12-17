@@ -140,7 +140,6 @@ func (s *Setting) SetOmega() {
 			s.Omega[l] = 1.0 / math.Sqrt(omega)
 		}
 	}
-	s.Omega[s.NumLayers-1] *= 2
 }
 
 func JustFail(err error) {

@@ -2,6 +2,7 @@ package multicell
 
 import (
 	"gonum.org/v1/gonum/stat/distuv"
+	"math/rand/v2"
 )
 
 /*
@@ -15,8 +16,9 @@ import (
 */
 
 type Genome struct {
-	E [NumFaces]SpMat
-	M map[IntPair]SpMat
+	E [NumFaces]SpMat   // input to middle layers
+	M map[IntPair]SpMat // within middle layers
+	W Vec               // weight of activation function
 }
 
 func (s *Setting) NewGenome() Genome {
@@ -33,7 +35,9 @@ func (s *Setting) NewGenome() Genome {
 		M[IntPair{l, k}] = m
 	})
 
-	return Genome{E: E, M: M}
+	W := make(Vec, s.NumLayers)
+	copy(W, s.Omega)
+	return Genome{E: E, M: M, W: W}
 }
 
 func (genome *Genome) Copy() Genome {
@@ -47,7 +51,10 @@ func (genome *Genome) Copy() Genome {
 		M[lk] = mat.Copy()
 	}
 
-	return Genome{E: E, M: M}
+	W := make(Vec, len(genome.W))
+	copy(W, genome.W)
+
+	return Genome{E: E, M: M, W: W}
 }
 
 func (genome *Genome) Mutate(s *Setting) {
@@ -69,6 +76,16 @@ func (genome *Genome) Mutate(s *Setting) {
 			genome.M[IntPair{l, k}].Mutate(density)
 		}
 	})
+
+	for l := range genome.W {
+		if rand.Float64() < s.MutRate {
+			if rand.IntN(2) == 1 {
+				genome.W[l] += 0.1
+			} else {
+				genome.W[l] -= 0.1
+			}
+		}
+	}
 }
 
 func (g0 *Genome) MateWith(g1 Genome) (Genome, Genome) {
@@ -84,9 +101,20 @@ func (g0 *Genome) MateWith(g1 Genome) (Genome, Genome) {
 		M0[lk] = nmat0
 		M1[lk] = nmat1
 	}
+	W0 := make(Vec, len(g0.W))
+	W1 := make(Vec, len(g0.W))
 
-	kid0 := Genome{E: E0, M: M0}
-	kid1 := Genome{E: E1, M: M1}
+	for l, w := range g0.W {
+		if rand.IntN(2) == 1 {
+			W0[l] = w
+			W1[l] = g1.W[l]
+		} else {
+			W1[l] = w
+			W0[l] = g1.W[l]
+		}
+	}
+	kid0 := Genome{E: E0, M: M0, W: W0}
+	kid1 := Genome{E: E1, M: M1, W: W1}
 	return kid0, kid1
 }
 
@@ -104,6 +132,8 @@ func (g *Genome) ToVec(s *Setting) Vec {
 		}
 	}
 
+	vec = append(vec, g.W...)
+
 	return vec
 }
 
@@ -115,6 +145,12 @@ func (g0 *Genome) Equal(g1 *Genome) bool {
 	}
 	for lk, m := range g0.M {
 		if !m.Equal(g1.M[lk]) {
+			return false
+		}
+	}
+
+	for l, w := range g0.W {
+		if w != g1.W[l] {
 			return false
 		}
 	}

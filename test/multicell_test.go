@@ -37,7 +37,7 @@ func myrecover(t *testing.T, msg string) {
 
 func TestMain(m *testing.M) {
 	m.Run()
-	//	cleanup()
+	cleanup()
 }
 
 func TestSpMatMutate(t *testing.T) {
@@ -192,12 +192,12 @@ func TestProjection(t *testing.T) {
 
 	env := envs[0]
 	pop := s.NewPopulation(env)
-	//	pop, dumpfile := pop.Evolve(s, env)
+	pop, dumpfile := pop.Evolve(s, env)
 
 	s.ProductionRun = true
 	env = envs[1]
 	pop.Iepoch = 1
-	//	pop, dumpfile = pop.Evolve(s, envs[1])
+	pop, dumpfile = pop.Evolve(s, envs[1])
 
 	file00 := s.TrajectoryFilename(1, 0, "traj.gz")
 	pop0 := s.LoadPopulation(file00)
@@ -211,8 +211,7 @@ func TestProjection(t *testing.T) {
 	for igen := range s.MaxGeneration {
 		file := s.TrajectoryFilename(1, igen, "traj.gz")
 		pop := s.LoadPopulation(file)
-		ofile := s.TrajectoryFilename(1, igen, "gpplot")
-		pop.Project(s, ofile, p0, paxis, g0, gaxis, c0, caxis)
+		pop.Project(s, p0, paxis, g0, gaxis, c0, caxis)
 	}
 }
 
