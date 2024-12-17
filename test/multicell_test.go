@@ -171,7 +171,7 @@ func TestModels(t *testing.T) {
 	s := multicell.GetDefaultSetting()
 	s.Outdir = "traj"
 	s.MaxGeneration = 10
-	envs := s.LoadEnvs(ENVSFILE)
+	envs := s.SaveEnvs(ENVSFILE, 50)
 	for _, model := range MODELS {
 		fmt.Println("### Testing model: ", model)
 		s.SetModel(model)

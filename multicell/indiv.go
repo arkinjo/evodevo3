@@ -124,22 +124,21 @@ func (indiv *Individual) SetFitness(s *Setting, selenv Vec) {
 }
 
 func (indiv *Individual) Develop(s *Setting, selenv Vec) Individual {
-	istep := 0
-	for istep = range s.MaxDevelop {
-		dev := 0.0
+	dev := 0.0
+	for istep := range s.MaxDevelop {
+		dev = 0.0
 		for i := range indiv.Cells {
 			dev += indiv.Cells[i].DevStep(s, indiv.Genome, istep)
 		}
+		indiv.Ndev = istep + 1
 		if dev < s.ConvDevelop {
 			break
 		}
 	}
 
-	indiv.Ndev = istep + 1
-
 	indiv.SetFitness(s, selenv)
 
-	if istep == s.MaxDevelop-1 {
+	if dev >= s.ConvDevelop && s.MaxDevelop > 1 {
 		indiv.Fitness = 0.0
 	}
 

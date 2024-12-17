@@ -22,9 +22,13 @@ func (s *Setting) OriginalModel() {
 	s.Basename = "Original"
 	s.NumLayers = 4
 	topology := NewTopology(s.NumLayers)
+
+	// feedforward
 	topology[1][0] = default_density
 	topology[2][1] = default_density
 	topology[3][2] = default_density
+
+	// feedback
 	topology[0][1] = default_density
 	topology[2][2] = default_density
 	s.Topology = topology
@@ -33,18 +37,15 @@ func (s *Setting) OriginalModel() {
 
 func (s *Setting) NoHieModel() {
 	s.Basename = "NoHie"
-	s.NumLayers = 2
-	s.LenLayer = []int{3 * 200, 200}
+	s.NumLayers = 1
+	s.LenLayer = []int{4 * default_len_state}
 	topology := NewTopology(s.NumLayers)
 
-	//feedforward (1,0) and (2,1) in Full
-	s.DensityEM = default_density * 2.0 / 3.0
+	//feedforward
+	s.DensityEM = default_density
 
-	// self-loops (1,1), (2,2), (3,3) in Full
-	topology[0][0] = default_density / 3.0
-
-	//feedforward (3,2), (4,3) in Full
-	topology[1][0] = default_density * 2.0 / 3.0
+	// feedback
+	topology[0][0] = default_density * 3.0 / 16.0
 
 	s.Topology = topology
 	s.SetOmega()
