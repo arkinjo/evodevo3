@@ -21,6 +21,16 @@ type Genome struct {
 	W Vec               // weight of activation function
 }
 
+// Expected variance of a random genome.
+func (s *Setting) RandomGenomeVariance() float64 {
+	v := float64(NumFaces*s.LenLayer[0]*s.LenFace) * s.DensityEM
+	s.Topology.Do(func(l, k int, density float64) {
+		v += float64(s.LenLayer[l]*s.LenLayer[k]) * density
+	})
+
+	return v
+}
+
 func (s *Setting) NewGenome() Genome {
 	var E [NumFaces]SpMat
 	for i := range NumFaces {
