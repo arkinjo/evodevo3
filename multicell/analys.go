@@ -226,10 +226,8 @@ func XPCA(xs []Vec, x0, xaxis Vec, ys []Vec, y0, yaxis Vec) (Vec, []Vec, []Vec) 
 	svd.UTo(&u)
 	svd.VTo(&v)
 	u0 := make([]Vec, 2)
-	for j := range u0 {
-		u0[j] = make(Vec, len(x0))
-	}
 	for j := range len(u0) {
+		u0[j] = make(Vec, len(x0))
 		for i := range len(x0) {
 			u0[j][i] = u.At(i, j)
 		}
@@ -238,8 +236,6 @@ func XPCA(xs []Vec, x0, xaxis Vec, ys []Vec, y0, yaxis Vec) (Vec, []Vec, []Vec) 
 	v0 := make([]Vec, 2)
 	for j := range len(v0) {
 		v0[j] = make(Vec, len(y0))
-	}
-	for j := range len(v0) {
 		for i := range len(y0) {
 			v0[j][i] = v.At(i, j)
 		}
