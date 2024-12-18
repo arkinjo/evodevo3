@@ -122,27 +122,36 @@ func (pop *Population) Project(s *Setting, p0, paxis, g0, gaxis, c0, caxis Vec) 
 
 	gvar := MatTotVar(gvecs, mg)
 	pvar := MatTotVar(pvecs, mp)
-	fmt.Fprintf(fout, "GPvar\t%d\t%f\t%f\n", pop.Igen, gvar, pvar)
+	rvar := s.RandomGenomeVariance()
+	fmt.Fprintf(fout, "GPvar\t%d\t%f\t%f\t%f\n", pop.Igen, gvar, pvar, rvar)
 
 	//Pheno-Pheno variance-covariance
 	svPheno, uPheno, _ := XPCA(pvecs, mp, paxis, pvecs, mp, paxis)
 	rsvPheno0 := svPheno[0] / svPheno.Norm2()
-	aliP := DotVecs(uPheno, punit)
+	aliP := DotVecs(uPheno[0], punit)
 	fmt.Fprintf(fout, "PPcov\t%d\t%f\t%f\t%f\n",
 		pop.Igen, svPheno[0], rsvPheno0, aliP)
 
-	Pps := ProjectOnAxis(pvecs, mp, uPheno)
+	Pps0 := ProjectOnAxis(pvecs, mp, uPheno[0])
+	if DotVecs(Pps0, ps) < 0 {
+		Pps0.ScaleBy(-1)
+	}
+	Pps1 := ProjectOnAxis(pvecs, mp, uPheno[1])
+	if DotVecs(Pps1, ps) < 0 {
+		Pps1.ScaleBy(-1)
+	}
 
 	// Pheno-Geno Cross-Covariance
 	svGeno, uGeno, vGeno := XPCA(pvecs, mp, paxis, gvecs, mg, gaxis)
 	rsvGeno0 := svGeno[0] / svGeno.Norm2()
-	aliG := DotVecs(uGeno, punit)
+	aliG := DotVecs(uGeno[0], punit)
 	fmt.Fprintf(fout, "PGcov\t%d\t%f\t%f\t%f\n",
 		pop.Igen, svGeno[0], rsvGeno0, aliG)
 
-	Pgs := ProjectOnAxis(pvecs, mp, uGeno)
-	Ggs := ProjectOnAxis(gvecs, mg, vGeno)
-	if DotVecs(Ggs, Pgs) < 0 {
+	Pgs := ProjectOnAxis(pvecs, mp, uGeno[0])
+	Ggs := ProjectOnAxis(gvecs, mg, vGeno[0])
+	if DotVecs(Pgs, ps) < 0 {
+		Pgs.ScaleBy(-1)
 		Ggs.ScaleBy(-1)
 	}
 
@@ -151,24 +160,25 @@ func (pop *Population) Project(s *Setting, p0, paxis, g0, gaxis, c0, caxis Vec) 
 	mc := c0 //MeanVecs(cvecs)
 	svCue, uCue, vCue := XPCA(pvecs, mp, paxis, cvecs, mc, caxis)
 	rsvCue0 := svCue[0] / svCue.Norm2()
-	aliC := DotVecs(uCue, punit)
+	aliC := DotVecs(uCue[0], punit)
 	fmt.Fprintf(fout, "PCcov\t%d\t%f\t%f\t%f\n",
 		pop.Igen, svCue[0], rsvCue0, aliC)
 
-	Pcs := ProjectOnAxis(pvecs, mp, uCue)
-	Ccs := ProjectOnAxis(cvecs, mc, vCue)
-	if DotVecs(Ccs, Pcs) < 0 {
+	Pcs := ProjectOnAxis(pvecs, mp, uCue[0])
+	Ccs := ProjectOnAxis(cvecs, mc, vCue[0])
+	if DotVecs(Pcs, ps) < 0 {
+		Pcs.ScaleBy(-1)
 		Ccs.ScaleBy(-1)
 	}
 
 	fmt.Fprintf(fout, "#\t%3s\t%8s\t%8s", "gen", "g", "p")
-	fmt.Fprintf(fout, "\t%8s", "Ppheno")
+	fmt.Fprintf(fout, "\t%8s\t%8s", "Ppheno0", "Ppheno1")
 	fmt.Fprintf(fout, "\t%8s\t%8s", "Ggeno", "Pgeno")
 	fmt.Fprintf(fout, "\t%8s\t%8s", "Gcue", "Pcue")
 	fmt.Fprintf(fout, "\n")
 	for i := range pop.Indivs {
 		fmt.Fprintf(fout, "I\t%d\t%f\t%f", i, gs[i], ps[i])
-		fmt.Fprintf(fout, "\t%f", Pps[i])
+		fmt.Fprintf(fout, "\t%f\t%f", Pps0[i], Pps1[i])
 		fmt.Fprintf(fout, "\t%f\t%f", Ggs[i], Pgs[i])
 		fmt.Fprintf(fout, "\t%f\t%f", Ccs[i], Pcs[i])
 		fmt.Fprintf(fout, "\n")
@@ -204,7 +214,7 @@ func CovarianceMatrix(xs []Vec, x0 Vec, ys []Vec, y0 Vec) *mat.Dense {
 }
 
 // Get singular values, the first left and right singular vectors.
-func XPCA(xs []Vec, x0, xaxis Vec, ys []Vec, y0, yaxis Vec) (Vec, Vec, Vec) {
+func XPCA(xs []Vec, x0, xaxis Vec, ys []Vec, y0, yaxis Vec) (Vec, []Vec, []Vec) {
 	ccov := CovarianceMatrix(xs, x0, ys, y0)
 	var svd mat.SVD
 	ok := svd.Factorize(ccov, mat.SVDThin)
@@ -215,19 +225,25 @@ func XPCA(xs []Vec, x0, xaxis Vec, ys []Vec, y0, yaxis Vec) (Vec, Vec, Vec) {
 	sv := svd.Values(nil)
 	svd.UTo(&u)
 	svd.VTo(&v)
-	u0 := make(Vec, len(x0))
-	for i := range len(x0) {
-		u0[i] = u.At(i, 0)
+	u0 := make([]Vec, 2)
+	for j := range u0 {
+		u0[j] = make(Vec, len(x0))
 	}
-	if DotVecs(u0, xaxis) < 0 {
-		u0.ScaleBy(-1)
+	for j := range len(u0) {
+		for i := range len(x0) {
+			u0[j][i] = u.At(i, j)
+		}
 	}
-	v0 := make(Vec, len(y0))
-	for i := range len(y0) {
-		v0[i] = v.At(i, 0)
+
+	v0 := make([]Vec, 2)
+	for j := range len(v0) {
+		v0[j] = make(Vec, len(y0))
 	}
-	if DotVecs(v0, yaxis) < 0 {
-		v0.ScaleBy(-1)
+	for j := range len(v0) {
+		for i := range len(y0) {
+			v0[j][i] = v.At(i, j)
+		}
 	}
+
 	return sv, u0, v0
 }
