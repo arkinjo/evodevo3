@@ -83,22 +83,51 @@ func MatTotVar(vecs []Vec, mv Vec) float64 {
 	return sd2 / float64(len(vecs))
 }
 
-func (pop *Population) Project(s *Setting, p0, paxis, g0, gaxis, c0, caxis Vec) {
-	filename := s.TrajectoryFilename(pop.Iepoch, pop.Igen, "gpplot")
-	fout, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
-	JustFail(err)
-	defer fout.Close()
+func GetProjected1(fout *os.File, label string, igen int, xs []Vec, x0 Vec, axis, ps Vec) (Vec, Vec) {
+	sv, u, _ := XPCA(xs, x0, xs, x0)
+	ali := 0.0
+	if axis != nil {
+		ali = DotVecs(u[0], axis)
+	}
 
-	// for alignment calculation
-	punit := paxis.Copy()
-	punit.Normalize()
+	fmt.Fprintf(fout, "%s\t%d\t%f\t%f\t%f\n",
+		label, igen, sv.Norm2(), sv[0], ali)
 
-	// Geno-Pheno Plot
-	gvecs := pop.GenomeVecs(s)
-	gs := ProjectOnAxis(gvecs, g0, gaxis)
+	px := ProjectOnAxis(xs, x0, u[0])
+	py := ProjectOnAxis(xs, x0, u[1])
 
-	pvecs := pop.PhenoVecs(s)
-	ps := ProjectOnAxis(pvecs, p0, paxis)
+	if DotVecs(px, ps) < 0 {
+		px.ScaleBy(-1)
+	}
+
+	if DotVecs(py, ps) < 0 {
+		py.ScaleBy(-1)
+	}
+
+	return px, py
+}
+
+func GetProjected2(fout *os.File, label string, igen int, xs []Vec, x0 Vec, ys []Vec, y0 Vec, axis, ps Vec) (Vec, Vec) {
+	sv, u, v := XPCA(xs, x0, ys, y0)
+	ali := 0.0
+	if axis != nil {
+		ali = DotVecs(u[0], axis)
+	}
+	fmt.Fprintf(fout, "%s\t%d\t%f\t%f\t%f\n",
+		label, igen, sv.Norm2(), sv[0], ali)
+
+	px := ProjectOnAxis(xs, x0, u[0])
+	py := ProjectOnAxis(ys, y0, v[0])
+
+	if DotVecs(px, ps) < 0 {
+		px.ScaleBy(-1)
+		py.ScaleBy(-1)
+	}
+
+	return px, py
+}
+
+func (pop *Population) PrintPopStats(fout *os.File, gs, ps Vec) {
 	ga, gv := avesd(gs)
 	pa, pv := avesd(ps)
 	fmt.Fprintf(fout, "Proj\t%d\t%d\t%f\t%f\t%f\t%f\n",
@@ -116,6 +145,26 @@ func (pop *Population) Project(s *Setting, p0, paxis, g0, gaxis, c0, caxis Vec) 
 	fmt.Fprintf(fout, "Ndev\t%d\t%f\t%f\n", pop.Igen, na, nv)
 	fmt.Fprintf(fout, "Mis\t%d\t%f\t%f\n", pop.Igen, ma, mv)
 	fmt.Fprintf(fout, "Fit\t%d\t%f\t%f\n", pop.Igen, fa, fv)
+}
+
+func (pop *Population) Project(s *Setting, p0, paxis, g0, gaxis, c0, caxis Vec) {
+	filename := s.TrajectoryFilename(pop.Iepoch, pop.Igen, "gpplot")
+	fout, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	JustFail(err)
+	defer fout.Close()
+
+	// for alignment calculation
+	punit := paxis.Copy()
+	punit.Normalize()
+
+	// Geno-Pheno Projection Plot
+	gvecs := pop.GenomeVecs(s)
+	gs := ProjectOnAxis(gvecs, g0, gaxis)
+
+	pvecs := pop.PhenoVecs(s)
+	ps := ProjectOnAxis(pvecs, p0, paxis)
+
+	pop.PrintPopStats(fout, gs, ps)
 
 	mg := MeanVecs(gvecs)
 	mp := MeanVecs(pvecs)
@@ -126,61 +175,46 @@ func (pop *Population) Project(s *Setting, p0, paxis, g0, gaxis, c0, caxis Vec) 
 	fmt.Fprintf(fout, "GPvar\t%d\t%f\t%f\t%f\n", pop.Igen, gvar, pvar, rvar)
 
 	//Pheno-Pheno variance-covariance
-	svPheno, uPheno, _ := XPCA(pvecs, mp, paxis, pvecs, mp, paxis)
-	rsvPheno0 := svPheno[0] / svPheno.Norm2()
-	aliP := DotVecs(uPheno[0], punit)
-	fmt.Fprintf(fout, "PPcov\t%d\t%f\t%f\t%f\n",
-		pop.Igen, svPheno[0], rsvPheno0, aliP)
-
-	Pps0 := ProjectOnAxis(pvecs, mp, uPheno[0])
-	if DotVecs(Pps0, ps) < 0 {
-		Pps0.ScaleBy(-1)
-	}
-	Pps1 := ProjectOnAxis(pvecs, mp, uPheno[1])
-	if DotVecs(Pps1, ps) < 0 {
-		Pps1.ScaleBy(-1)
-	}
-
-	// Pheno-Geno Cross-Covariance
-	svGeno, uGeno, vGeno := XPCA(pvecs, mp, paxis, gvecs, mg, gaxis)
-	rsvGeno0 := svGeno[0] / svGeno.Norm2()
-	aliG := DotVecs(uGeno[0], punit)
-	fmt.Fprintf(fout, "PGcov\t%d\t%f\t%f\t%f\n",
-		pop.Igen, svGeno[0], rsvGeno0, aliG)
-
-	Pgs := ProjectOnAxis(pvecs, mp, uGeno[0])
-	Ggs := ProjectOnAxis(gvecs, mg, vGeno[0])
-	if DotVecs(Pgs, ps) < 0 {
-		Pgs.ScaleBy(-1)
-		Ggs.ScaleBy(-1)
-	}
+	Pp0, Pp1 := GetProjected1(fout, "PPcov", pop.Igen, pvecs, mp, punit, ps)
 
 	// Pheno-Cue Cross-Covariance
 	cvecs := pop.CueVecs(s)
 	mc := c0 //MeanVecs(cvecs)
-	svCue, uCue, vCue := XPCA(pvecs, mp, paxis, cvecs, mc, caxis)
-	rsvCue0 := svCue[0] / svCue.Norm2()
-	aliC := DotVecs(uCue[0], punit)
-	fmt.Fprintf(fout, "PCcov\t%d\t%f\t%f\t%f\n",
-		pop.Igen, svCue[0], rsvCue0, aliC)
+	Ppc, Cpc := GetProjected2(fout, "PCcov", pop.Igen, pvecs, mp, cvecs, mc, punit, ps)
 
-	Pcs := ProjectOnAxis(pvecs, mp, uCue[0])
-	Ccs := ProjectOnAxis(cvecs, mc, vCue[0])
-	if DotVecs(Pcs, ps) < 0 {
-		Pcs.ScaleBy(-1)
-		Ccs.ScaleBy(-1)
-	}
+	// Pheno-Geno Cross-Covariance
+	Ppg, Gpg := GetProjected2(fout, "PGcov", pop.Igen, pvecs, mp, gvecs, mg, punit, ps)
+
+	// State variance-covariance
+	svecs := pop.StateVecs()
+	ms := MeanVecs(svecs)
+	Ss0, Ss1 := GetProjected1(fout, "SScov", pop.Igen, svecs, ms, nil, ps)
+
+	// State-Cue cross-covariance
+	Ssc, Csc := GetProjected2(fout, "SCcov", pop.Igen, svecs, ms, cvecs, mc, nil, ps)
+
+	// State-Genome cross-covariance (very slow)
+	Ssg, Gsg := GetProjected2(fout, "SGcov", pop.Igen, svecs, ms, gvecs, mg, nil, ps)
 
 	fmt.Fprintf(fout, "#\t%3s\t%8s\t%8s", "gen", "g", "p")
 	fmt.Fprintf(fout, "\t%8s\t%8s", "Ppheno0", "Ppheno1")
-	fmt.Fprintf(fout, "\t%8s\t%8s", "Ggeno", "Pgeno")
 	fmt.Fprintf(fout, "\t%8s\t%8s", "Gcue", "Pcue")
+	fmt.Fprintf(fout, "\t%8s\t%8s", "Ggeno", "Pgeno")
+	fmt.Fprintf(fout, "\t%8s\t%8s", "SS0", "SS1")
+	fmt.Fprintf(fout, "\t%8s\t%8s", "Gsg", "Ssg")
+	fmt.Fprintf(fout, "\t%8s\t%8s", "Gsc", "Ssc")
 	fmt.Fprintf(fout, "\n")
 	for i := range pop.Indivs {
 		fmt.Fprintf(fout, "I\t%d\t%f\t%f", i, gs[i], ps[i])
-		fmt.Fprintf(fout, "\t%f\t%f", Pps0[i], Pps1[i])
-		fmt.Fprintf(fout, "\t%f\t%f", Ggs[i], Pgs[i])
-		fmt.Fprintf(fout, "\t%f\t%f", Ccs[i], Pcs[i])
+		fmt.Fprintf(fout, "\t%f\t%f", Pp0[i], Pp1[i])
+
+		fmt.Fprintf(fout, "\t%f\t%f", Cpc[i], Ppc[i])
+		fmt.Fprintf(fout, "\t%f\t%f", Gpg[i], Ppg[i])
+
+		fmt.Fprintf(fout, "\t%f\t%f", Ss0[i], Ss1[i])
+
+		fmt.Fprintf(fout, "\t%f\t%f", Csc[i], Ssc[i])
+		fmt.Fprintf(fout, "\t%f\t%f", Gsg[i], Ssg[i])
 		fmt.Fprintf(fout, "\n")
 	}
 	log.Printf("Projection saved in: %s", filename)
@@ -214,7 +248,7 @@ func CovarianceMatrix(xs []Vec, x0 Vec, ys []Vec, y0 Vec) *mat.Dense {
 }
 
 // Get singular values, the first left and right singular vectors.
-func XPCA(xs []Vec, x0, xaxis Vec, ys []Vec, y0, yaxis Vec) (Vec, []Vec, []Vec) {
+func XPCA(xs []Vec, x0 Vec, ys []Vec, y0 Vec) (Vec, []Vec, []Vec) {
 	ccov := CovarianceMatrix(xs, x0, ys, y0)
 	var svd mat.SVD
 	ok := svd.Factorize(ccov, mat.SVDThin)
