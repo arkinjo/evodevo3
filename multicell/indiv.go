@@ -47,6 +47,14 @@ func (indiv *Individual) CueVec(s *Setting) Vec {
 	return vec
 }
 
+func (indiv *Individual) StateVec() Vec {
+	var vec Vec
+	for _, c := range indiv.Cells {
+		vec = append(vec, c.ToVec()...)
+	}
+	return vec
+}
+
 func (s *Setting) CellId(i, j int) int {
 	return i*s.NumCellY + j
 }

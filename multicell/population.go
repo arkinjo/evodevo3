@@ -235,6 +235,14 @@ func (s *Setting) LoadPopulationJSON(filename string, env Environment) Populatio
 	return pop
 }
 
+func (pop *Population) StateVecs() []Vec {
+	vecs := make([]Vec, len(pop.Indivs))
+	for i, indiv := range pop.Indivs {
+		vecs[i] = indiv.StateVec()
+	}
+	return vecs
+}
+
 func (pop *Population) GenomeVecs(s *Setting) []Vec {
 	vecs := make([]Vec, len(pop.Indivs))
 	for i, indiv := range pop.Indivs {

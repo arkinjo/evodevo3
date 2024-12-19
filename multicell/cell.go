@@ -3,6 +3,7 @@ package multicell
 import (
 	//	"fmt"
 	"log"
+	"slices"
 )
 
 type Cell struct {
@@ -12,6 +13,13 @@ type Cell struct {
 	S      []Vec         // middle and output layers
 	P      Vec
 	Pvar   Vec
+}
+
+// all internal states into one vector.
+func (c *Cell) ToVec() Vec {
+	var vec Vec
+	return slices.Concat(c.S...)
+	return vec
 }
 
 func (s *Setting) NewCell(id int) Cell {
