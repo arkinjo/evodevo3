@@ -34,8 +34,22 @@ func MeanVecs(vecs []Vec) Vec {
 		}
 	}
 	n := float64(len(vecs))
-	ave.ScaleBy(1 / n)
+	ave.ScaleBy(1.0 / n)
 	return ave
+}
+
+func VarVecs(vecs []Vec, mv Vec) Vec {
+	vvec := make(Vec, len(mv))
+	for _, vec := range vecs {
+		for i, v := range vec {
+			d := v - mv[i]
+			vvec[i] += d * d
+		}
+	}
+	n := float64(len(vecs))
+	vvec.ScaleBy(1.0 / n)
+
+	return vvec
 }
 
 func GetAxis(v0, v1 Vec) Vec {

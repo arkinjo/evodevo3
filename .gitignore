@@ -27,6 +27,7 @@ go.work.sum
 runsim/runsim
 simanc/simanc
 gpplot/gpplot
+gana/gana
 */*.json
 */*.gz
 */traj
