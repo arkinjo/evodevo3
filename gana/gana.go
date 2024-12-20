@@ -49,7 +49,7 @@ func PrintVarMatrix(filename string, vv multicell.Vec) {
 	defer fout.Close()
 
 	for i, v := range vv {
-		fmt.Fprintf(fout, "%f", v)
+		fmt.Fprintf(fout, "%f", v*100)
 		if (i+1)%200 == 0 {
 			fmt.Fprintf(fout, "\n")
 		} else {
@@ -69,8 +69,8 @@ func main() {
 		gvecs := pop.GenomeVecs(sim.Setting)
 		gmean := multicell.MeanVecs(gvecs)
 		gvar := multicell.VarVecs(gvecs, gmean)
-		//		PrintMeanVarVecs(fname, gmean, gvar)
-		PrintVarMatrix(fname, gvar)
+		PrintMeanVarVecs(fname, gmean, gvar)
+		//		PrintVarMatrix(fname, gvar)
 	}
 
 	log.Println("Time: ", time.Since(t0))
