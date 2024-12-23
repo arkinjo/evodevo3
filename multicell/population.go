@@ -84,10 +84,10 @@ func (pop *Population) Develop(s *Setting, selenv Vec) {
 		}(indiv)
 	}
 
-	for range pop.Indivs {
-		indiv := <-ch
-		pop.Indivs[indiv.Id] = indiv
+	for i := range pop.Indivs {
+		pop.Indivs[i] = <-ch
 	}
+	pop.Sort()
 }
 
 func (pop *Population) Select(s *Setting) Population {
