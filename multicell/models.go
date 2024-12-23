@@ -8,19 +8,18 @@ func (s *Setting) FullModel() {
 	s.Basename = "Full"
 	s.NumLayers = 4
 	s.LenLayer = make([]int, s.NumLayers)
-	for i := range s.LenLayer {
-		s.LenLayer[i] = default_len_state
-	}
 	topology := NewTopology(s.NumLayers)
-	// feedforward
-	topology[1][0] = default_density
-	topology[2][1] = default_density
-	topology[3][2] = default_density
+	s.DensityEM = default_density
+	for l := range s.NumLayers {
+		s.LenLayer[l] = default_len_state
 
-	// feedback
-	topology[1][1] = default_density
-	topology[2][2] = default_density
-	topology[3][3] = default_density
+		// feedforward
+		if l > 0 {
+			topology[l][l-1] = default_density
+		}
+		// feedback
+		topology[l][l] = default_density
+	}
 
 	s.Topology = topology
 	s.SetOmega()
