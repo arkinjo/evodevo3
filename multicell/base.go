@@ -78,6 +78,13 @@ func LCatan(omega float64) func(float64) float64 {
 	}
 }
 
+// Simple arctan
+func Atan(omega float64) func(float64) float64 {
+	return func(x float64) float64 {
+		return math.Atan(omega * x)
+	}
+}
+
 func Tanh(omega float64) func(float64) float64 {
 	return func(x float64) float64 {
 		return math.Tanh(omega * x)
