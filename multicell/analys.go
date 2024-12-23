@@ -101,7 +101,7 @@ func GetProjected1(fout *os.File, label string, igen int, xs []Vec, x0 Vec, axis
 	sv, u, _ := XPCA(xs, x0, xs, x0)
 	ali := 0.0
 	if axis != nil {
-		ali = DotVecs(u[0], axis)
+		ali = math.Abs(DotVecs(u[0], axis))
 	}
 
 	fmt.Fprintf(fout, "%s\t%d\t%f\t%f\t%f\n",
@@ -126,7 +126,7 @@ func GetProjected2(fout *os.File, label string, igen int, xs []Vec, x0 Vec, ys [
 	sv, u, v := XPCA(xs, x0, ys, y0)
 	ali := 0.0
 	if axis != nil {
-		ali = DotVecs(u[0], axis)
+		ali = math.Abs(DotVecs(u[0], axis))
 	}
 	fmt.Fprintf(fout, "%s\t%d\t%f\t%f\t%f\n",
 		label, igen, sv.Norm2(), sv[0], ali)
@@ -248,9 +248,9 @@ func CovarianceMatrix(xs []Vec, x0 Vec, ys []Vec, y0 Vec) *mat.Dense {
 	for n, x := range xs {
 		xt.Diff(x, x0)
 		yt.Diff(ys[n], y0)
-		for i := range nx {
-			for j := range ny {
-				cov.Set(i, j, cov.At(i, j)+xt[i]*yt[j])
+		for j, yj := range yt {
+			for i, xi := range xt {
+				cov.Set(i, j, cov.At(i, j)+xi*yj)
 			}
 		}
 	}
