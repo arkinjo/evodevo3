@@ -11,14 +11,15 @@ type Cell struct {
 	Facing [NumFaces]int // Facing Cell's Id; -1 if none.
 	E      []Vec         // points to neighboring cell face or environment
 	S      []Vec         // middle and output layers
-	P      Vec
+	P      Vec           // points to S[s.NumLayers-1]
+	Pave   Vec
 	Pvar   Vec
 }
 
 // all internal states into one vector.
 func (c *Cell) ToVec() Vec {
 	var vec Vec
-	return slices.Concat(c.S...)
+	return slices.Concat(c.S[:len(c.S)-1]...)
 	return vec
 }
 
@@ -29,7 +30,7 @@ func (s *Setting) NewCell(id int) Cell {
 	}
 	e := make([]Vec, NumFaces) //
 	pave := NewVec(s.LenLayer[s.NumLayers-1], 1.0)
-	pvar := NewVec(s.LenLayer[s.NumLayers-1], 1.0)
+	pvar := NewVec(s.LenLayer[s.NumLayers-1], 0.0)
 
 	m := make([]Vec, s.NumLayers)
 	for i, nc := range s.LenLayer {
@@ -41,7 +42,8 @@ func (s *Setting) NewCell(id int) Cell {
 		Facing: facing,
 		E:      e,
 		S:      m,
-		P:      pave,
+		P:      m[s.NumLayers-1],
+		Pave:   pave,
 		Pvar:   pvar}
 }
 
@@ -131,17 +133,13 @@ func (c *Cell) DevStep(s *Setting, g Genome, istep int) float64 {
 		c.S[l].ApplyFVec(afunc, va)
 	}
 
-	if istep == 0 {
-		copy(c.P, c.S[s.NumLayers-1])
-		c.Pvar.SetAll(1.0)
-	} else { // exponential moving average/variance
-		for i, v := range c.S[s.NumLayers-1] {
-			d := v - c.P[i]
-			incr := s.Alpha * d
-			c.P[i] += incr
-			c.Pvar[i] = (1 - s.Alpha) * (c.Pvar[i] + d*incr)
-		}
+	for i, v := range c.S[s.NumLayers-1] {
+		d := v - c.Pave[i]
+		incr := s.Alpha * d
+		c.Pave[i] += incr
+		c.Pvar[i] = (1 - s.Alpha) * (c.Pvar[i] + d*incr)
 	}
+
 	dev := 0.0
 	for _, d := range c.Pvar {
 		dev += d

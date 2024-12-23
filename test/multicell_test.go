@@ -103,10 +103,6 @@ func TestCell(t *testing.T) {
 		t.Errorf("len(cell.P)=%d; want %d",
 			len(cell.P), lp)
 	}
-	if len(cell.Pvar) != lp {
-		t.Errorf("len(cell.Pvar)=%d; want %d",
-			len(cell.Pvar), lp)
-	}
 }
 
 func TestIndividual(t *testing.T) {

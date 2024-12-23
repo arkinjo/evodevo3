@@ -24,11 +24,8 @@ go.work.sum
 # env file
 .env
 
-runsim/runsim
-simanc/simanc
-gpplot/gpplot
-gana/gana
 */*.json
 */*.gz
 */traj
 test/traj/*
+bin/*

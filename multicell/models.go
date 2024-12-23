@@ -6,6 +6,24 @@ import (
 
 func (s *Setting) FullModel() {
 	s.Basename = "Full"
+	s.NumLayers = 4
+	s.LenLayer = make([]int, s.NumLayers)
+	for i := range s.LenLayer {
+		s.LenLayer[i] = default_len_state
+	}
+	topology := NewTopology(s.NumLayers)
+	// feedforward
+	topology[1][0] = default_density
+	topology[2][1] = default_density
+	topology[3][2] = default_density
+
+	// feedback
+	topology[1][1] = default_density
+	topology[2][2] = default_density
+	topology[3][3] = default_density
+
+	s.Topology = topology
+	s.SetOmega()
 }
 
 func (s *Setting) NoCueModel() {
@@ -16,6 +34,7 @@ func (s *Setting) NoCueModel() {
 func (s *Setting) NoDevModel() {
 	s.Basename = "NoDev"
 	s.MaxDevelop = 1
+	s.Alpha = 1.0
 }
 
 func (s *Setting) OriginalModel() {
@@ -38,14 +57,50 @@ func (s *Setting) OriginalModel() {
 func (s *Setting) NoHieModel() {
 	s.Basename = "NoHie"
 	s.NumLayers = 1
-	s.LenLayer = []int{4 * default_len_state}
+	s.LenLayer = []int{default_len_state}
 	topology := NewTopology(s.NumLayers)
 
 	//feedforward
-	s.DensityEM = default_density
+	s.DensityEM = default_density * 4.0
 
 	// feedback
-	topology[0][0] = default_density * 3.0 / 16.0
+	topology[0][0] = default_density * 4.0
+
+	s.Topology = topology
+	s.SetOmega()
+}
+
+func (s *Setting) Hie1Model() {
+	s.Basename = "Hie1"
+	s.NumLayers = 2
+	s.LenLayer = []int{600, 200}
+	topology := NewTopology(s.NumLayers)
+
+	//feedforward
+	s.DensityEM = default_density * 2.0 / 3.0
+	topology[1][0] = default_density * 2.0 / 3.0
+	// feedback
+	topology[0][0] = default_density / 3.0
+	topology[1][1] = default_density
+
+	s.Topology = topology
+	s.SetOmega()
+}
+
+func (s *Setting) Hie2Model() {
+	s.Basename = "Hie2"
+	s.NumLayers = 3
+	s.LenLayer = []int{300, 300, 200}
+	topology := NewTopology(s.NumLayers)
+
+	//feedforward
+	s.DensityEM = default_density * 2.0 / 3.0
+	topology[1][0] = default_density * 8.0 / 9.0
+	topology[2][1] = default_density * 2.0 / 3.0
+	// feedback
+	topology[0][0] = default_density * 2.0 / 3.0
+	topology[1][1] = default_density * 2.0 / 3.0
+	topology[2][2] = default_density
 
 	s.Topology = topology
 	s.SetOmega()
@@ -55,6 +110,7 @@ func (s *Setting) NullModel() {
 	s.NoHieModel()
 	s.WithCue = false
 	s.MaxDevelop = 1
+	s.Alpha = 1.0
 	s.Basename = "Null"
 	s.SetOmega()
 }
@@ -83,6 +139,10 @@ func (s *Setting) SetModel(model string) {
 		s.FullModel()
 	case "NoHie":
 		s.NoHieModel()
+	case "Hie1":
+		s.Hie1Model()
+	case "Hie2":
+		s.Hie2Model()
 	case "NoCue":
 		s.NoCueModel()
 	case "NoDev":

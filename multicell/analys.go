@@ -122,6 +122,7 @@ func GetProjected1(fout *os.File, label string, igen int, xs []Vec, x0 Vec, axis
 }
 
 func GetProjected2(fout *os.File, label string, igen int, xs []Vec, x0 Vec, ys []Vec, y0 Vec, axis, ps Vec) (Vec, Vec) {
+	log.Printf("GetProjected2 %s\n", label)
 	sv, u, v := XPCA(xs, x0, ys, y0)
 	ali := 0.0
 	if axis != nil {
@@ -203,20 +204,19 @@ func (pop *Population) Project(s *Setting, p0, paxis, g0, gaxis, c0, caxis Vec) 
 	svecs := pop.StateVecs()
 	ms := MeanVecs(svecs)
 	Ss0, Ss1 := GetProjected1(fout, "SScov", pop.Igen, svecs, ms, nil, ps)
-
 	// State-Cue cross-covariance
-	Ssc, Csc := GetProjected2(fout, "SCcov", pop.Igen, svecs, ms, cvecs, mc, nil, ps)
+	//Ssc, Csc := GetProjected2(fout, "SCcov", pop.Igen, svecs, ms, cvecs, mc, nil, ps)
 
 	// State-Genome cross-covariance (very slow)
-	Ssg, Gsg := GetProjected2(fout, "SGcov", pop.Igen, svecs, ms, gvecs, mg, nil, ps)
+	//	Ssg, Gsg := GetProjected2(fout, "SGcov", pop.Igen, svecs, ms, gvecs, mg, nil, ps)
 
 	fmt.Fprintf(fout, "#\t%3s\t%8s\t%8s", "gen", "g", "p")
 	fmt.Fprintf(fout, "\t%8s\t%8s", "Ppheno0", "Ppheno1")
 	fmt.Fprintf(fout, "\t%8s\t%8s", "Gcue", "Pcue")
 	fmt.Fprintf(fout, "\t%8s\t%8s", "Ggeno", "Pgeno")
 	fmt.Fprintf(fout, "\t%8s\t%8s", "SS0", "SS1")
-	fmt.Fprintf(fout, "\t%8s\t%8s", "Gsg", "Ssg")
-	fmt.Fprintf(fout, "\t%8s\t%8s", "Gsc", "Ssc")
+	//	fmt.Fprintf(fout, "\t%8s\t%8s", "Gsc", "Ssc")
+	//	fmt.Fprintf(fout, "\t%8s\t%8s", "Gsg", "Ssg")
 	fmt.Fprintf(fout, "\n")
 	for i := range pop.Indivs {
 		fmt.Fprintf(fout, "I\t%d\t%f\t%f", i, gs[i], ps[i])
@@ -227,8 +227,8 @@ func (pop *Population) Project(s *Setting, p0, paxis, g0, gaxis, c0, caxis Vec) 
 
 		fmt.Fprintf(fout, "\t%f\t%f", Ss0[i], Ss1[i])
 
-		fmt.Fprintf(fout, "\t%f\t%f", Csc[i], Ssc[i])
-		fmt.Fprintf(fout, "\t%f\t%f", Gsg[i], Ssg[i])
+		//	fmt.Fprintf(fout, "\t%f\t%f", Csc[i], Ssc[i])
+		//	fmt.Fprintf(fout, "\t%f\t%f", Gsg[i], Ssg[i])
 		fmt.Fprintf(fout, "\n")
 	}
 	log.Printf("Projection saved in: %s", filename)

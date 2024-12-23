@@ -65,7 +65,7 @@ func main() {
 
 	log.Printf("Plotting %s epoch %d population under env %d\n",
 		sim.Setting.Basename, pop0.Iepoch, iepoch)
-	ch := make(chan struct{}, 8)
+	ch := make(chan struct{}, 1)
 	var wg sync.WaitGroup
 	wg.Add(len(sim.Files))
 	for _, traj := range sim.Files {
