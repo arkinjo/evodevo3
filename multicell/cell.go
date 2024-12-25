@@ -11,7 +11,6 @@ type Cell struct {
 	Facing [NumFaces]int // Facing Cell's Id; -1 if none.
 	E      []Vec         // points to neighboring cell face or environment
 	S      []Vec         // middle and output layers
-	P      Vec           // points to S[s.NumLayers-1]
 	Pave   Vec
 	Pvar   Vec
 }
@@ -42,7 +41,6 @@ func (s *Setting) NewCell(id int) Cell {
 		Facing: facing,
 		E:      e,
 		S:      m,
-		P:      m[s.NumLayers-1],
 		Pave:   pave,
 		Pvar:   pvar}
 }
@@ -51,22 +49,24 @@ func (c *Cell) Initialize(s *Setting) {
 	for l := range s.NumLayers {
 		c.S[l].SetAll(1.0)
 	}
+	c.Pave.SetAll(1.0)
+	c.Pvar.SetAll(0.0)
 }
 
 func (c *Cell) Left(s *Setting) Vec {
-	return c.P[:s.LenFace]
+	return c.S[s.NumLayers-1][:s.LenFace]
 }
 
 func (c *Cell) Top(s *Setting) Vec {
-	return c.P[s.LenFace : s.LenFace*2]
+	return c.S[s.NumLayers-1][s.LenFace : s.LenFace*2]
 }
 
 func (c *Cell) Right(s *Setting) Vec {
-	return c.P[s.LenFace*2 : s.LenFace*3]
+	return c.S[s.NumLayers-1][s.LenFace*2 : s.LenFace*3]
 }
 
 func (c *Cell) Bottom(s *Setting) Vec {
-	return c.P[s.LenFace*3:]
+	return c.S[s.NumLayers-1][s.LenFace*3:]
 }
 
 func (c *Cell) Face(s *Setting, iface int) Vec {
@@ -124,9 +124,9 @@ func (c *Cell) DevStep(s *Setting, g Genome, istep int) float64 {
 			mat.MultVec(c.S[k], vt)
 			va.Acc(vt)
 		}
-		afunc := Atan(g.W[l])
+		afunc := LCatan(g.W[l] * s.Omega[l])
 		if l == s.NumLayers-1 {
-			afunc = Tanh(g.W[l])
+			afunc = SCtanh(g.W[l] * s.Omega[l])
 		}
 		c.S[l].ApplyFVec(afunc, va)
 	}
