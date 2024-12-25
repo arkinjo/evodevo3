@@ -46,7 +46,8 @@ func (s *Setting) NewGenome() Genome {
 	})
 
 	W := make(Vec, s.NumLayers)
-	copy(W, s.Omega)
+	//	copy(W, s.Omega)
+	W.SetAll(1.0)
 	return Genome{E: E, M: M, W: W}
 }
 
