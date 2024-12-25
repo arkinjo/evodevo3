@@ -4,162 +4,93 @@ import (
 	"log"
 )
 
-func (s *Setting) FullModel() {
-	s.Basename = "Full"
-	s.NumLayers = 4
+type model_t struct {
+	cue     bool
+	develop bool
+	nLayers int
+}
+
+var models = map[string]model_t{
+	"Full":    {true, true, 3},
+	"Hie0":    {true, true, 0},
+	"Hie1":    {true, true, 1},
+	"Hie2":    {true, true, 2},
+	"Null":    {false, false, 0},
+	"NoCue":   {false, true, 3},
+	"NoDev":   {true, false, 3},
+	"NullHie": {false, false, 3},
+	"NullCue": {true, false, 0},
+	"NullDev": {true, true, 0},
+}
+
+func (s *Setting) SetLayer(n int) {
+	s.NumLayers = n + 1
 	s.LenLayer = make([]int, s.NumLayers)
-	topology := NewTopology(s.NumLayers)
-	s.DensityEM = default_density
-	for l := range s.NumLayers {
-		s.LenLayer[l] = default_len_state
+	slen := s.LenFace * NumFaces
+	s.LenLayer[s.NumLayers-1] = slen
 
-		// feedforward
-		if l > 0 {
-			topology[l][l-1] = default_density
+	s.Topology = NewTopology(s.NumLayers)
+
+	switch n {
+	case 3:
+		s.LenLayer[0] = slen
+		s.LenLayer[1] = slen
+		s.LenLayer[2] = slen
+		s.DensityEM = default_density
+		for l := range s.NumLayers {
+			// feedforward
+			if l > 0 {
+				s.Topology[l][l-1] = default_density
+			}
+			// feedback (no feedback for the phenotype layer)
+			if l < s.NumLayers-1 {
+				s.Topology[l][l] = default_density
+			}
 		}
+	case 2:
+		s.LenLayer[0] = slen * 3 / 2
+		s.LenLayer[1] = slen * 3 / 2
+		//feedforward
+		s.DensityEM = default_density * 2.0 / 3.0
+		s.Topology[1][0] = default_density * 8.0 / 9.0
+		s.Topology[2][1] = default_density * 2.0 / 3.0
 		// feedback
-		topology[l][l] = default_density
-	}
-
-	s.Topology = topology
-	s.SetOmega()
-}
-
-func (s *Setting) NoCueModel() {
-	s.Basename = "NoCue"
-	s.WithCue = false
-}
-
-func (s *Setting) NoDevModel() {
-	s.Basename = "NoDev"
-	s.MaxDevelop = 1
-	s.Alpha = 1.0
-}
-
-func (s *Setting) OriginalModel() {
-	s.Basename = "Original"
-	s.NumLayers = 4
-	topology := NewTopology(s.NumLayers)
-
-	// feedforward
-	topology[1][0] = default_density
-	topology[2][1] = default_density
-	topology[3][2] = default_density
-
-	// feedback
-	topology[0][1] = default_density
-	topology[2][2] = default_density
-	s.Topology = topology
-	s.SetOmega()
-}
-
-func (s *Setting) NoHieModel() {
-	s.Basename = "NoHie"
-	s.NumLayers = 1
-	s.LenLayer = []int{default_len_state}
-	topology := NewTopology(s.NumLayers)
-
-	//feedforward
-	s.DensityEM = default_density * 4.0
-
-	// feedback
-	topology[0][0] = default_density * 4.0
-
-	s.Topology = topology
-	s.SetOmega()
-}
-
-func (s *Setting) Hie1Model() {
-	s.Basename = "Hie1"
-	s.NumLayers = 2
-	s.LenLayer = []int{600, 200}
-	topology := NewTopology(s.NumLayers)
-
-	//feedforward
-	s.DensityEM = default_density * 2.0 / 3.0
-	topology[1][0] = default_density * 2.0 / 3.0
-	// feedback
-	topology[0][0] = default_density / 3.0
-	topology[1][1] = default_density
-
-	s.Topology = topology
-	s.SetOmega()
-}
-
-func (s *Setting) Hie2Model() {
-	s.Basename = "Hie2"
-	s.NumLayers = 3
-	s.LenLayer = []int{300, 300, 200}
-	topology := NewTopology(s.NumLayers)
-
-	//feedforward
-	s.DensityEM = default_density * 2.0 / 3.0
-	topology[1][0] = default_density * 8.0 / 9.0
-	topology[2][1] = default_density * 2.0 / 3.0
-	// feedback
-	topology[0][0] = default_density * 2.0 / 3.0
-	topology[1][1] = default_density * 2.0 / 3.0
-	topology[2][2] = default_density
-
-	s.Topology = topology
-	s.SetOmega()
-}
-
-func (s *Setting) NullModel() {
-	s.NoHieModel()
-	s.WithCue = false
-	s.MaxDevelop = 1
-	s.Alpha = 1.0
-	s.Basename = "Null"
-	s.SetOmega()
-}
-
-func (s *Setting) NullCueModel() {
-	s.NullModel()
-	s.WithCue = true
-	s.Basename = "NullCue"
-}
-
-func (s *Setting) NullDevModel() {
-	s.NullModel()
-	s.MaxDevelop = 200
-	s.Basename = "NullDev"
-}
-
-func (s *Setting) NullHieModel() {
-	s.WithCue = false
-	s.MaxDevelop = 1
-	s.Basename = "NullHie"
-}
-
-func (s *Setting) SetModel(model string) {
-	switch model {
-	case "Full":
-		s.FullModel()
-	case "NoHie":
-		s.NoHieModel()
-	case "Hie1":
-		s.Hie1Model()
-	case "Hie2":
-		s.Hie2Model()
-	case "NoCue":
-		s.NoCueModel()
-	case "NoDev":
-		s.NoDevModel()
-	case "Null":
-		s.NullModel()
-	case "NullCue":
-		s.NullCueModel()
-	case "NullHie":
-		s.NullHieModel()
-	case "NullDev":
-		s.NullDevModel()
-	case "Original":
-		s.OriginalModel()
+		s.Topology[0][0] = default_density * 2.0 / 3.0
+		s.Topology[1][1] = default_density * 2.0 / 3.0
+	case 1:
+		s.LenLayer[0] = slen * 3
+		//feedforward
+		s.DensityEM = default_density * 2.0 / 3.0
+		s.Topology[1][0] = default_density * 2.0 / 3.0
+		// feedback
+		s.Topology[0][0] = default_density / 3.0
+	case 0:
+		s.DensityEM = default_density * 7.0
 	default:
-		log.Println("SetModel: invalid model name. Must be one of Full, NoCue, NoHie, NoDev, Null, NullCue, NullHie, NullDev\n")
-		log.Fatal("Invalid model: " + model)
+		log.Printf("SetLayer: unknown number of layers: %d\n", n)
+		panic("SetLayer")
 	}
+}
 
-	s.SetOmega()
+func (s *Setting) SetDevelop(flag bool) {
+	if flag {
+		s.MaxDevelop = 200
+		s.Alpha = 1.0 / 3.0
+	} else {
+		s.MaxDevelop = 1
+		s.Alpha = 1.0
+	}
+}
+
+func (s *Setting) SetModel(basename string) {
+	m, ok := models[basename]
+	if ok {
+		s.Basename = basename
+		s.SetLayer(m.nLayers)
+		s.SetDevelop(m.develop)
+		s.WithCue = m.cue
+		s.SetOmega()
+	} else {
+		log.Fatal("Unknown model: " + basename)
+	}
 }
