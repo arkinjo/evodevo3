@@ -25,14 +25,14 @@ func GetSetting() Simulation {
 	resfileP := flag.String("restart", "", "saved restart population file")
 	settingP := flag.String("setting", "", "saved settings file")
 	mkenvsP := flag.String("make_envs", "", "Make brand new environments")
-	modelP := flag.String("model", "Full", "Model name")
+
 	trajDirP := flag.String("trajdir", "traj", "Directory for trajectory files")
 	eStartP := flag.Int("env_start", 0, "starting environment (0, 1, ...)")
 	eEndP := flag.Int("env_end", 20, "ending environment")
 	seedP := flag.Uint64("seed", 13, "random seed for environments")
 	ngenP := flag.Int("ngen", 200, "number of generations per epoch")
 	prodP := flag.Bool("production", false, "true if production run")
-
+	modelP := flag.String("model", "Full", "Model name")
 	flag.Parse()
 
 	var s *multicell.Setting
