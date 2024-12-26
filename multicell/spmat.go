@@ -103,7 +103,7 @@ func (sp SpMat) Mutate(density float64) {
 	}
 }
 
-func MateSpMats(mat0, mat1 SpMat) (SpMat, SpMat) {
+func (mat0 SpMat) MateWith(mat1 SpMat) (SpMat, SpMat) {
 	if mat0.Nrow != mat1.Nrow || mat0.Ncol != mat1.Ncol {
 		log.Fatal("MateSpMats: incompatible matrices")
 	}

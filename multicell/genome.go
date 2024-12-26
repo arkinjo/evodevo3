@@ -100,13 +100,13 @@ func (genome *Genome) Mutate(s *Setting) {
 func (g0 *Genome) MateWith(g1 Genome) (Genome, Genome) {
 	var E0, E1 [NumFaces]SpMat
 	for i, e0 := range g0.E {
-		E0[i], E1[i] = MateSpMats(e0, g1.E[i])
+		E0[i], E1[i] = e0.MateWith(g1.E[i])
 	}
 
 	M0 := NewSliceOfMaps[SpMat](len(g0.M))
 	M1 := NewSliceOfMaps[SpMat](len(g1.M))
 	g0.M.Do(func(l, k int, m0 SpMat) {
-		nmat0, nmat1 := MateSpMats(m0, g1.M[l][k])
+		nmat0, nmat1 := m0.MateWith(g1.M[l][k])
 		M0[l][k] = nmat0
 		M1[l][k] = nmat1
 	})
