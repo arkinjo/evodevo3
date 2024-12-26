@@ -18,7 +18,7 @@ func (sp SpMat) Do(f func(i, j int, v float64)) {
 	sp.M.Do(f)
 }
 
-func (sp0 *SpMat) Equal(sp1 SpMat) bool {
+func (sp0 SpMat) Equal(sp1 SpMat) bool {
 	if sp0.Nrow != sp1.Nrow || sp0.Ncol != sp1.Ncol {
 		return false
 	}
@@ -80,7 +80,7 @@ func (sp *SpMat) ToVec() Vec {
 }
 
 // random matrix
-func (sp *SpMat) Randomize(density float64) {
+func (sp SpMat) Randomize(density float64) {
 	dist := distuv.Poisson{Lambda: density * float64(sp.Nrow*sp.Ncol)}
 	n := int(dist.Rand())
 	for range n {

@@ -137,6 +137,22 @@ func TestGenome(t *testing.T) {
 
 }
 
+func TestGenomeClone(t *testing.T) {
+	s := multicell.GetDefaultSetting()
+	g0 := s.NewGenome()
+	g1 := g0.Clone()
+	if !g0.Equal(&g1) {
+		t.Errorf("Genome cloning failed.")
+	}
+	g1.M[0][0].Randomize(0.1)
+	if g0.M[0][0].Equal(g1.M[0][0]) {
+		t.Errorf("Genome randomization failed (1).")
+	}
+	if !g0.M[1][0].Equal(g1.M[1][0]) {
+		t.Errorf("Genome randomization failed (2).")
+	}
+}
+
 func TestActivation(t *testing.T) {
 	lcatan := multicell.LCatan(1.0)
 	v0 := lcatan(1.0)

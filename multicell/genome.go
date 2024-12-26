@@ -3,6 +3,7 @@ package multicell
 import (
 	"gonum.org/v1/gonum/stat/distuv"
 	"math/rand/v2"
+	"slices"
 )
 
 /*
@@ -38,18 +39,13 @@ func (s *Setting) NewGenome() Genome {
 		E[i].Randomize(s.DensityEM)
 	}
 
-	M := make([]map[int]SpMat, s.NumLayers)
-	for l := range s.NumLayers {
-		M[l] = make(map[int]SpMat)
-	}
+	M := NewSliceOfMaps[SpMat](s.NumLayers)
 	s.Topology.Do(func(l, k int, density float64) {
-		m := NewSpMat(s.LenLayer[l], s.LenLayer[k])
-		m.Randomize(density)
-		M[l][k] = m
+		M[l][k] = NewSpMat(s.LenLayer[l], s.LenLayer[k])
+		M[l][k].Randomize(density)
 	})
 
 	W := make(Vec, s.NumLayers)
-	//	copy(W, s.Omega)
 	W.SetAll(1.0)
 	return Genome{E: E, M: M, W: W}
 }
@@ -65,8 +61,7 @@ func (genome *Genome) Clone() Genome {
 		M[l][k] = mat.Clone()
 	})
 
-	W := make(Vec, len(genome.W))
-	copy(W, genome.W)
+	W := slices.Clone(genome.W)
 
 	return Genome{E: E, M: M, W: W}
 }
@@ -167,10 +162,7 @@ func (g0 *Genome) Equal(g1 *Genome) bool {
 		}
 	}
 
-	for l, w := range g0.W {
-		if w != g1.W[l] {
-			return false
-		}
-	}
+	return slices.Equal(g0.W, g1.W)
+
 	return true
 }
