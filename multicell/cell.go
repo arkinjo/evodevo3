@@ -105,24 +105,19 @@ func (c *Cell) OppositeFace(s *Setting, iface int) Vec {
 
 func (c *Cell) DevStep(s *Setting, g Genome, istep int) float64 {
 	v0 := make(Vec, s.LenFace)
-	v1 := make(Vec, s.LenLayer[0])
 	s0 := make(Vec, s.LenLayer[0])
 	for i, ei := range c.E {
 		v0.Diff(ei, c.Face(s, i))
-		g.E[i].MultVec(v0, v1)
-		s0.Acc(v1)
+		s0.MultSpMatVec(g.E[i], v0) // s0 is accumulated.
 	}
 
 	for l, tl := range s.Topology {
 		va := make(Vec, s.LenLayer[l])
-		vt := make(Vec, s.LenLayer[l])
 		if l == 0 {
 			va.Acc(s0)
 		}
 		for k := range tl {
-			mat := g.M[l][k]
-			mat.MultVec(c.S[k], vt)
-			va.Acc(vt)
+			va.MultSpMatVec(g.M[l][k], c.S[k]) // va is accumulated.
 		}
 		afunc := LCatan(g.W[l] * s.Omega[l])
 		if l == s.NumLayers-1 {

@@ -144,11 +144,11 @@ func TestGenomeClone(t *testing.T) {
 	if !g0.Equal(&g1) {
 		t.Errorf("Genome cloning failed.")
 	}
-	g1.M[0][0].Randomize(0.1)
-	if g0.M[0][0].Equal(g1.M[0][0]) {
+	g1.M[1][0].Randomize(0.1)
+	if g0.M[1][0].Equal(g1.M[1][0]) {
 		t.Errorf("Genome randomization failed (1).")
 	}
-	if !g0.M[1][0].Equal(g1.M[1][0]) {
+	if !g0.M[2][1].Equal(g1.M[2][1]) {
 		t.Errorf("Genome randomization failed (2).")
 	}
 }

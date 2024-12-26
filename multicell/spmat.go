@@ -51,17 +51,14 @@ func (sp *SpMat) Set(i, j int, v float64) {
 // copy a sparse matrix
 func (sp *SpMat) Clone() SpMat {
 	nsp := NewSpMat(sp.Nrow, sp.Ncol)
-	for i, mi := range sp.M {
-		for j, v := range mi {
-			nsp.M[i][j] = v
-		}
-	}
+	sp.Do(func(i, j int, v float64) {
+		nsp.M[i][j] = v
+	})
 	return nsp
 }
 
-// multiply a sparse matrix to a vector
-func (sp *SpMat) MultVec(vin, vout Vec) {
-	vout.SetAll(0.0)
+// multiply a sparse matrix to a vector. vout is NOT initialized!!
+func (vout Vec) MultSpMatVec(sp SpMat, vin Vec) {
 	sp.Do(func(i, j int, x float64) {
 		vout[i] += x * vin[j]
 	})
