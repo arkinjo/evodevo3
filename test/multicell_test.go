@@ -164,7 +164,7 @@ func TestGenomeClone(t *testing.T) {
 	s := multicell.GetDefaultSetting()
 	g0 := s.NewGenome()
 	g1 := g0.Clone()
-	if !g0.Equal(&g1) {
+	if !g0.Equal(g1) {
 		t.Errorf("Genome cloning failed.")
 	}
 	g1.M[1][0].Randomize(0.1)
@@ -289,7 +289,7 @@ func TestGenomeEqual(t *testing.T) {
 	pop1.Develop(s, selenv)
 	pop1.Sort()
 	for i, indiv := range pop0.Indivs {
-		if !indiv.Genome.Equal(&pop1.Indivs[i].Genome) {
+		if !indiv.Genome.Equal(pop1.Indivs[i].Genome) {
 			t.Errorf("Genomes are not equal")
 		}
 	}
@@ -323,7 +323,7 @@ func TestGenomeVecs(t *testing.T) {
 		del := dvec.Norm1()
 		if del > 0 {
 			t.Errorf("genome vecs %d differ by %f", i, del)
-			fmt.Printf("genome equality: %d %t\n", i, g0.Equal(&g1))
+			fmt.Printf("genome equality: %d %t\n", i, g0.Equal(g1))
 			for k, x := range v0 {
 				if x != v1[k] {
 					fmt.Printf("%d\t%d\t%f\t%f\n", i, k, x, v1[k])
