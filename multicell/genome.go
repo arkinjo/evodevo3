@@ -16,9 +16,9 @@ import (
 */
 
 type Genome struct {
-	E [NumFaces]SpMat // input to middle layers
-	M []map[int]SpMat // within middle layers
-	W Vec             // weight of activation function
+	E [NumFaces]SpMat    // input to middle layers
+	M SliceOfMaps[SpMat] // within middle layers
+	W Vec                // weight of activation function
 }
 
 // Expected variance of a random genome.
@@ -60,13 +60,10 @@ func (genome *Genome) Clone() Genome {
 	for i, mat := range genome.E {
 		E[i] = mat.Clone()
 	}
-	M := make([]map[int]SpMat, len(genome.M))
-	for l, ml := range genome.M {
-		M[l] = make(map[int]SpMat)
-		for k, mat := range ml {
-			M[l][k] = mat.Clone()
-		}
-	}
+	M := NewSliceOfMaps[SpMat](len(genome.M))
+	genome.M.Do(func(l, k int, mat SpMat) {
+		M[l][k] = mat.Clone()
+	})
 
 	W := make(Vec, len(genome.W))
 	copy(W, genome.W)
@@ -111,17 +108,14 @@ func (g0 *Genome) MateWith(g1 Genome) (Genome, Genome) {
 		E0[i], E1[i] = MateSpMats(e0, g1.E[i])
 	}
 
-	M0 := make([]map[int]SpMat, len(g0.M))
-	M1 := make([]map[int]SpMat, len(g1.M))
-	for l, ml := range g0.M {
-		M0[l] = make(map[int]SpMat)
-		M1[l] = make(map[int]SpMat)
-		for k, m0 := range ml {
-			nmat0, nmat1 := MateSpMats(m0, g1.M[l][k])
-			M0[l][k] = nmat0
-			M1[l][k] = nmat1
-		}
-	}
+	M0 := NewSliceOfMaps[SpMat](len(g0.M))
+	M1 := NewSliceOfMaps[SpMat](len(g1.M))
+	g0.M.Do(func(l, k int, m0 SpMat) {
+		nmat0, nmat1 := MateSpMats(m0, g1.M[l][k])
+		M0[l][k] = nmat0
+		M1[l][k] = nmat1
+	})
+
 	W0 := make(Vec, len(g0.W))
 	W1 := make(Vec, len(g0.W))
 

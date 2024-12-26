@@ -29,7 +29,7 @@ func (s *Setting) SetLayer(n int) {
 	slen := s.LenFace * NumFaces
 	s.LenLayer[s.NumLayers-1] = slen
 
-	s.Topology = NewTopology(s.NumLayers)
+	s.Topology = NewSliceOfMaps[float64](s.NumLayers)
 
 	switch n {
 	case 3:

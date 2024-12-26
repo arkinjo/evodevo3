@@ -27,22 +27,22 @@ const (
 	NumFaces // Numbef of faces per cell
 )
 
-type Topology_t []map[int]float64
+type SliceOfMaps[T any] []map[int]T
 
-func NewTopology(n int) Topology_t {
-	t := make([]map[int]float64, n)
-	for i := range n {
-		t[i] = make(map[int]float64)
-	}
-	return t
-}
-
-func (top Topology_t) Do(f func(l, k int, v float64)) {
-	for l, tl := range top {
-		for k, v := range tl {
-			f(l, k, v)
+func (sm SliceOfMaps[T]) Do(f func(i, j int, v T)) {
+	for i, mi := range sm {
+		for j, v := range mi {
+			f(i, j, v)
 		}
 	}
+}
+
+func NewSliceOfMaps[T any](n int) SliceOfMaps[T] {
+	t := make([]map[int]T, n)
+	for i := range n {
+		t[i] = make(map[int]T)
+	}
+	return t
 }
 
 // various set-ups
@@ -62,14 +62,14 @@ type Setting struct {
 	Denv          float64 // size of an environmental change
 	SelStrength   float64 // selection strength
 
-	WithCue    bool       // with cue or not
-	MaxDevelop int        // maximum number of developmental steps
-	Alpha      float64    // weight for exponential moving average
-	NumLayers  int        // number of middle layers
-	LenLayer   []int      // Length of each state vector
-	DensityEM  float64    // input -> middle layer genome density
-	Topology   Topology_t // densities of genome matrices
-	Omega      Vec        // initial scaling factors of activation functions
+	WithCue    bool                 // with cue or not
+	MaxDevelop int                  // maximum number of developmental steps
+	Alpha      float64              // weight for exponential moving average
+	NumLayers  int                  // number of middle layers
+	LenLayer   []int                // Length of each state vector
+	DensityEM  float64              // input -> middle layer genome density
+	Topology   SliceOfMaps[float64] // densities of genome matrices
+	Omega      Vec                  // initial scaling factors of activation functions
 }
 
 // LeCun-inspired arctan function

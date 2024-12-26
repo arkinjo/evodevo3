@@ -11,7 +11,7 @@ import (
 type SpMat struct {
 	Nrow int
 	Ncol int
-	M    Topology_t
+	M    SliceOfMaps[float64]
 }
 
 func (sp SpMat) Do(f func(i, j int, v float64)) {
@@ -32,7 +32,7 @@ func (sp0 *SpMat) Equal(sp1 SpMat) bool {
 
 // Create a new sparse matrix
 func NewSpMat(nrow, ncol int) SpMat {
-	mat := NewTopology(nrow)
+	mat := NewSliceOfMaps[float64](nrow)
 	return SpMat{
 		Nrow: nrow,
 		Ncol: ncol,
