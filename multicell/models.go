@@ -82,6 +82,22 @@ func (s *Setting) SetDevelop(flag bool) {
 	}
 }
 
+func (s *Setting) SetOmega() {
+	s.Omega = make(Vec, s.NumLayers)
+
+	s.Omega[0] = s.DensityEM * float64(s.LenFace*NumFaces)
+
+	s.Topology.Do(func(l, k int, density float64) {
+		s.Omega[l] += density * float64(s.LenLayer[k])
+	})
+
+	for l, omega := range s.Omega {
+		if omega > 0 {
+			s.Omega[l] = 1.0 / math.Sqrt(omega)
+		}
+	}
+}
+
 func (s *Setting) SetModel(basename string) {
 	m, ok := models[basename]
 	if ok {

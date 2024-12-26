@@ -11,10 +11,10 @@ import (
 const (
 	Sqrt3              = 1.7320508075688772
 	default_num_layers = 4
-	default_len_state  = 200 // multiple of 4.
+	default_len_face   = 50
+	default_len_state  = 200 // NumFaces * default_len_face
 	default_num_cell_x = 1
 	default_num_cell_y = 1
-	default_len_face   = 50
 	default_density    = 0.02 // genome matrix density
 )
 
@@ -27,6 +27,7 @@ const (
 	NumFaces // Numbef of faces per cell
 )
 
+// sparse matrix of anything.
 type SliceOfMaps[T any] []map[int]T
 
 func (sm SliceOfMaps[T]) Do(f func(i, j int, v T)) {
@@ -87,7 +88,7 @@ func GetDefaultSetting() *Setting {
 		ConvDevelop:   1e-5,
 		Denv:          0.5,
 		SelStrength:   20.0,
-		// undefined parameters are:
+		// undefined parameters to be determined in SetModel are:
 		//WithCue
 		//MaxDevelop
 		//Alpha
@@ -100,22 +101,6 @@ func GetDefaultSetting() *Setting {
 
 	s.SetModel("Full")
 	return &s
-}
-
-func (s *Setting) SetOmega() {
-	s.Omega = make(Vec, s.NumLayers)
-
-	s.Omega[0] = s.DensityEM * float64(s.LenFace*NumFaces)
-
-	s.Topology.Do(func(l, k int, density float64) {
-		s.Omega[l] += density * float64(s.LenLayer[k])
-	})
-
-	for l, omega := range s.Omega {
-		if omega > 0 {
-			s.Omega[l] = 1.0 / math.Sqrt(omega)
-		}
-	}
 }
 
 func JustFail(err error) {
