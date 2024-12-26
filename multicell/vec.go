@@ -2,6 +2,8 @@ package multicell
 
 import (
 	"math"
+	"math/rand/v2"
+	"slices"
 )
 
 // vector
@@ -99,4 +101,18 @@ func (v Vec) Norm2() float64 {
 		d += x * x
 	}
 	return math.Sqrt(d)
+}
+
+func (v0 Vec) MateWith(v1 Vec) (Vec, Vec) {
+	nv0 := slices.Clone(v0)
+	nv1 := slices.Clone(v1)
+
+	for i, v := range nv0 {
+		if rand.IntN(2) == 1 {
+			nv0[i] = nv1[i]
+			nv1[i] = v
+		}
+	}
+
+	return nv0, nv1
 }

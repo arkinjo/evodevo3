@@ -106,23 +106,11 @@ func (g0 *Genome) MateWith(g1 Genome) (Genome, Genome) {
 	M0 := NewSliceOfMaps[SpMat](len(g0.M))
 	M1 := NewSliceOfMaps[SpMat](len(g1.M))
 	g0.M.Do(func(l, k int, m0 SpMat) {
-		nmat0, nmat1 := m0.MateWith(g1.M[l][k])
-		M0[l][k] = nmat0
-		M1[l][k] = nmat1
+		M0[l][k], M1[l][k] = m0.MateWith(g1.M[l][k])
 	})
 
-	W0 := make(Vec, len(g0.W))
-	W1 := make(Vec, len(g0.W))
+	W0, W1 := g0.W.MateWith(g1.W)
 
-	for l, w := range g0.W {
-		if rand.IntN(2) == 1 {
-			W0[l] = w
-			W1[l] = g1.W[l]
-		} else {
-			W1[l] = w
-			W0[l] = g1.W[l]
-		}
-	}
 	kid0 := Genome{E: E0, M: M0, W: W0}
 	kid1 := Genome{E: E1, M: M1, W: W1}
 	return kid0, kid1
@@ -163,6 +151,4 @@ func (g0 *Genome) Equal(g1 *Genome) bool {
 	}
 
 	return slices.Equal(g0.W, g1.W)
-
-	return true
 }
