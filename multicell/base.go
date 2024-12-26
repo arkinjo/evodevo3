@@ -7,16 +7,6 @@ import (
 	"os"
 )
 
-const (
-	Sqrt3              = 1.7320508075688772
-	default_num_layers = 4
-	default_len_face   = 50
-	default_len_state  = 200 // NumFaces * default_len_face
-	default_num_cell_x = 1
-	default_num_cell_y = 1
-	default_density    = 0.02 // genome matrix density
-)
-
 // faces
 const (
 	Left = iota
@@ -24,6 +14,15 @@ const (
 	Right
 	Bottom
 	NumFaces // Numbef of faces per cell
+)
+
+const (
+	Sqrt3              = 1.7320508075688772
+	default_num_layers = 4
+	default_len_face   = 50
+	default_num_cell_x = 1
+	default_num_cell_y = 1
+	default_density    = 0.02 // genome matrix density
 )
 
 // sparse matrix of anything.
