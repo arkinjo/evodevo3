@@ -122,7 +122,7 @@ func (g *Genome) ToVec(s *Setting) Vec {
 	return vec
 }
 
-func (g0 *Genome) Equal(g1 *Genome) bool {
+func (g0 Genome) Equal(g1 Genome) bool {
 	for iface, e := range g0.E {
 		if !e.Equal(g1.E[iface]) {
 			return false
