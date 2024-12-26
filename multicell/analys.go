@@ -169,7 +169,7 @@ func (pop *Population) Project(s *Setting, p0, paxis, g0, gaxis, c0, caxis Vec) 
 	defer fout.Close()
 
 	// for alignment calculation
-	punit := paxis.Copy()
+	punit := paxis.Clone()
 	punit.Normalize()
 
 	// Geno-Pheno Projection Plot

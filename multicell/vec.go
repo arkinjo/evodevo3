@@ -19,7 +19,7 @@ func (vec Vec) SetAll(v float64) {
 	}
 }
 
-func (vec Vec) Copy() Vec {
+func (vec Vec) Clone() Vec {
 	vout := make(Vec, len(vec))
 	copy(vout, vec)
 	return vout

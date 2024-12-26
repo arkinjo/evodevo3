@@ -3,38 +3,27 @@ package multicell
 import (
 	"gonum.org/v1/gonum/stat/distuv"
 	"log"
+	"maps"
 	"math/rand/v2"
 )
-
-// index for sparse matrices etc.
-type IntPair struct {
-	I, J int
-}
 
 // sparse matrix
 type SpMat struct {
 	Nrow int
 	Ncol int
-	M    map[IntPair]float64
+	M    Topology_t
 }
 
 func (sp SpMat) Do(f func(i, j int, v float64)) {
-	for ij, v := range sp.M {
-		f(ij.I, ij.J, v)
-	}
+	sp.M.Do(f)
 }
 
 func (sp0 *SpMat) Equal(sp1 SpMat) bool {
 	if sp0.Nrow != sp1.Nrow || sp0.Ncol != sp1.Ncol {
 		return false
 	}
-	for ij, v := range sp0.M {
-		if v != sp1.M[ij] {
-			return false
-		}
-	}
-	for ij, v := range sp1.M {
-		if v != sp1.M[ij] {
+	for i, mi := range sp0.M {
+		if !maps.Equal(mi, sp1.M[i]) {
 			return false
 		}
 	}
@@ -43,7 +32,7 @@ func (sp0 *SpMat) Equal(sp1 SpMat) bool {
 
 // Create a new sparse matrix
 func NewSpMat(nrow, ncol int) SpMat {
-	mat := make(map[IntPair]float64)
+	mat := NewTopology(nrow)
 	return SpMat{
 		Nrow: nrow,
 		Ncol: ncol,
@@ -52,18 +41,20 @@ func NewSpMat(nrow, ncol int) SpMat {
 }
 
 func (sp *SpMat) At(i, j int) float64 {
-	return sp.M[IntPair{i, j}]
+	return sp.M[i][j]
 }
 
 func (sp *SpMat) Set(i, j int, v float64) {
-	sp.M[IntPair{i, j}] = v
+	sp.M[i][j] = v
 }
 
 // copy a sparse matrix
-func (sp *SpMat) Copy() SpMat {
+func (sp *SpMat) Clone() SpMat {
 	nsp := NewSpMat(sp.Nrow, sp.Ncol)
-	for ij, v := range sp.M {
-		nsp.M[ij] = v
+	for i, mi := range sp.M {
+		for j, v := range mi {
+			nsp.M[i][j] = v
+		}
 	}
 	return nsp
 }
@@ -81,7 +72,7 @@ func (sp *SpMat) ToVec() Vec {
 
 	for i := range sp.Nrow {
 		for j := range sp.Ncol {
-			vec = append(vec, sp.M[IntPair{i, j}])
+			vec = append(vec, sp.M[i][j])
 		}
 	}
 
@@ -96,21 +87,22 @@ func (sp *SpMat) Randomize(density float64) {
 		i := rand.IntN(sp.Nrow)
 		j := rand.IntN(sp.Ncol)
 		if rand.IntN(2) == 1 {
-			sp.M[IntPair{i, j}] = 1
+			sp.M[i][j] = 1
 		} else {
-			sp.M[IntPair{i, j}] = -1
+			sp.M[i][j] = -1
 		}
 	}
 }
 
 func (sp SpMat) Mutate(density float64) {
-	ij := IntPair{I: rand.IntN(sp.Nrow), J: rand.IntN(sp.Ncol)}
+	i := rand.IntN(sp.Nrow)
+	j := rand.IntN(sp.Ncol)
 	if rand.Float64() >= density {
-		delete(sp.M, ij)
+		delete(sp.M[i], j)
 	} else if rand.IntN(2) == 1 {
-		sp.M[ij] = 1.0
+		sp.M[i][j] = 1.0
 	} else {
-		sp.M[ij] = -1.0
+		sp.M[i][j] = -1.0
 	}
 }
 
@@ -121,30 +113,14 @@ func MateSpMats(mat0, mat1 SpMat) (SpMat, SpMat) {
 
 	nmat0 := NewSpMat(mat0.Nrow, mat0.Ncol)
 	nmat1 := NewSpMat(mat0.Nrow, mat0.Ncol)
-	ind0 := make([][]IntPair, mat0.Nrow)
-	ind1 := make([][]IntPair, mat1.Nrow)
 
-	for ij := range mat0.M {
-		ind0[ij.I] = append(ind0[ij.I], ij)
-	}
-	for ij := range mat1.M {
-		ind1[ij.I] = append(ind1[ij.I], ij)
-	}
 	for i := range mat0.Nrow {
 		if rand.IntN(2) == 1 {
-			for _, ij := range ind0[i] {
-				nmat0.M[ij] = mat0.M[ij]
-			}
-			for _, ij := range ind1[i] {
-				nmat1.M[ij] = mat1.M[ij]
-			}
+			nmat0.M[i] = maps.Clone(mat0.M[i])
+			nmat1.M[i] = maps.Clone(mat1.M[i])
 		} else {
-			for _, ij := range ind0[i] {
-				nmat1.M[ij] = mat0.M[ij]
-			}
-			for _, ij := range ind1[i] {
-				nmat0.M[ij] = mat1.M[ij]
-			}
+			nmat1.M[i] = maps.Clone(mat0.M[i])
+			nmat0.M[i] = maps.Clone(mat1.M[i])
 		}
 	}
 	return nmat0, nmat1

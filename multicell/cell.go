@@ -120,7 +120,7 @@ func (c *Cell) DevStep(s *Setting, g Genome, istep int) float64 {
 			va.Acc(s0)
 		}
 		for k := range tl {
-			mat := g.M[IntPair{l, k}]
+			mat := g.M[l][k]
 			mat.MultVec(c.S[k], vt)
 			va.Acc(vt)
 		}

@@ -55,7 +55,7 @@ func (s *Setting) NewPopulation(env Environment) Population {
 	genome := s.NewGenome()
 	for id := range s.MaxPopulation {
 		indiv := s.NewIndividual(id, env)
-		indiv.Genome = genome.Copy()
+		indiv.Genome = genome.Clone()
 		indiv.Genome.Mutate(s)
 		indivs = append(indivs, indiv)
 	}

@@ -9,16 +9,16 @@ import (
 		Genome is an array of maps of sparse matrices.
 	        g Genome
                 g.E[iface] is the matrix connecting cell.E[iface] and cell.S[0]
-	        g.M[IntPair{l,k}] is the matrix connecting cell.S[k] to cell.S[l].
+	        g.M[l][k] is the matrix connecting from cell.S[k] to cell.S[l].
 	        Feedforward if k < l.
-	        Feedbackward if k > l.
+	        Feedback if k > l.
 	        Self-loop if l == k.
 */
 
 type Genome struct {
-	E [NumFaces]SpMat   // input to middle layers
-	M map[IntPair]SpMat // within middle layers
-	W Vec               // weight of activation function
+	E [NumFaces]SpMat // input to middle layers
+	M []map[int]SpMat // within middle layers
+	W Vec             // weight of activation function
 }
 
 // Expected variance of a random genome.
@@ -38,11 +38,14 @@ func (s *Setting) NewGenome() Genome {
 		E[i].Randomize(s.DensityEM)
 	}
 
-	M := make(map[IntPair]SpMat)
+	M := make([]map[int]SpMat, s.NumLayers)
+	for l := range s.NumLayers {
+		M[l] = make(map[int]SpMat)
+	}
 	s.Topology.Do(func(l, k int, density float64) {
 		m := NewSpMat(s.LenLayer[l], s.LenLayer[k])
 		m.Randomize(density)
-		M[IntPair{l, k}] = m
+		M[l][k] = m
 	})
 
 	W := make(Vec, s.NumLayers)
@@ -51,15 +54,18 @@ func (s *Setting) NewGenome() Genome {
 	return Genome{E: E, M: M, W: W}
 }
 
-func (genome *Genome) Copy() Genome {
+func (genome *Genome) Clone() Genome {
 	var E [NumFaces]SpMat
 
 	for i, mat := range genome.E {
-		E[i] = mat.Copy()
+		E[i] = mat.Clone()
 	}
-	M := make(map[IntPair]SpMat)
-	for lk, mat := range genome.M {
-		M[lk] = mat.Copy()
+	M := make([]map[int]SpMat, len(genome.M))
+	for l, ml := range genome.M {
+		M[l] = make(map[int]SpMat)
+		for k, mat := range ml {
+			M[l][k] = mat.Clone()
+		}
 	}
 
 	W := make(Vec, len(genome.W))
@@ -84,7 +90,7 @@ func (genome *Genome) Mutate(s *Setting) {
 		dist := distuv.Poisson{Lambda: lambda}
 		nmut := int(dist.Rand())
 		for range nmut {
-			genome.M[IntPair{l, k}].Mutate(density)
+			genome.M[l][k].Mutate(density)
 		}
 	})
 
@@ -105,12 +111,16 @@ func (g0 *Genome) MateWith(g1 Genome) (Genome, Genome) {
 		E0[i], E1[i] = MateSpMats(e0, g1.E[i])
 	}
 
-	M0 := make(map[IntPair]SpMat)
-	M1 := make(map[IntPair]SpMat)
-	for lk, m0 := range g0.M {
-		nmat0, nmat1 := MateSpMats(m0, g1.M[lk])
-		M0[lk] = nmat0
-		M1[lk] = nmat1
+	M0 := make([]map[int]SpMat, len(g0.M))
+	M1 := make([]map[int]SpMat, len(g1.M))
+	for l, ml := range g0.M {
+		M0[l] = make(map[int]SpMat)
+		M1[l] = make(map[int]SpMat)
+		for k, m0 := range ml {
+			nmat0, nmat1 := MateSpMats(m0, g1.M[l][k])
+			M0[l][k] = nmat0
+			M1[l][k] = nmat1
+		}
 	}
 	W0 := make(Vec, len(g0.W))
 	W1 := make(Vec, len(g0.W))
@@ -137,7 +147,7 @@ func (g *Genome) ToVec(s *Setting) Vec {
 	// Go's map is UNORDERED (random order for every "range").
 	for l := range s.NumLayers {
 		for k := range s.NumLayers {
-			if mat, ok := g.M[IntPair{l, k}]; ok {
+			if mat, ok := g.M[l][k]; ok {
 				vec = append(vec, mat.ToVec()...)
 			}
 		}
@@ -154,9 +164,12 @@ func (g0 *Genome) Equal(g1 *Genome) bool {
 			return false
 		}
 	}
-	for lk, m := range g0.M {
-		if !m.Equal(g1.M[lk]) {
-			return false
+
+	for l, ml := range g0.M {
+		for k, m := range ml {
+			if !m.Equal(g1.M[l][k]) {
+				return false
+			}
 		}
 	}
 

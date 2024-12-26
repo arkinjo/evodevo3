@@ -14,7 +14,7 @@ import (
 )
 
 var ENVSFILE = "envs.json"
-var MODELS = []string{"Full", "NoCue", "NoHie", "NoDev", "Null",
+var MODELS = []string{"Full", "NoCue", "Hie0", "Hie1", "Hie2", "NoDev", "Null",
 	"NullCue", "NullHie", "NullDev"}
 
 func cleanup() {
@@ -43,9 +43,9 @@ func TestMain(m *testing.M) {
 func TestSpMatMutate(t *testing.T) {
 	m0 := multicell.NewSpMat(10, 10)
 	m0.Randomize(0.1)
-	m1 := m0.Copy()
+	m1 := m0.Clone()
 	if !m0.Equal(m1) {
-		t.Errorf("Copy failed.")
+		t.Errorf("Clone failed.")
 	}
 
 	for range 100 {
@@ -99,9 +99,9 @@ func TestCell(t *testing.T) {
 		}
 	}
 	lp := s.LenLayer[s.NumLayers-1]
-	if len(cell.P) != lp {
-		t.Errorf("len(cell.P)=%d; want %d",
-			len(cell.P), lp)
+	if len(cell.S[s.NumLayers-1]) != lp {
+		t.Errorf("len(cell.S[%d])=%d; want %d",
+			s.NumLayers-1, len(cell.S[s.NumLayers-1]), lp)
 	}
 }
 
@@ -126,9 +126,9 @@ func TestGenome(t *testing.T) {
 		t.Errorf("len(g.E)=%d; want %d", len(g.E), multicell.NumFaces)
 	}
 	maxL := 0
-	for lk := range g.M {
-		if maxL < lk.I {
-			maxL = lk.I
+	for l := range g.M {
+		if maxL < l {
+			maxL = l
 		}
 	}
 	if maxL != s.NumLayers-1 {
@@ -177,6 +177,28 @@ func TestModels(t *testing.T) {
 
 	}
 
+}
+
+func TestPopulationDump(t *testing.T) {
+	s := multicell.GetDefaultSetting()
+	s.Outdir = "traj"
+	s.MaxGeneration = 10
+	envs := s.SaveEnvs(ENVSFILE, 50)
+	s.SetModel("Full")
+	pop := s.NewPopulation(envs[0])
+	pop.Evolve(s, envs[0])
+	pop.Dump(s)
+}
+
+func TestPopulationDumpJSON(t *testing.T) {
+	s := multicell.GetDefaultSetting()
+	s.Outdir = "traj"
+	s.MaxGeneration = 10
+	envs := s.SaveEnvs(ENVSFILE, 50)
+	s.SetModel("Full")
+	pop := s.NewPopulation(envs[0])
+	pop.Evolve(s, envs[0])
+	pop.DumpJSON(s)
 }
 
 func TestProjection(t *testing.T) {
