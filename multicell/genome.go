@@ -2,7 +2,6 @@ package multicell
 
 import (
 	"gonum.org/v1/gonum/stat/distuv"
-	"math/rand/v2"
 	"slices"
 )
 
@@ -72,29 +71,17 @@ func (genome *Genome) Mutate(s *Setting) {
 	for i := range NumFaces {
 		dist.Lambda = s.MutRate * float64(s.LenLayer[0]*s.LenFace)
 		nmut := int(dist.Rand())
-		for n := 0; n < nmut; n++ {
-			genome.E[i].Mutate(s.DensityEM)
-		}
+		genome.E[i].Mutate(nmut, s.DensityEM)
 	}
 
 	s.Topology.Do(func(l, k int, density float64) {
 		lambda := s.MutRate * float64(s.LenLayer[l]*s.LenLayer[k])
 		dist := distuv.Poisson{Lambda: lambda}
 		nmut := int(dist.Rand())
-		for range nmut {
-			genome.M[l][k].Mutate(density)
-		}
+		genome.M[l][k].Mutate(nmut, density)
 	})
 
-	for l := range genome.W {
-		if rand.Float64() < s.MutRate {
-			if rand.IntN(2) == 1 {
-				genome.W[l] *= 1.1
-			} else {
-				genome.W[l] /= 1.1
-			}
-		}
-	}
+	genome.W.Mutate(s.MutRate, s.WScale)
 }
 
 func (g0 *Genome) MateWith(g1 Genome) (Genome, Genome) {

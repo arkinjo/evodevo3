@@ -116,3 +116,16 @@ func (v0 Vec) MateWith(v1 Vec) (Vec, Vec) {
 
 	return nv0, nv1
 }
+
+func (vec Vec) Mutate(rate, scale float64) {
+	for i := range vec {
+		if rand.Float64() >= rate {
+			continue
+		}
+		if rand.IntN(2) == 1 {
+			vec[i] *= scale
+		} else {
+			vec[i] /= scale
+		}
+	}
+}

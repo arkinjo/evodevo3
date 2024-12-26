@@ -23,6 +23,7 @@ const (
 	default_num_cell_x = 1
 	default_num_cell_y = 1
 	default_density    = 0.02 // genome matrix density
+	default_W_scale    = 1.1
 )
 
 // sparse matrix of anything.
@@ -60,6 +61,7 @@ type Setting struct {
 	ConvDevelop   float64 // convergence limit
 	Denv          float64 // size of an environmental change
 	SelStrength   float64 // selection strength
+	WScale        float64 // scaling factor for genome.W mutation
 
 	WithCue    bool                 // with cue or not
 	MaxDevelop int                  // maximum number of developmental steps
@@ -86,6 +88,8 @@ func GetDefaultSetting() *Setting {
 		ConvDevelop:   1e-5,
 		Denv:          0.5,
 		SelStrength:   20.0,
+		WScale:        default_W_scale,
+
 		// parameters to be determined in SetModel are:
 		//WithCue
 		//MaxDevelop

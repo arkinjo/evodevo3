@@ -91,15 +91,17 @@ func (sp SpMat) Randomize(density float64) {
 	}
 }
 
-func (sp SpMat) Mutate(density float64) {
-	i := rand.IntN(sp.Nrow)
-	j := rand.IntN(sp.Ncol)
-	if rand.Float64() >= density {
-		delete(sp.M[i], j)
-	} else if rand.IntN(2) == 1 {
-		sp.M[i][j] = 1.0
-	} else {
-		sp.M[i][j] = -1.0
+func (sp SpMat) Mutate(nmut int, density float64) {
+	for range nmut {
+		i := rand.IntN(sp.Nrow)
+		j := rand.IntN(sp.Ncol)
+		if rand.Float64() >= density {
+			delete(sp.M[i], j)
+		} else if rand.IntN(2) == 1 {
+			sp.M[i][j] = 1.0
+		} else {
+			sp.M[i][j] = -1.0
+		}
 	}
 }
 

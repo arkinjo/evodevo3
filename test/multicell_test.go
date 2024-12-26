@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	//	"reflect"
+	"slices"
 	"testing"
 
 	"github.com/arkinjo/evodevo3/multicell"
@@ -48,9 +49,8 @@ func TestSpMatMutate(t *testing.T) {
 		t.Errorf("Clone failed.")
 	}
 
-	for range 100 {
-		m0.Mutate(0.1)
-	}
+	m0.Mutate(100, 0.1)
+
 	if m0.Equal(m1) {
 		t.Errorf("Mutation failed.")
 	}
@@ -135,6 +135,29 @@ func TestGenome(t *testing.T) {
 		t.Errorf("maxL=%d; want %d", maxL, s.NumLayers-1)
 	}
 
+}
+
+func TestVecMutate(t *testing.T) {
+	vec0 := multicell.NewVec(100, 1.0)
+	vec1 := vec0.Clone()
+	if !slices.Equal(vec0, vec1) {
+		t.Errorf("Vec.Clone() failed.")
+	}
+	vec1.Mutate(0.1, 2.5)
+	if slices.Equal(vec0, vec1) {
+		t.Errorf("Vec.Mutate(0.1,2.5) failed.")
+	}
+
+}
+
+func TestVecMateWit(t *testing.T) {
+	vec0 := multicell.NewVec(100, 1.0)
+	vec1 := vec0.Clone()
+	vec1.Mutate(0.1, 2.5)
+	nv0, nv1 := vec0.MateWith(vec1)
+	if slices.Equal(nv0, vec0) || slices.Equal(nv1, vec1) {
+		t.Errorf("Vec.MateWith() failed.")
+	}
 }
 
 func TestGenomeClone(t *testing.T) {
