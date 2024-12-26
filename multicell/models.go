@@ -2,6 +2,7 @@ package multicell
 
 import (
 	"log"
+	"math"
 )
 
 type model_t struct {

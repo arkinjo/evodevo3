@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"math"
 	"os"
 )
 
@@ -88,7 +87,7 @@ func GetDefaultSetting() *Setting {
 		ConvDevelop:   1e-5,
 		Denv:          0.5,
 		SelStrength:   20.0,
-		// undefined parameters to be determined in SetModel are:
+		// parameters to be determined in SetModel are:
 		//WithCue
 		//MaxDevelop
 		//Alpha

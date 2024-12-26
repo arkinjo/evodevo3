@@ -116,7 +116,7 @@ func (indiv *Individual) Initialize(s *Setting, env Environment) {
 	s.SetCellEnv(indiv.Cells, env)
 }
 
-func (indiv *Individual) SetFitness(s *Setting, selenv Vec) {
+func (indiv *Individual) SetFitness(s *Setting, selenv Vec, dev float64) {
 	selphen := indiv.SelectedPhenotype(s)
 	dv := make(Vec, len(selenv))
 	mis := 0.0
@@ -127,8 +127,13 @@ func (indiv *Individual) SetFitness(s *Setting, selenv Vec) {
 		fit += DotVecs(p, selenv)
 	}
 	indiv.Mismatch = mis / float64(len(selenv)*len(selphen))
-	fit /= float64(len(selenv) * len(selphen))
-	indiv.Fitness = math.Exp(s.SelStrength * (fit - 1))
+
+	if dev >= s.ConvDevelop && s.MaxDevelop > 1 {
+		indiv.Fitness = 0.0
+	} else {
+		fit /= float64(len(selenv) * len(selphen))
+		indiv.Fitness = math.Exp(s.SelStrength * (fit - 1))
+	}
 }
 
 func (indiv *Individual) Develop(s *Setting, selenv Vec) Individual {
@@ -144,12 +149,7 @@ func (indiv *Individual) Develop(s *Setting, selenv Vec) Individual {
 		}
 	}
 
-	indiv.SetFitness(s, selenv)
-
-	if dev >= s.ConvDevelop && s.MaxDevelop > 1 {
-		indiv.Fitness = 0.0
-	}
-
+	indiv.SetFitness(s, selenv, dev)
 	return *indiv
 }
 
