@@ -46,7 +46,7 @@ func (env Environment) Right(s *Setting) Vec {
 }
 
 func (env Environment) Bottom(s *Setting) Vec {
-	return env[s.LenFace*3:]
+	return env[s.LenFace*3 : s.LenFace*4]
 }
 
 func (env Environment) Face(s *Setting, iface int) Vec {
