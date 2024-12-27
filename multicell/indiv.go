@@ -22,7 +22,13 @@ func (indiv *Individual) NumCells() int {
 }
 
 func (s *Setting) SetCellEnv(cells []Cell, env Environment) {
-	nenv := env.AddNoise(s) // noisy environment.
+	var nenv Vec
+	if s.WithCue {
+		nenv = env.AddNoise(s) // noisy environment.
+	} else {
+		ones := NewVec(len(env), 1.0)
+		nenv = ones.AddNoise(s)
+	}
 	for i, c := range cells {
 		for iface, iop := range c.Facing {
 			if iop < 0 {
