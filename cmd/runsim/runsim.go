@@ -39,8 +39,7 @@ func GetSetting() Simulation {
 	if *settingP != "" {
 		s = multicell.LoadSetting(*settingP)
 	} else {
-		s = multicell.GetDefaultSetting()
-		s.SetModel(*modelP)
+		s = multicell.GetDefaultSetting(*modelP)
 	}
 	s.Seed = *seedP
 	s.MaxPopulation = *maxpopP

@@ -57,9 +57,8 @@ func TestSpMatMutate(t *testing.T) {
 }
 
 func TestSetting(t *testing.T) {
-	s := multicell.GetDefaultSetting()
 	for _, model := range MODELS {
-		s.SetModel(model)
+		s := multicell.GetDefaultSetting(model)
 		got := len(s.Topology)
 		if got != s.NumLayers {
 			t.Errorf("got len(Topology) = %d; want %d", got, s.NumLayers)
@@ -68,13 +67,13 @@ func TestSetting(t *testing.T) {
 }
 
 func TestSettingDump(t *testing.T) {
-	s := multicell.GetDefaultSetting()
+	s := multicell.GetDefaultSetting("Full")
 	s.Outdir = "traj"
 	s.Dump()
 }
 
 func TestEnvironment(t *testing.T) {
-	s := multicell.GetDefaultSetting()
+	s := multicell.GetDefaultSetting("Full")
 	envs := s.SaveEnvs(ENVSFILE, 50)
 	if len(envs) != 50 {
 		t.Errorf("len(envs)= %d; want 50", len(envs))
@@ -87,7 +86,7 @@ func TestEnvironment(t *testing.T) {
 }
 
 func TestCell(t *testing.T) {
-	s := multicell.GetDefaultSetting()
+	s := multicell.GetDefaultSetting("Full")
 	cell := s.NewCell(0)
 	if len(cell.E) != multicell.NumFaces {
 		t.Errorf("len(cell.E)= %d; want %d", len(cell.E), multicell.NumFaces)
@@ -106,7 +105,7 @@ func TestCell(t *testing.T) {
 }
 
 func TestIndividual(t *testing.T) {
-	s := multicell.GetDefaultSetting()
+	s := multicell.GetDefaultSetting("Full")
 	envs := s.SaveEnvs(ENVSFILE, 50)
 	indiv := s.NewIndividual(113, envs[0])
 	if indiv.Id != 113 {
@@ -120,7 +119,7 @@ func TestIndividual(t *testing.T) {
 }
 
 func TestGenome(t *testing.T) {
-	s := multicell.GetDefaultSetting()
+	s := multicell.GetDefaultSetting("Full")
 	g := s.NewGenome()
 	if len(g.E) != multicell.NumFaces {
 		t.Errorf("len(g.E)=%d; want %d", len(g.E), multicell.NumFaces)
@@ -161,7 +160,7 @@ func TestVecMateWit(t *testing.T) {
 }
 
 func TestGenomeClone(t *testing.T) {
-	s := multicell.GetDefaultSetting()
+	s := multicell.GetDefaultSetting("Full")
 	g0 := s.NewGenome()
 	g1 := g0.Clone()
 	if !g0.Equal(g1) {
@@ -191,7 +190,7 @@ func TestActivation(t *testing.T) {
 }
 
 func TestPopulation(t *testing.T) {
-	s := multicell.GetDefaultSetting()
+	s := multicell.GetDefaultSetting("Full")
 	s.Outdir = "traj"
 	s.SetOmega()
 
@@ -203,7 +202,7 @@ func TestPopulation(t *testing.T) {
 }
 
 func TestModels(t *testing.T) {
-	s := multicell.GetDefaultSetting()
+	s := multicell.GetDefaultSetting("Full")
 	s.Outdir = "traj"
 	s.MaxGeneration = 10
 	envs := s.SaveEnvs(ENVSFILE, 50)
@@ -219,30 +218,27 @@ func TestModels(t *testing.T) {
 }
 
 func TestPopulationDump(t *testing.T) {
-	s := multicell.GetDefaultSetting()
+	s := multicell.GetDefaultSetting("Full")
 	s.Outdir = "traj"
 	s.MaxGeneration = 10
 	envs := s.SaveEnvs(ENVSFILE, 50)
-	s.SetModel("Full")
 	pop := s.NewPopulation(envs[0])
 	pop.Evolve(s, envs[0])
 	pop.Dump(s)
 }
 
 func TestPopulationDumpJSON(t *testing.T) {
-	s := multicell.GetDefaultSetting()
+	s := multicell.GetDefaultSetting("Full")
 	s.Outdir = "traj"
 	s.MaxGeneration = 10
 	envs := s.SaveEnvs(ENVSFILE, 50)
-	s.SetModel("Full")
 	pop := s.NewPopulation(envs[0])
 	pop.Evolve(s, envs[0])
 	pop.DumpJSON(s)
 }
 
 func TestProjection(t *testing.T) {
-	s := multicell.GetDefaultSetting()
-	s.SetModel("Full")
+	s := multicell.GetDefaultSetting("Full")
 	s.Outdir = "traj"
 	s.MaxGeneration = 10
 	envs := s.SaveEnvs(ENVSFILE, 50)
@@ -273,8 +269,7 @@ func TestProjection(t *testing.T) {
 }
 
 func TestGenomeEqual(t *testing.T) {
-	s := multicell.GetDefaultSetting()
-	s.SetModel("Full")
+	s := multicell.GetDefaultSetting("Full")
 	s.Outdir = "traj"
 	s.MaxGeneration = 10
 	envs := s.SaveEnvs(ENVSFILE, 50)
@@ -296,8 +291,7 @@ func TestGenomeEqual(t *testing.T) {
 }
 
 func TestGenomeVecs(t *testing.T) {
-	s := multicell.GetDefaultSetting()
-	s.SetModel("Full")
+	s := multicell.GetDefaultSetting("Full")
 	s.Outdir = "traj"
 	s.MaxGeneration = 10
 	envs := s.SaveEnvs(ENVSFILE, 50)
@@ -350,10 +344,9 @@ func TestSVD(t *testing.T) {
 }
 
 func TestGenomeW(t *testing.T) {
-	s := multicell.GetDefaultSetting()
+	s := multicell.GetDefaultSetting("Full")
 	s.Outdir = "traj"
 	s.SelStrength = 20
-	s.SetModel("Full")
 	envs := s.SaveEnvs(ENVSFILE, 50)
 	pop := s.NewPopulation(envs[0])
 	pop, _ = pop.Evolve(s, envs[0])

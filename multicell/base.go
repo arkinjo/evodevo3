@@ -73,7 +73,7 @@ type Setting struct {
 	Omega      Vec                  // initial scaling factors of activation functions
 }
 
-func GetDefaultSetting() *Setting {
+func GetDefaultSetting(modelname string) *Setting {
 	s := Setting{
 		Seed:          13,
 		Outdir:        ".",
@@ -101,7 +101,7 @@ func GetDefaultSetting() *Setting {
 		//Omega
 	}
 
-	s.SetModel("Full")
+	s.SetModel(modelname)
 	return &s
 }
 
@@ -122,9 +122,9 @@ func (s *Setting) Dump() {
 func LoadSetting(filename string) *Setting {
 	buffer, err := os.ReadFile(filename)
 	JustFail(err)
-	s := GetDefaultSetting()
-	err = json.Unmarshal(buffer, s)
+	var s Setting
+	err = json.Unmarshal(buffer, &s)
 	JustFail(err)
 
-	return s
+	return &s
 }

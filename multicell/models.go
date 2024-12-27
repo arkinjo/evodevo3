@@ -12,16 +12,18 @@ type model_t struct {
 }
 
 var models = map[string]model_t{
-	"Full":    {true, true, 3},
-	"Hie0":    {true, true, 0},
-	"Hie1":    {true, true, 1},
-	"Hie2":    {true, true, 2},
-	"Null":    {false, false, 0},
+	"Full": {true, true, 3},
+	"Hie2": {true, true, 2},
+	"Hie1": {true, true, 1},
+	"Hie0": {true, true, 0},
+
 	"NoCue":   {false, true, 3},
 	"NoDev":   {true, false, 3},
 	"NullHie": {false, false, 3},
+
 	"NullCue": {true, false, 0},
-	"NullDev": {true, true, 0},
+	"NullDev": {false, true, 0},
+	"Null":    {false, false, 0},
 }
 
 func (s *Setting) SetLayer(n int) {
