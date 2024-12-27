@@ -97,7 +97,7 @@ func MatTotVar(vecs []Vec, mv Vec) float64 {
 	return sd2 / float64(len(vecs))
 }
 
-func GetProjected1(fout *os.File, label string, igen int, xs []Vec, x0 Vec, axis, ps Vec) (Vec, Vec) {
+func (pop *Population) GetProjected1(s *Setting, fout *os.File, label string, xs []Vec, x0 Vec, axis, ps Vec) (Vec, Vec) {
 	sv, u, _ := XPCA(xs, x0, xs, x0)
 	ali := 0.0
 	if axis != nil {
@@ -105,23 +105,33 @@ func GetProjected1(fout *os.File, label string, igen int, xs []Vec, x0 Vec, axis
 	}
 
 	fmt.Fprintf(fout, "%s\t%d\t%f\t%f\t%f\n",
-		label, igen, sv.Norm2(), sv[0], ali)
+		label, pop.Igen, sv.Norm2(), sv[0], ali)
 
 	px := ProjectOnAxis(xs, x0, u[0])
 	py := ProjectOnAxis(xs, x0, u[1])
 
 	if DotVecs(px, ps) < 0 {
 		px.ScaleBy(-1)
+		u[0].ScaleBy(-1)
 	}
 
 	if DotVecs(py, ps) < 0 {
 		py.ScaleBy(-1)
+		u[1].ScaleBy(-1)
+	}
+
+	filvec := s.TrajectoryFilename(pop.Iepoch, pop.Igen, label)
+	fvec, err := os.OpenFile(filvec, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	JustFail(err)
+	defer fout.Close()
+	for i, ui := range u[0] {
+		fmt.Fprintf(fvec, "%d\t%f\t%f\n", i, ui, u[1][i])
 	}
 
 	return px, py
 }
 
-func GetProjected2(fout *os.File, label string, igen int, xs []Vec, x0 Vec, ys []Vec, y0 Vec, axis, ps Vec) (Vec, Vec) {
+func (pop *Population) GetProjected2(s *Setting, fout *os.File, label string, xs []Vec, x0 Vec, ys []Vec, y0 Vec, axis, ps Vec) (Vec, Vec) {
 	log.Printf("GetProjected2 %s\n", label)
 	sv, u, v := XPCA(xs, x0, ys, y0)
 	ali := 0.0
@@ -129,7 +139,7 @@ func GetProjected2(fout *os.File, label string, igen int, xs []Vec, x0 Vec, ys [
 		ali = math.Abs(DotVecs(u[0], axis))
 	}
 	fmt.Fprintf(fout, "%s\t%d\t%f\t%f\t%f\n",
-		label, igen, sv.Norm2(), sv[0], ali)
+		label, pop.Igen, sv.Norm2(), sv[0], ali)
 
 	px := ProjectOnAxis(xs, x0, u[0])
 	py := ProjectOnAxis(ys, y0, v[0])
@@ -137,6 +147,19 @@ func GetProjected2(fout *os.File, label string, igen int, xs []Vec, x0 Vec, ys [
 	if DotVecs(px, ps) < 0 {
 		px.ScaleBy(-1)
 		py.ScaleBy(-1)
+		u[0].ScaleBy(-1)
+		v[0].ScaleBy(-1)
+	}
+
+	filvec := s.TrajectoryFilename(pop.Iepoch, pop.Igen, label)
+	fvec, err := os.OpenFile(filvec, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	JustFail(err)
+	defer fout.Close()
+	for i, ui := range u[0] {
+		fmt.Fprintf(fvec, "U\t%d\t%f\t%f\n", i, ui)
+	}
+	for i, vi := range v[0] {
+		fmt.Fprintf(fvec, "V\t%d\t%f\t%f\n", i, vi)
 	}
 
 	return px, py
@@ -190,25 +213,25 @@ func (pop *Population) Project(s *Setting, p0, paxis, g0, gaxis, c0, caxis Vec) 
 	fmt.Fprintf(fout, "GPvar\t%d\t%f\t%f\t%f\n", pop.Igen, gvar, pvar, rvar)
 
 	//Pheno-Pheno variance-covariance
-	Pp0, Pp1 := GetProjected1(fout, "PPcov", pop.Igen, pvecs, mp, punit, ps)
+	Pp0, Pp1 := pop.GetProjected1(s, fout, "PPcov", pvecs, mp, punit, ps)
 
 	// Pheno-Cue Cross-Covariance
 	cvecs := pop.CueVecs(s)
 	mc := c0 //MeanVecs(cvecs)
-	Ppc, Cpc := GetProjected2(fout, "PCcov", pop.Igen, pvecs, mp, cvecs, mc, punit, ps)
+	Ppc, Cpc := pop.GetProjected2(s, fout, "PCcov", pvecs, mp, cvecs, mc, punit, ps)
 
 	// Pheno-Geno Cross-Covariance
-	Ppg, Gpg := GetProjected2(fout, "PGcov", pop.Igen, pvecs, mp, gvecs, mg, punit, ps)
+	Ppg, Gpg := pop.GetProjected2(s, fout, "PGcov", pvecs, mp, gvecs, mg, punit, ps)
 
 	// State variance-covariance
 	svecs := pop.StateVecs()
 	ms := MeanVecs(svecs)
-	Ss0, Ss1 := GetProjected1(fout, "SScov", pop.Igen, svecs, ms, nil, ps)
+	Ss0, Ss1 := pop.GetProjected1(s, fout, "SScov", svecs, ms, nil, ps)
 	// State-Cue cross-covariance
-	//Ssc, Csc := GetProjected2(fout, "SCcov", pop.Igen, svecs, ms, cvecs, mc, nil, ps)
+	//Ssc, Csc := pop.GetProjected2(s, fout, "SCcov", svecs, ms, cvecs, mc, nil, ps)
 
 	// State-Genome cross-covariance (very slow)
-	//	Ssg, Gsg := GetProjected2(fout, "SGcov", pop.Igen, svecs, ms, gvecs, mg, nil, ps)
+	//	Ssg, Gsg := pop.GetProjected2(s, fout, "SGcov", svecs, ms, gvecs, mg, nil, ps)
 
 	fmt.Fprintf(fout, "#\t%3s\t%8s\t%8s", "gen", "g", "p")
 	fmt.Fprintf(fout, "\t%8s\t%8s", "Ppheno0", "Ppheno1")
