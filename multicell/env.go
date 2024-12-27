@@ -67,17 +67,18 @@ func (env Environment) Face(s *Setting, iface int) Vec {
 	return v
 }
 
-func (env Environment) AddNoise(s *Setting) Environment {
-	nenv := make([]float64, env.Len())
-	for i, v := range env {
+func (env Environment) GetCue(s *Setting) Environment {
+	cue := env.Clone()
+	if !s.WithCue {
+		cue.SetAll(1.0)
+	}
+	for i := range cue {
 		if rand.Float64() < s.EnvNoise {
-			nenv[i] = -v
-		} else {
-			nenv[i] = v
+			cue[i] *= -1
 		}
 	}
 
-	return nenv
+	return cue
 }
 
 func (env Environment) SelectingEnv(s *Setting) Vec {

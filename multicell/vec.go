@@ -22,9 +22,7 @@ func (vec Vec) SetAll(v float64) {
 }
 
 func (vec Vec) Clone() Vec {
-	vout := make(Vec, len(vec))
-	copy(vout, vec)
-	return vout
+	return slices.Clone(vec)
 }
 
 // sum all elements.
