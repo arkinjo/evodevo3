@@ -55,34 +55,39 @@ func DotVecs(v0, v1 Vec) float64 {
 	return dot
 }
 
-func (vin Vec) ScaleBy(f float64) {
-	for i, v := range vin {
-		vin[i] = f * v
+func (vec Vec) ScaleBy(f float64) Vec {
+	for i, v := range vec {
+		vec[i] = f * v
 	}
+	return vec
 }
 
-func (v Vec) Normalize() {
+func (v Vec) Normalize() Vec {
 	mag := v.Norm2()
 	v.ScaleBy(1 / mag)
+	return v
 }
 
-func (vout Vec) Add(v0, v1 Vec) {
+func (vout Vec) Add(v0, v1 Vec) Vec {
 	for i, v := range v0 {
 		vout[i] = v + v1[i]
 	}
+	return vout
 }
 
 // Accumulate
-func (vout Vec) Acc(vin Vec) {
+func (vout Vec) Acc(vin Vec) Vec {
 	for i, v := range vin {
 		vout[i] += v
 	}
+	return vout
 }
 
-func (vout Vec) Diff(v0, v1 Vec) {
+func (vout Vec) Diff(v0, v1 Vec) Vec {
 	for i, v := range v0 {
 		vout[i] = v - v1[i]
 	}
+	return vout
 }
 
 func (v Vec) Norm1() float64 {
