@@ -14,11 +14,11 @@ type Simulation struct {
 }
 
 func main() {
-	nenvsP := flag.Int("num_envs", 50, "number of environments")
+	nenvsP := flag.Int("n", 50, "number of environments")
 	envsfileP := flag.String("envs", "", "input environments JSON file")
 	outfileP := flag.String("o", "", "Output environment JSON file")
 	denvP := flag.Float64("denv", 0.5, "degree of environmental change")
-	appendP := flag.Bool("append", false, "append new environments after existing ones")
+	replaceP := flag.Int("replace", 0, "replace new environments after the epoch. should be >0.")
 	seedP := flag.Uint64("seed", 13, "random seed for environments")
 	flag.Parse()
 
@@ -29,22 +29,25 @@ func main() {
 
 	log.Printf("Seed=%d; Denv=%f\n", s.Seed, s.Denv)
 
+	var env0 multicell.Environment
+	var envs multicell.EnvironmentS
 	if *outfileP == "" {
 		panic("Specify output file!")
 	}
-	if *appendP {
+	if *replaceP <= 0 {
+		env0 = s.NewEnvironment()
+		envs = env0.GenerateEnvs(s, *nenvsP)
+	} else {
 		if *envsfileP == "" {
 			panic("Provide environment file with -envs!")
 		}
-		envs := s.LoadEnvs(*envsfileP)
-		env0 := envs[len(envs)-1]
-		aenvs := env0.GenerateEnvs(s, *nenvsP)
-		s.DumpEnvs(*outfileP, aenvs)
-	} else {
-		env0 := s.NewEnvironment()
-		envs := env0.GenerateEnvs(s, *nenvsP)
-		s.DumpEnvs(*outfileP, envs)
+		aenvs := s.LoadEnvs(*envsfileP)
+		env0 = aenvs[*replaceP-1]
+		nenvs := env0.GenerateEnvs(s, *nenvsP+1)
+		envs = append(aenvs[0:*replaceP], nenvs[1:]...)
 	}
+
+	envs.DumpEnvs(*outfileP)
 	log.Printf("Brand new environments saved in: %s\n", *outfileP)
 
 }
