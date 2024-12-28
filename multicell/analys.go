@@ -132,7 +132,6 @@ func (pop *Population) GetProjected1(s *Setting, fout *os.File, label string, xs
 }
 
 func (pop *Population) GetProjected2(s *Setting, fout *os.File, label string, xs []Vec, x0 Vec, ys []Vec, y0 Vec, axis, ps Vec) (Vec, Vec) {
-	log.Printf("GetProjected2 %s\n", label)
 	sv, u, v := XPCA(xs, x0, ys, y0)
 	ali := 0.0
 	if axis != nil {
