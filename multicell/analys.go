@@ -123,9 +123,9 @@ func (pop *Population) GetProjected1(s *Setting, fout *os.File, label string, xs
 	filvec := s.TrajectoryFilename(pop.Iepoch, pop.Igen, label)
 	fvec, err := os.OpenFile(filvec, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	JustFail(err)
-	defer fout.Close()
+	defer fvec.Close()
 	for i, ui := range u[0] {
-		fmt.Fprintf(fvec, "%d\t%f\t%f\n", i, ui, u[1][i])
+		fmt.Fprintf(fvec, "%d\t%e\t%e\n", i, ui, u[1][i])
 	}
 
 	return px, py
@@ -154,12 +154,12 @@ func (pop *Population) GetProjected2(s *Setting, fout *os.File, label string, xs
 	filvec := s.TrajectoryFilename(pop.Iepoch, pop.Igen, label)
 	fvec, err := os.OpenFile(filvec, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	JustFail(err)
-	defer fout.Close()
+	defer fvec.Close()
 	for i, ui := range u[0] {
-		fmt.Fprintf(fvec, "U\t%d\t%f\t%f\n", i, ui)
+		fmt.Fprintf(fvec, "U\t%d\t%e\n", i, ui)
 	}
 	for i, vi := range v[0] {
-		fmt.Fprintf(fvec, "V\t%d\t%f\t%f\n", i, vi)
+		fmt.Fprintf(fvec, "V\t%d\t%e\n", i, vi)
 	}
 
 	return px, py
@@ -224,14 +224,17 @@ func (pop *Population) Project(s *Setting, p0, paxis, g0, gaxis, c0, caxis Vec) 
 	Ppg, Gpg := pop.GetProjected2(s, fout, "PGcov", pvecs, mp, gvecs, mg, punit, ps)
 
 	// State variance-covariance
-	svecs := pop.StateVecs()
-	ms := MeanVecs(svecs)
-	Ss0, Ss1 := pop.GetProjected1(s, fout, "SScov", svecs, ms, nil, ps)
-	// State-Cue cross-covariance
-	//Ssc, Csc := pop.GetProjected2(s, fout, "SCcov", svecs, ms, cvecs, mc, nil, ps)
+	var Ss0, Ss1 Vec
+	if s.NumLayers > 1 {
+		svecs := pop.StateVecs()
+		ms := MeanVecs(svecs)
+		Ss0, Ss1 = pop.GetProjected1(s, fout, "SScov", svecs, ms, nil, ps)
+		// State-Cue cross-covariance
+		//Ssc, Csc := pop.GetProjected2(s, fout, "SCcov", svecs, ms, cvecs, mc, nil, ps)
 
-	// State-Genome cross-covariance (very slow)
-	//	Ssg, Gsg := pop.GetProjected2(s, fout, "SGcov", svecs, ms, gvecs, mg, nil, ps)
+		// State-Genome cross-covariance (very slow)
+		//	Ssg, Gsg := pop.GetProjected2(s, fout, "SGcov", svecs, ms, gvecs, mg, nil, ps)
+	}
 
 	fmt.Fprintf(fout, "#\t%3s\t%8s\t%8s", "gen", "g", "p")
 	fmt.Fprintf(fout, "\t%8s\t%8s", "Ppheno0", "Ppheno1")
@@ -247,8 +250,9 @@ func (pop *Population) Project(s *Setting, p0, paxis, g0, gaxis, c0, caxis Vec) 
 
 		fmt.Fprintf(fout, "\t%f\t%f", Cpc[i], Ppc[i])
 		fmt.Fprintf(fout, "\t%f\t%f", Gpg[i], Ppg[i])
-
-		fmt.Fprintf(fout, "\t%f\t%f", Ss0[i], Ss1[i])
+		if s.NumLayers > 1 {
+			fmt.Fprintf(fout, "\t%f\t%f", Ss0[i], Ss1[i])
+		}
 
 		//	fmt.Fprintf(fout, "\t%f\t%f", Csc[i], Ssc[i])
 		//	fmt.Fprintf(fout, "\t%f\t%f", Gsg[i], Ssg[i])
