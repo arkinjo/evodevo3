@@ -101,9 +101,8 @@ func (env Environment) ChangeEnv(s *Setting, rng *rand.Rand) Environment {
 	return nenv
 }
 
-func (s *Setting) SaveEnvs(filename string, nepochs int) []Environment {
+func (env Environment) GenerateEnvs(s *Setting, nepochs int) []Environment {
 	rng := rand.New(rand.NewPCG(s.Seed, s.Seed+1397))
-	env := s.NewEnvironment()
 	envs := make([]Environment, nepochs)
 	envs[0] = env
 	for n := range nepochs {
@@ -111,11 +110,15 @@ func (s *Setting) SaveEnvs(filename string, nepochs int) []Environment {
 			continue
 		}
 		envs[n] = envs[n-1].ChangeEnv(s, rng)
+
 	}
+	return envs
+}
+
+func (s *Setting) DumpEnvs(filename string, envs []Environment) {
 	json, err := json.Marshal(envs)
 	JustFail(err)
 	os.WriteFile(filename, json, 0644)
-	return envs
 }
 
 func (s *Setting) LoadEnvs(filename string) []Environment {

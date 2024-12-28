@@ -20,11 +20,9 @@ type Simulation struct {
 
 func GetSetting() Simulation {
 	maxpopP := flag.Int("popsize", 500, "population size")
-	nenvsP := flag.Int("num_envs", 50, "number of environments")
 	envsfileP := flag.String("envs", "", "saved environments JSON file")
 	resfileP := flag.String("restart", "", "saved restart population file")
 	settingP := flag.String("setting", "", "saved settings file")
-	mkenvsP := flag.String("make_envs", "", "Make brand new environments")
 
 	trajDirP := flag.String("trajdir", "traj", "Directory for trajectory files")
 	eStartP := flag.Int("env_start", 0, "starting environment (0, 1, ...)")
@@ -49,14 +47,11 @@ func GetSetting() Simulation {
 
 	var envs []multicell.Environment
 
-	if *mkenvsP == "" && *envsfileP == "" {
-		panic("use -envs or -make_envs")
-	} else if *mkenvsP != "" {
-		s.SaveEnvs(*mkenvsP, *nenvsP)
-		log.Printf("Environments saved in: %s; exitting...\n", *mkenvsP)
-		os.Exit(0)
-	} else if *envsfileP != "" {
+	if *envsfileP != "" {
 		envs = s.LoadEnvs(*envsfileP)
+	} else {
+		log.Printf("specify environment file with -envs")
+		panic("envs")
 	}
 
 	if *eStartP >= *eEndP {
