@@ -2,12 +2,15 @@ package multicell
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"math/rand/v2"
 	"os"
 )
 
 type Environment = Vec
+
+type EnvironmentS []Environment
 
 type CellEnvs struct {
 	Tops    []Vec
@@ -101,7 +104,7 @@ func (env Environment) ChangeEnv(s *Setting, rng *rand.Rand) Environment {
 	return nenv
 }
 
-func (env Environment) GenerateEnvs(s *Setting, nepochs int) []Environment {
+func (env Environment) GenerateEnvs(s *Setting, nepochs int) EnvironmentS {
 	rng := rand.New(rand.NewPCG(s.Seed, s.Seed+1397))
 	envs := make([]Environment, nepochs)
 	envs[0] = env
@@ -115,10 +118,21 @@ func (env Environment) GenerateEnvs(s *Setting, nepochs int) []Environment {
 	return envs
 }
 
-func (s *Setting) DumpEnvs(filename string, envs []Environment) {
-	json, err := json.Marshal(envs)
+func (envs EnvironmentS) DumpEnvs(filename string) {
+	fout, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	JustFail(err)
-	os.WriteFile(filename, json, 0644)
+	defer fout.Close()
+
+	fmt.Fprintf(fout, "[")
+	for i, env := range envs {
+		json, err := json.Marshal(env)
+		JustFail(err)
+		fmt.Fprintf(fout, "%s", json)
+		if i < len(envs)-1 {
+			fmt.Fprintf(fout, ",\n")
+		}
+	}
+	fmt.Fprintf(fout, "]\n")
 }
 
 func (s *Setting) LoadEnvs(filename string) []Environment {
