@@ -85,8 +85,6 @@ func TestEnvChange(t *testing.T) {
 		env0 := envs[n-1]
 		diff := make(multicell.Vec, len(env))
 		ndiff := int(diff.Diff(env0, env).ScaleBy(0.5).Norm1())
-		fmt.Println(diff)
-
 		if ndiff != nexp {
 			t.Errorf("EnvChange: %d; expected %d\n", ndiff, nexp)
 		}
