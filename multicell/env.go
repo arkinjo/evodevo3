@@ -90,13 +90,13 @@ func (env Environment) SelectingEnv(s *Setting) Vec {
 func (env Environment) ChangeEnv(s *Setting, rng *rand.Rand) Environment {
 	lenv := env.Len()
 	nflip := int(s.Denv * float64(lenv))
-	nenv := make(Vec, lenv)
+	nenv := env.Clone()
 
-	for i, j := range rng.Perm(lenv) {
-		nenv[i] = env[i]
-		if j < nflip {
-			nenv[i] *= -1
+	for i, p := range rng.Perm(lenv) {
+		if i == nflip {
+			break
 		}
+		nenv[p] *= -1
 	}
 	return nenv
 }
@@ -105,9 +105,12 @@ func (s *Setting) SaveEnvs(filename string, nepochs int) []Environment {
 	rng := rand.New(rand.NewPCG(s.Seed, s.Seed+1397))
 	env := s.NewEnvironment()
 	envs := make([]Environment, nepochs)
-	for i := range nepochs {
-		env = env.ChangeEnv(s, rng)
-		envs[i] = env
+	envs[0] = env
+	for n := range nepochs {
+		if n == 0 {
+			continue
+		}
+		envs[n] = envs[n-1].ChangeEnv(s, rng)
 	}
 	json, err := json.Marshal(envs)
 	JustFail(err)

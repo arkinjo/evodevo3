@@ -72,6 +72,48 @@ func TestSettingDump(t *testing.T) {
 	s.Dump()
 }
 
+func TestEnvChange(t *testing.T) {
+	s := multicell.GetDefaultSetting("Full")
+	s.Denv = 0.5
+	envs := s.SaveEnvs(ENVSFILE, 50)
+	nexp := int(s.Denv * float64(len(envs[0])))
+
+	for n, env := range envs {
+		if n == 0 {
+			continue
+		}
+		ndiff := 0
+		env0 := envs[n-1]
+		for i, v := range env {
+			if v != env0[i] {
+				ndiff += 1
+			}
+		}
+		if ndiff != nexp {
+			t.Errorf("EnvChange: %d; expected %d\n", ndiff, nexp)
+		}
+	}
+}
+
+func TestCue(t *testing.T) {
+	s := multicell.GetDefaultSetting("Full")
+	s.Outdir = "traj"
+	envs := s.SaveEnvs(ENVSFILE, 50)
+	s.EnvNoise = 0.05
+	env := envs[0]
+	cue := env.GetCue(s)
+	ndiff := 0
+	for i, v := range cue {
+		if v != env[i] {
+			ndiff += 1
+		}
+	}
+	nexp := int(s.EnvNoise * float64(len(env)))
+	if ndiff != nexp {
+		t.Errorf("Cue difference %d; expected %d\n", ndiff, nexp)
+	}
+}
+
 func TestEnvironment(t *testing.T) {
 	s := multicell.GetDefaultSetting("Full")
 	envs := s.SaveEnvs(ENVSFILE, 50)
