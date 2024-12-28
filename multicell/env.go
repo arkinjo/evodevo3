@@ -24,7 +24,7 @@ func (s *Setting) NewEnvironment() Environment {
 	lenenv := s.LenFace * 4
 	env := make([]float64, lenenv)
 	for i := range lenenv {
-		if i < lenenv/2 {
+		if i%2 == 0 {
 			env[i] = 1
 		} else {
 			env[i] = -1
