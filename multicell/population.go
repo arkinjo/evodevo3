@@ -221,7 +221,6 @@ func (s *Setting) LoadPopulation(filename string) Population {
 	err = decoder.Decode(&pop)
 	JustFail(err)
 	pop.Sort()
-	s.MaxPopulation = len(pop.Indivs)
 	return pop
 }
 
