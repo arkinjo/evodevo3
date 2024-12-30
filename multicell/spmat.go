@@ -84,7 +84,7 @@ func (sp *SpMat) ToVec() Vec {
 
 func (sp SpMat) Density() float64 {
 	nonz := 0.0
-	sp.M.Do(func(i, j int, _ float64) {
+	sp.M.Do(func(_, _ int, _ float64) {
 		nonz += 1.0
 	})
 	return nonz / float64(sp.Nrows()*sp.Ncols())
