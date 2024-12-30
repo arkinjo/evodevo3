@@ -181,7 +181,36 @@ func (pop *Population) PrintPopStats(fout *os.File, gs, ps Vec) {
 	fa, fv := avesd(fs)
 	fmt.Fprintf(fout, "Ndev\t%d\t%f\t%f\n", pop.Igen, na, nv)
 	fmt.Fprintf(fout, "Mis\t%d\t%f\t%f\n", pop.Igen, ma, mv)
-	fmt.Fprintf(fout, "Fit\t%d\t%f\t%f\n", pop.Igen, fa, fv)
+	fmt.Fprintf(fout, "Fit\t%d\t%e\t%e\n", pop.Igen, fa, fv)
+}
+
+func (pop *Population) GenoPhenoPlot(s *Setting, p0, paxis, g0, gaxis Vec) {
+	filename := s.TrajectoryFilename(pop.Iepoch, pop.Igen, "gpplot")
+	fout, err := os.Create(filename)
+	JustFail(err)
+	defer fout.Close()
+	// Geno-Pheno Projection Plot
+	gvecs := pop.GenomeVecs(s)
+	gs := ProjectOnAxis(gvecs, g0, gaxis)
+
+	pvecs := pop.PhenoVecs(s)
+	ps := ProjectOnAxis(pvecs, p0, paxis)
+
+	pop.PrintPopStats(fout, gs, ps)
+
+	mg := MeanVecs(gvecs)
+	mp := MeanVecs(pvecs)
+	gvar := MatTotVar(gvecs, mg)
+	pvar := MatTotVar(pvecs, mp)
+	rvar := s.RandomGenomeVariance()
+	fmt.Fprintf(fout, "GPvar\t%d\t%f\t%f\t%f\n", pop.Igen, gvar, pvar, rvar)
+	fmt.Fprintf(fout, "#\t%3s\t%8s\t%8s", "gen", "g", "p")
+	fmt.Fprintf(fout, "\n")
+	for i := range pop.Indivs {
+		fmt.Fprintf(fout, "I\t%d\t%f\t%f", i, gs[i], ps[i])
+		fmt.Fprintf(fout, "\n")
+	}
+	log.Printf("Projection saved in: %s", filename)
 }
 
 func (pop *Population) Project(s *Setting, p0, paxis, g0, gaxis, c0, caxis Vec) {
@@ -196,20 +225,11 @@ func (pop *Population) Project(s *Setting, p0, paxis, g0, gaxis, c0, caxis Vec) 
 
 	// Geno-Pheno Projection Plot
 	gvecs := pop.GenomeVecs(s)
-	gs := ProjectOnAxis(gvecs, g0, gaxis)
-
 	pvecs := pop.PhenoVecs(s)
-	ps := ProjectOnAxis(pvecs, p0, paxis)
-
-	pop.PrintPopStats(fout, gs, ps)
-
 	mg := MeanVecs(gvecs)
 	mp := MeanVecs(pvecs)
-
-	gvar := MatTotVar(gvecs, mg)
-	pvar := MatTotVar(pvecs, mp)
-	rvar := s.RandomGenomeVariance()
-	fmt.Fprintf(fout, "GPvar\t%d\t%f\t%f\t%f\n", pop.Igen, gvar, pvar, rvar)
+	gs := ProjectOnAxis(gvecs, g0, paxis)
+	ps := ProjectOnAxis(pvecs, p0, paxis)
 
 	//Pheno-Pheno variance-covariance
 	Pp0, Pp1 := pop.GetProjected1(s, fout, "PPcov", pvecs, mp, punit, ps)
@@ -237,11 +257,13 @@ func (pop *Population) Project(s *Setting, p0, paxis, g0, gaxis, c0, caxis Vec) 
 
 	fmt.Fprintf(fout, "#\t%3s\t%8s\t%8s", "gen", "g", "p")
 	fmt.Fprintf(fout, "\t%8s\t%8s", "Ppheno0", "Ppheno1")
-	fmt.Fprintf(fout, "\t%8s\t%8s", "Gcue", "Pcue")
+	fmt.Fprintf(fout, "\t%8s\t%8s", "Ccue", "Pcue")
 	fmt.Fprintf(fout, "\t%8s\t%8s", "Ggeno", "Pgeno")
-	fmt.Fprintf(fout, "\t%8s\t%8s", "SS0", "SS1")
-	//	fmt.Fprintf(fout, "\t%8s\t%8s", "Gsc", "Ssc")
-	//	fmt.Fprintf(fout, "\t%8s\t%8s", "Gsg", "Ssg")
+	if s.NumLayers > 1 {
+		fmt.Fprintf(fout, "\t%8s\t%8s", "SS0", "SS1")
+		//	fmt.Fprintf(fout, "\t%8s\t%8s", "Gsc", "Ssc")
+		//	fmt.Fprintf(fout, "\t%8s\t%8s", "Gsg", "Ssg")
+	}
 	fmt.Fprintf(fout, "\n")
 	for i := range pop.Indivs {
 		fmt.Fprintf(fout, "I\t%d\t%f\t%f", i, gs[i], ps[i])
@@ -251,10 +273,9 @@ func (pop *Population) Project(s *Setting, p0, paxis, g0, gaxis, c0, caxis Vec) 
 		fmt.Fprintf(fout, "\t%f\t%f", Gpg[i], Ppg[i])
 		if s.NumLayers > 1 {
 			fmt.Fprintf(fout, "\t%f\t%f", Ss0[i], Ss1[i])
+			//	fmt.Fprintf(fout, "\t%f\t%f", Csc[i], Ssc[i])
+			//	fmt.Fprintf(fout, "\t%f\t%f", Gsg[i], Ssg[i])
 		}
-
-		//	fmt.Fprintf(fout, "\t%f\t%f", Csc[i], Ssc[i])
-		//	fmt.Fprintf(fout, "\t%f\t%f", Gsg[i], Ssg[i])
 		fmt.Fprintf(fout, "\n")
 	}
 	log.Printf("Projection saved in: %s", filename)
