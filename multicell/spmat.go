@@ -99,11 +99,13 @@ func (sp SpMat) Randomize(density float64) {
 	}
 }
 
-func (sp SpMat) Mutate(nmut int, density float64) {
+func (sp SpMat) Mutate(rate float64, density float64) {
 	d2 := density / 2.0
 	nr := sp.Nrows()
 	nc := sp.Ncols()
-	for range nmut {
+	dist := distuv.Poisson{Lambda: rate * float64(nr*nc)}
+	n := int(dist.Rand())
+	for range n {
 		i := rand.IntN(nr)
 		j := rand.IntN(nc)
 		delete(sp.M[i], j)
