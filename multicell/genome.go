@@ -2,6 +2,7 @@ package multicell
 
 import (
 	"gonum.org/v1/gonum/stat/distuv"
+	//	"log"
 	"slices"
 )
 
@@ -75,8 +76,7 @@ func (genome *Genome) Mutate(s *Setting) {
 	}
 
 	s.Topology.Do(func(l, k int, density float64) {
-		lambda := s.MutRate * float64(s.LenLayer[l]*s.LenLayer[k])
-		dist := distuv.Poisson{Lambda: lambda}
+		dist.Lambda = s.MutRate * float64(s.LenLayer[l]*s.LenLayer[k])
 		nmut := int(dist.Rand())
 		genome.M[l][k].Mutate(nmut, density)
 	})
