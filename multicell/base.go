@@ -17,13 +17,14 @@ const (
 )
 
 const (
-	Sqrt3              = 1.7320508075688772
-	default_num_layers = 4
-	default_len_face   = 50
-	default_num_cell_x = 1
-	default_num_cell_y = 1
-	default_density    = 0.02 // genome matrix density
-	default_W_scale    = 1.1
+	Sqrt3                 = 1.7320508075688772
+	default_num_layers    = 4
+	default_len_face      = 50
+	default_num_cell_x    = 1
+	default_num_cell_y    = 1
+	default_density       = 0.02 // genome matrix density
+	default_mutation_rate = 0.001
+	default_W_scale       = 1.1
 )
 
 // sparse matrix of anything.
@@ -84,7 +85,7 @@ func GetDefaultSetting(modelname string) *Setting {
 		LenFace:       default_len_face,
 		ProductionRun: false,
 		EnvNoise:      0.05,
-		MutRate:       0.001,
+		MutRate:       default_mutation_rate,
 		ConvDevelop:   1e-5,
 		Denv:          0.5,
 		SelStrength:   20.0,
