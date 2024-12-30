@@ -72,10 +72,10 @@ func (env Environment) Face(s *Setting, iface int) Vec {
 
 func (env Environment) GetCue(s *Setting) Environment {
 	cue := env.Clone()
-	nflip := int(s.EnvNoise * float64(len(env)))
 	if !s.WithCue {
 		cue.SetAll(1.0)
 	}
+	nflip := int(s.EnvNoise * float64(len(env)))
 	for i, p := range rand.Perm(len(env)) {
 		if i == nflip {
 			break
