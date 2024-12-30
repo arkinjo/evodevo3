@@ -118,8 +118,15 @@ func (env Environment) GenerateEnvs(s *Setting, nepochs int) EnvironmentS {
 	return envs
 }
 
+func (s *Setting) SaveEnvs(filename string, nepochs int) EnvironmentS {
+	env0 := s.NewEnvironment()
+	envs := env0.GenerateEnvs(s, nepochs)
+	envs.DumpEnvs(filename)
+	return envs
+}
+
 func (envs EnvironmentS) DumpEnvs(filename string) {
-	fout, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	fout, err := os.Create(filename)
 	JustFail(err)
 	defer fout.Close()
 
