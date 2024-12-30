@@ -48,7 +48,7 @@ ifdef RELEASE
 	GO_BUILD_TAGS:=$(GO_BUILD_TAGS),evodevo3
 endif
 # go build
-GO_BUILD:=-tags=$(GO_BUILD_TAGS) $(GO_BUILD_RACE) $(GO_BUILD_STATIC) -ldflags "$(GO_LDFLAGS)"
+GO_BUILD:=-pgo=auto -tags=$(GO_BUILD_TAGS) $(GO_BUILD_RACE) $(GO_BUILD_STATIC) -ldflags "$(GO_LDFLAGS)"
 
 # ビルドタスク
 .PHONY: build
