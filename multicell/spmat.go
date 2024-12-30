@@ -73,9 +73,9 @@ func (vout Vec) MultSpMatVec(sp SpMat, vin Vec) {
 func (sp *SpMat) ToVec() Vec {
 	var vec Vec
 
-	for i := range sp.Nrows() {
+	for _, mi := range sp.M {
 		for j := range sp.Ncol {
-			vec = append(vec, sp.M[i][j])
+			vec = append(vec, mi[j])
 		}
 	}
 
