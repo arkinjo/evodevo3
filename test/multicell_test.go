@@ -42,18 +42,20 @@ func TestMain(m *testing.M) {
 }
 
 func TestSpMatMutate(t *testing.T) {
-	m0 := multicell.NewSpMat(10, 10)
-	m0.Randomize(0.1)
+	m0 := multicell.NewSpMat(200, 200)
+	m0.Randomize(0.02)
 	m1 := m0.Clone()
 	if !m0.Equal(m1) {
 		t.Errorf("Clone failed.")
 	}
 
-	m0.Mutate(100, 0.1)
+	m0.Mutate(0.001, 0.02)
 
 	if m0.Equal(m1) {
 		t.Errorf("Mutation failed.")
 	}
+
+	fmt.Printf("Densities %f %f\n", m0.Density(), m1.Density())
 }
 
 func TestSetting(t *testing.T) {
