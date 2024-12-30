@@ -15,13 +15,13 @@ EI1=30
 EI0=`printf "%2.2d" $[${EI1}-1]`
 EI2=50
 EEND=`printf "%2.2d" $[${EI2}-1]`
-#MODELS=(Full Null NoCue NoDev Hie0 Hie1 Hie2 NullHie NullCue NullDev)
-MODELS=(Full Null NoCue NoDev)
+MODELS=(Full)
+#MODELS=(Full NoCue NoDev)
 #MODELS=(Hie0 Hie1 Hie2)
-#MODELS=(NullCue)
+#MODELS=(NullCue NullDev NullHie)
 for model in $MODELS; do
     ${runsim} -envs ${ENVSFILE} -model ${model} -popsize ${POPSIZE} \
 	      -env_start 0 -env_end ${EI1} -ngen 200 \
-	> data/${model}_train.out 2> train.log
-done
+	> data/${model}_train.out
+done 2> train.log
 
