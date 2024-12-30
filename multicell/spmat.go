@@ -9,9 +9,16 @@ import (
 
 // sparse matrix
 type SpMat struct {
-	Nrow int
 	Ncol int
 	M    SliceOfMaps[float64]
+}
+
+func (sp SpMat) Nrows() int {
+	return len(sp.M)
+}
+
+func (sp SpMat) Ncols() int {
+	return sp.Ncol
 }
 
 func (sp SpMat) Do(f func(i, j int, v float64)) {
@@ -19,7 +26,7 @@ func (sp SpMat) Do(f func(i, j int, v float64)) {
 }
 
 func (sp0 SpMat) Equal(sp1 SpMat) bool {
-	if sp0.Nrow != sp1.Nrow || sp0.Ncol != sp1.Ncol {
+	if sp0.Nrows() != sp1.Nrows() || sp0.Ncols() != sp1.Ncols() {
 		return false
 	}
 	for i, mi := range sp0.M {
@@ -34,7 +41,6 @@ func (sp0 SpMat) Equal(sp1 SpMat) bool {
 func NewSpMat(nrow, ncol int) SpMat {
 	mat := NewSliceOfMaps[float64](nrow)
 	return SpMat{
-		Nrow: nrow,
 		Ncol: ncol,
 		M:    mat}
 
@@ -50,7 +56,7 @@ func (sp *SpMat) Set(i, j int, v float64) {
 
 // copy a sparse matrix
 func (sp *SpMat) Clone() SpMat {
-	nsp := NewSpMat(sp.Nrow, sp.Ncol)
+	nsp := NewSpMat(sp.Nrows(), sp.Ncols())
 	sp.Do(func(i, j int, v float64) {
 		nsp.M[i][j] = v
 	})
@@ -67,7 +73,7 @@ func (vout Vec) MultSpMatVec(sp SpMat, vin Vec) {
 func (sp *SpMat) ToVec() Vec {
 	var vec Vec
 
-	for i := range sp.Nrow {
+	for i := range sp.Nrows() {
 		for j := range sp.Ncol {
 			vec = append(vec, sp.M[i][j])
 		}
@@ -78,11 +84,13 @@ func (sp *SpMat) ToVec() Vec {
 
 // random matrix
 func (sp SpMat) Randomize(density float64) {
-	dist := distuv.Poisson{Lambda: density * float64(sp.Nrow*sp.Ncol)}
+	nr := sp.Nrows()
+	nc := sp.Ncols()
+	dist := distuv.Poisson{Lambda: density * float64(nr*nc)}
 	n := int(dist.Rand())
 	for range n {
-		i := rand.IntN(sp.Nrow)
-		j := rand.IntN(sp.Ncol)
+		i := rand.IntN(nr)
+		j := rand.IntN(nc)
 		if rand.IntN(2) == 1 {
 			sp.M[i][j] = 1
 		} else {
@@ -92,28 +100,31 @@ func (sp SpMat) Randomize(density float64) {
 }
 
 func (sp SpMat) Mutate(nmut int, density float64) {
+	d2 := density / 2.0
+	nr := sp.Nrows()
+	nc := sp.Ncols()
 	for range nmut {
-		i := rand.IntN(sp.Nrow)
-		j := rand.IntN(sp.Ncol)
-		if rand.Float64() >= density {
-			delete(sp.M[i], j)
-		} else if rand.IntN(2) == 1 {
+		i := rand.IntN(nr)
+		j := rand.IntN(nc)
+		delete(sp.M[i], j)
+		r := rand.Float64()
+		if r < d2 {
 			sp.M[i][j] = 1.0
-		} else {
+		} else if r < density {
 			sp.M[i][j] = -1.0
 		}
 	}
 }
 
 func (mat0 SpMat) MateWith(mat1 SpMat) (SpMat, SpMat) {
-	if mat0.Nrow != mat1.Nrow || mat0.Ncol != mat1.Ncol {
+	if mat0.Nrows() != mat1.Nrows() || mat0.Ncols() != mat1.Ncols() {
 		log.Fatal("MateSpMats: incompatible matrices")
 	}
 
-	nmat0 := NewSpMat(mat0.Nrow, mat0.Ncol)
-	nmat1 := NewSpMat(mat0.Nrow, mat0.Ncol)
+	nmat0 := NewSpMat(mat0.Nrows(), mat0.Ncols())
+	nmat1 := NewSpMat(mat0.Nrows(), mat0.Ncols())
 
-	for i := range mat0.Nrow {
+	for i := range mat0.Nrows() {
 		if rand.IntN(2) == 1 {
 			nmat0.M[i] = maps.Clone(mat0.M[i])
 			nmat1.M[i] = maps.Clone(mat1.M[i])
