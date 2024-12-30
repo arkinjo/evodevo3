@@ -52,11 +52,11 @@ func (pop *Population) GetPopStats() PopStats {
 
 func (s *Setting) NewPopulation(env Environment) Population {
 	var indivs []Individual
-	genome := s.NewGenome()
+	//	genome := s.NewGenome()
 	for id := range s.MaxPopulation {
 		indiv := s.NewIndividual(id, env)
-		indiv.Genome = genome.Clone()
-		indiv.Genome.Mutate(s)
+		indiv.Genome = s.NewGenome() //genome.Clone()
+		//		indiv.Genome.Mutate(s)
 		indivs = append(indivs, indiv)
 	}
 	return Population{
@@ -177,7 +177,7 @@ func (s *Setting) TrajectoryFilename(iepoch, igen int, suffix string) string {
 // Dump the Population in a gzipped binary file.
 func (pop *Population) Dump(s *Setting) string {
 	filename := s.TrajectoryFilename(pop.Iepoch, pop.Igen, "traj.gz")
-	fout, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	fout, err := os.Create(filename)
 	JustFail(err)
 	defer fout.Close()
 	foutz, err := gzip.NewWriterLevel(fout, gzip.BestSpeed)
