@@ -82,6 +82,14 @@ func (sp *SpMat) ToVec() Vec {
 	return vec
 }
 
+func (sp SpMat) Density() float64 {
+	nonz := 0.0
+	sp.M.Do(func(i, j int, _ float64) {
+		nonz += 1.0
+	})
+	return nonz / float64(sp.Nrows()*sp.Ncols())
+}
+
 // random matrix
 func (sp SpMat) Randomize(density float64) {
 	nr := sp.Nrows()
@@ -100,11 +108,11 @@ func (sp SpMat) Randomize(density float64) {
 }
 
 func (sp SpMat) Mutate(rate float64, density float64) {
-	d2 := density / 2.0
 	nr := sp.Nrows()
 	nc := sp.Ncols()
 	dist := distuv.Poisson{Lambda: rate * float64(nr*nc)}
 	n := int(dist.Rand())
+	d2 := density * 0.5
 	for range n {
 		i := rand.IntN(nr)
 		j := rand.IntN(nc)
