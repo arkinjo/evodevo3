@@ -1,10 +1,11 @@
 package multicell
 
 import (
-	"gonum.org/v1/gonum/stat/distuv"
 	"log"
 	"maps"
 	"math/rand/v2"
+
+	"gonum.org/v1/gonum/stat/distuv"
 )
 
 // sparse matrix
