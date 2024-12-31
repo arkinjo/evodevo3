@@ -91,21 +91,43 @@ func (sp SpMat) Density() float64 {
 	return nonz / float64(sp.Nrows()*sp.Ncols())
 }
 
+func (sp SpMat) PickRandomElements(n int) SliceOfMaps[float64] {
+	nr := sp.Nrows()
+	nc := sp.Ncols()
+	ps := make(SliceOfMaps[float64], nr)
+	k := 0
+	for {
+		if k == n {
+			break
+		}
+		i := rand.IntN(nr)
+		j := rand.IntN(nc)
+		if ps[i] == nil {
+			ps[i] = make(map[int]float64)
+		} else if ps[i][j] > 0.0 {
+			continue
+		}
+		ps[i][j] = rand.Float64()
+		k += 1
+	}
+
+	return ps
+}
+
 // random matrix
 func (sp SpMat) Randomize(density float64) {
 	nr := sp.Nrows()
 	nc := sp.Ncols()
 	dist := distuv.Poisson{Lambda: density * float64(nr*nc)}
 	n := int(dist.Rand())
-	for range n {
-		i := rand.IntN(nr)
-		j := rand.IntN(nc)
-		if rand.IntN(2) == 1 {
+	ps := sp.PickRandomElements(n)
+	ps.Do(func(i, j int, r float64) {
+		if r < 0.5 {
 			sp.M[i][j] = 1
 		} else {
 			sp.M[i][j] = -1
 		}
-	}
+	})
 }
 
 func (sp SpMat) Mutate(rate float64, density float64) {
@@ -113,18 +135,20 @@ func (sp SpMat) Mutate(rate float64, density float64) {
 	nc := sp.Ncols()
 	dist := distuv.Poisson{Lambda: rate * float64(nr*nc)}
 	n := int(dist.Rand())
-	d2 := density * 0.5
-	for range n {
-		i := rand.IntN(nr)
-		j := rand.IntN(nc)
-		delete(sp.M[i], j)
-		r := rand.Float64()
-		if r < d2 {
-			sp.M[i][j] = 1.0
-		} else if r < density {
-			sp.M[i][j] = -1.0
+	ps := sp.PickRandomElements(n)
+	ps.Do(func(i, j int, r float64) {
+		if r < density {
+			if v, ok := sp.M[i][j]; ok {
+				sp.M[i][j] = -v
+			} else if rand.IntN(2) == 1 {
+				sp.M[i][j] = 1.0
+			} else {
+				sp.M[i][j] = -1.0
+			}
+		} else {
+			delete(sp.M[i], j)
 		}
-	}
+	})
 }
 
 func (mat0 SpMat) MateWith(mat1 SpMat) (SpMat, SpMat) {
