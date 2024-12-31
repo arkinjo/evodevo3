@@ -136,11 +136,12 @@ func (sp SpMat) Mutate(rate float64, density float64) {
 	dist := distuv.Poisson{Lambda: rate * float64(nr*nc)}
 	n := int(dist.Rand())
 	ps := sp.PickRandomElements(n)
+	d2 := density / 2.0
 	ps.Do(func(i, j int, r float64) {
 		if r < density {
 			if v, ok := sp.M[i][j]; ok {
 				sp.M[i][j] = -v
-			} else if rand.IntN(2) == 1 {
+			} else if r < d2 {
 				sp.M[i][j] = 1.0
 			} else {
 				sp.M[i][j] = -1.0
