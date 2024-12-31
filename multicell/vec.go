@@ -106,6 +106,14 @@ func (v Vec) Norm2() float64 {
 	return math.Sqrt(d)
 }
 
+func (v Vec) NormInf() float64 {
+	d := 0.0
+	for _, x := range v {
+		d = max(d, math.Abs(x))
+	}
+	return d
+}
+
 func (v0 Vec) MateWith(v1 Vec) (Vec, Vec) {
 	nv0 := slices.Clone(v0)
 	nv1 := slices.Clone(v1)
