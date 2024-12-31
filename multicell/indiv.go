@@ -120,19 +120,16 @@ func (indiv *Individual) SetFitness(s *Setting, selenv Vec, dev float64) {
 	selphen := indiv.SelectedPhenotype(s)
 	dv := make(Vec, len(selenv))
 	mis := 0.0
-	fit := 0.0
 	for _, p := range selphen {
 		dv.Diff(p, selenv)
 		mis += dv.Norm1()
-		fit += DotVecs(p, selenv)
 	}
 	indiv.Mismatch = mis / float64(len(selenv)*len(selphen))
 
 	if dev >= s.ConvDevelop && s.MaxDevelop > 1 {
 		indiv.Fitness = 0.0
 	} else {
-		fit /= float64(len(selenv) * len(selphen))
-		indiv.Fitness = math.Exp(s.SelStrength * (fit - 1))
+		indiv.Fitness = math.Exp(-s.SelStrength * indiv.Mismatch)
 	}
 }
 
