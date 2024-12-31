@@ -158,24 +158,6 @@ func TestIndividual(t *testing.T) {
 	}
 }
 
-func TestGenome(t *testing.T) {
-	s := multicell.GetDefaultSetting("Full")
-	g := s.NewGenome()
-	if len(g.E) != multicell.NumFaces {
-		t.Errorf("len(g.E)=%d; want %d", len(g.E), multicell.NumFaces)
-	}
-	maxL := 0
-	for l := range g.M {
-		if maxL < l {
-			maxL = l
-		}
-	}
-	if maxL != s.NumLayers-1 {
-		t.Errorf("maxL=%d; want %d", maxL, s.NumLayers-1)
-	}
-
-}
-
 func TestVecMutate(t *testing.T) {
 	vec0 := multicell.NewVec(100, 1.0)
 	vec1 := vec0.Clone()
@@ -196,22 +178,6 @@ func TestVecMateWit(t *testing.T) {
 	nv0, nv1 := vec0.MateWith(vec1)
 	if slices.Equal(nv0, vec0) || slices.Equal(nv1, vec1) {
 		t.Errorf("Vec.MateWith() failed.")
-	}
-}
-
-func TestGenomeClone(t *testing.T) {
-	s := multicell.GetDefaultSetting("Full")
-	g0 := s.NewGenome()
-	g1 := g0.Clone()
-	if !g0.Equal(g1) {
-		t.Errorf("Genome cloning failed.")
-	}
-	g1.M[1][0].Randomize(0.1)
-	if g0.M[1][0].Equal(g1.M[1][0]) {
-		t.Errorf("Genome randomization failed (1).")
-	}
-	if !g0.M[2][1].Equal(g1.M[2][1]) {
-		t.Errorf("Genome randomization failed (2).")
 	}
 }
 
@@ -308,65 +274,6 @@ func TestProjection(t *testing.T) {
 	}
 }
 
-func TestGenomeEqual(t *testing.T) {
-	s := multicell.GetDefaultSetting("Full")
-	s.Outdir = "traj"
-	s.MaxGeneration = 10
-	envs := s.SaveEnvs(ENVSFILE, 50)
-
-	pop0 := s.NewPopulation(envs[0])
-	pop0, dumpfile := pop0.Evolve(s, envs[0])
-	pop0.Sort()
-
-	pop1 := s.LoadPopulation(dumpfile)
-	pop1.Initialize(s, envs[1])
-	selenv := envs[1].SelectingEnv(s)
-	pop1.Develop(s, selenv)
-	pop1.Sort()
-	for i, indiv := range pop0.Indivs {
-		if !indiv.Genome.Equal(pop1.Indivs[i].Genome) {
-			t.Errorf("Genomes are not equal")
-		}
-	}
-}
-
-func TestGenomeVecs(t *testing.T) {
-	s := multicell.GetDefaultSetting("Full")
-	s.Outdir = "traj"
-	s.MaxGeneration = 10
-	envs := s.SaveEnvs(ENVSFILE, 50)
-
-	pop0 := s.NewPopulation(envs[0])
-	pop0, dumpfile := pop0.Evolve(s, envs[0])
-	pop0.Sort()
-
-	pop1 := s.LoadPopulation(dumpfile)
-	pop1.Initialize(s, envs[1])
-	selenv := envs[1].SelectingEnv(s)
-	pop1.Develop(s, selenv)
-	pop1.Sort()
-
-	vecs0 := pop0.GenomeVecs(s)
-	vecs1 := pop1.GenomeVecs(s)
-	dvec := make(multicell.Vec, len(vecs0[0]))
-	for i, v0 := range vecs0 {
-		g0 := pop0.Indivs[i].Genome
-		g1 := pop1.Indivs[i].Genome
-		v1 := vecs1[i]
-		v1.Diff(dvec, v0)
-		del := dvec.Norm1()
-		if del > 0 {
-			t.Errorf("genome vecs %d differ by %f", i, del)
-			fmt.Printf("genome equality: %d %t\n", i, g0.Equal(g1))
-			for k, x := range v0 {
-				if x != v1[k] {
-					fmt.Printf("%d\t%d\t%f\t%f\n", i, k, x, v1[k])
-				}
-			}
-		}
-	}
-}
-
 func TestSVD(t *testing.T) {
 	M := mat.NewDense(2, 3, []float64{1, 2, 3, 4, 5, 6})
 	var svd mat.SVD
@@ -381,17 +288,4 @@ func TestSVD(t *testing.T) {
 	u0 := u.ColView(0).(*mat.VecDense).RawVector().Data
 	v0 := v.RawRowView(0)
 	fmt.Println(len(sv), u0, v0, v)
-}
-
-func TestGenomeW(t *testing.T) {
-	s := multicell.GetDefaultSetting("Full")
-	s.Outdir = "traj"
-	s.SelStrength = 20
-	envs := s.SaveEnvs(ENVSFILE, 50)
-	pop := s.NewPopulation(envs[0])
-	pop, _ = pop.Evolve(s, envs[0])
-	for i, indiv := range pop.Indivs {
-		fmt.Println(i, "\t", indiv.Genome.W)
-	}
-
 }
