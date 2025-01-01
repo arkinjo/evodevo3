@@ -121,7 +121,7 @@ func (c *Cell) DevStep(s *Setting, g Genome, istep int) float64 {
 		}
 		afunc := LCatan(g.W[l] * s.Omega[l])
 		if l == s.NumLayers-1 {
-			afunc = StepFunc(g.W[l] * s.Omega[l])
+			afunc = CStep1(g.W[l] * s.Omega[l])
 		}
 		c.S[l].ApplyFVec(afunc, va)
 	}
