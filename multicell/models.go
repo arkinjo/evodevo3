@@ -40,16 +40,14 @@ func (s *Setting) SetLayer(n int) {
 		s.LenLayer[1] = slen
 		s.LenLayer[2] = slen
 		s.DensityEM = default_density
-		for l := range s.NumLayers {
-			// feedforward
-			if l > 0 {
-				s.Topology[l][l-1] = default_density
-			}
-			// feedback (no feedback for the phenotype layer)
-			if l < s.NumLayers-1 {
-				s.Topology[l][l] = default_density
-			}
-		}
+
+		// feedforward
+		s.Topology[1][0] = default_density
+		s.Topology[2][1] = default_density
+		s.Topology[3][2] = default_density
+		// feedback
+		s.Topology[0][1] = default_density
+		s.Topology[1][2] = default_density
 	case 2:
 		s.LenLayer[0] = slen * 3 / 2
 		s.LenLayer[1] = slen * 3 / 2
@@ -58,17 +56,17 @@ func (s *Setting) SetLayer(n int) {
 		s.Topology[1][0] = default_density * 8.0 / 9.0
 		s.Topology[2][1] = default_density * 2.0 / 3.0
 		// feedback
-		s.Topology[0][0] = default_density * 2.0 / 3.0
-		s.Topology[1][1] = default_density * 2.0 / 3.0
+		s.Topology[0][1] = default_density * 8.0 / 9.0
+
 	case 1:
 		s.LenLayer[0] = slen * 3
 		//feedforward
 		s.DensityEM = default_density * 2.0 / 3.0
 		s.Topology[1][0] = default_density * 2.0 / 3.0
 		// feedback
-		s.Topology[0][0] = default_density / 3.0
+		s.Topology[0][0] = default_density * 2.0 / 9.0
 	case 0:
-		s.DensityEM = default_density * 7.0
+		s.DensityEM = default_density * 6.0
 	default:
 		log.Printf("SetLayer: unknown number of layers: %d\n", n)
 		panic("SetLayer")
