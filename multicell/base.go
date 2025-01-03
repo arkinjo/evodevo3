@@ -69,7 +69,6 @@ type Setting struct {
 	Alpha      float64              // weight for exponential moving average
 	NumLayers  int                  // number of middle layers
 	LenLayer   []int                // Length of each state vector
-	DensityEM  float64              // input -> middle layer genome density
 	Topology   SliceOfMaps[float64] // densities of genome matrices
 	Omega      Vec                  // initial scaling factors of activation functions
 }
@@ -97,7 +96,6 @@ func GetDefaultSetting(modelname string) *Setting {
 		//Alpha
 		//NumLayers
 		//LenLayer
-		//DensityEM
 		//Topology
 		//Omega
 	}
