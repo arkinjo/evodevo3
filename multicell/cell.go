@@ -15,11 +15,6 @@ type Cell struct {
 	Pvar   Vec
 }
 
-// all internal states into one vector.
-func (c *Cell) ToVec() Vec {
-	return slices.Concat(c.S[1 : len(c.S)-1]...)
-}
-
 func (s *Setting) NewCell(id int) Cell {
 	var facing [NumFaces]int
 	for i := range NumFaces {
@@ -49,6 +44,11 @@ func (c *Cell) Initialize(s *Setting) {
 	}
 	c.Pave.SetAll(1.0)
 	c.Pvar.SetAll(0.0)
+}
+
+// all internal states into one vector.
+func (c *Cell) ToVec() Vec {
+	return slices.Concat(c.S[1 : len(c.S)-1]...)
 }
 
 func (c *Cell) Left(s *Setting) Vec {
