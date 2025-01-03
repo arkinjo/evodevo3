@@ -17,9 +17,7 @@ type Cell struct {
 
 // all internal states into one vector.
 func (c *Cell) ToVec() Vec {
-	var vec Vec
-	return slices.Concat(c.S[:len(c.S)-1]...)
-	return vec
+	return slices.Concat(c.S[1 : len(c.S)-1]...)
 }
 
 func (s *Setting) NewCell(id int) Cell {
