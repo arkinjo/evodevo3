@@ -9,8 +9,8 @@ import (
 type Cell struct {
 	Id     int           // Identifier within an individual
 	Facing [NumFaces]int // Facing Cell's Id; -1 if none.
-	E      []Vec         // points to neighboring cell face or environment
-	S      []Vec         // middle and output layers
+	Cue    []Vec         // points to neighboring cell face or environment
+	S      []Vec         // state vectors
 	Pave   Vec
 	Pvar   Vec
 }
@@ -39,7 +39,7 @@ func (s *Setting) NewCell(id int) Cell {
 	return Cell{
 		Id:     id,
 		Facing: facing,
-		E:      e,
+		Cue:    e,
 		S:      m,
 		Pave:   pave,
 		Pvar:   pvar}
@@ -104,16 +104,11 @@ func (c *Cell) OppositeFace(s *Setting, iface int) Vec {
 }
 
 func (c *Cell) DevStep(s *Setting, g Genome, istep int) float64 {
-	v0 := make([]Vec, NumFaces)
-	for i, ei := range c.E {
-		v0[i] = make(Vec, s.LenFace)
-		v0[i].Diff(ei, c.Face(s, i))
-	}
-	s0 := slices.Concat(v0...)
 	for l, tl := range s.Topology {
 		va := make(Vec, s.LenLayer[l])
 		if l == 0 {
-			va.Acc(s0)
+			s0 := slices.Concat(c.Cue...)
+			va.Diff(s0, c.S[s.NumLayers-1])
 		}
 		for k := range tl {
 			va.MultSpMatVec(g.M[l][k], c.S[k]) // va is accumulated.

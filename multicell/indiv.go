@@ -26,9 +26,9 @@ func (s *Setting) SetCellEnv(cells []Cell, env Environment) {
 	for i, c := range cells {
 		for iface, iop := range c.Facing {
 			if iop < 0 {
-				cells[i].E[iface] = cue.Face(s, iface)
+				cells[i].Cue[iface] = cue.Face(s, iface)
 			} else {
-				cells[i].E[iface] = cells[iop].OppositeFace(s, iface)
+				cells[i].Cue[iface] = cells[iop].OppositeFace(s, iface)
 			}
 		}
 	}
@@ -40,7 +40,7 @@ func (indiv *Individual) CueVec(s *Setting) Vec {
 	for _, c := range indiv.Cells {
 		for iface, iopp := range c.Facing {
 			if iopp < 0 {
-				vec = append(vec, c.E[iface]...)
+				vec = append(vec, c.Cue[iface]...)
 			}
 		}
 	}
