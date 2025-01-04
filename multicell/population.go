@@ -52,11 +52,9 @@ func (pop *Population) GetPopStats() PopStats {
 
 func (s *Setting) NewPopulation(env Environment) Population {
 	var indivs []Individual
-	//	genome := s.NewGenome()
 	for id := range s.MaxPopulation {
 		indiv := s.NewIndividual(id, env)
-		indiv.Genome = s.NewGenome() //genome.Clone()
-		//		indiv.Genome.Mutate(s)
+		indiv.Genome = s.NewGenome()
 		indivs = append(indivs, indiv)
 	}
 	return Population{
