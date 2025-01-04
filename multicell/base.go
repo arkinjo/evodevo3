@@ -27,25 +27,6 @@ const (
 	default_W_scale       = 1.1
 )
 
-// sparse matrix of anything.
-type SliceOfMaps[T any] []map[int]T
-
-func (sm SliceOfMaps[T]) Do(f func(i, j int, v T)) {
-	for i, mi := range sm {
-		for j, v := range mi {
-			f(i, j, v)
-		}
-	}
-}
-
-func NewSliceOfMaps[T any](n int) SliceOfMaps[T] {
-	t := make([]map[int]T, n)
-	for i := range n {
-		t[i] = make(map[int]T)
-	}
-	return t
-}
-
 // various set-ups
 type Setting struct {
 	Basename      string  // name of the model
