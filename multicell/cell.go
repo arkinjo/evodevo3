@@ -109,11 +109,11 @@ func (c *Cell) DevStep(s *Setting, g Genome, istep int) float64 {
 			va.Diff(s0, c.S[s.NumLayers-1])
 		}
 		for k := range tl {
-			va.MultSpMatVec(g.M[l][k], c.S[k]) // va is accumulated.
+			va.MultSpMatVec(g.G[l][k], c.S[k]) // va is accumulated.
 		}
-		afunc := LCatan(g.W[l] * s.Omega[l])
+		afunc := LCatan(s.Omega[l])
 		if l == s.NumLayers-1 {
-			afunc = CStep1(g.W[l] * s.Omega[l])
+			afunc = CStep1(s.Omega[l])
 		}
 		c.S[l].ApplyFVec(afunc, va)
 	}

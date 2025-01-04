@@ -90,7 +90,7 @@ func (s *Setting) SetDevelop(flag bool) {
 func (s *Setting) SetOmega() {
 	s.Omega = make(Vec, s.NumLayers)
 
-	s.Omega[0] = 1.0 // -2 or 0 with probability 1/2 each, initially.
+	s.Omega[0] = 2.0 // -2 or 0 with probability 1/2 each, initially.
 	s.Topology.Do(func(l, k int, density float64) {
 		s.Omega[l] += density * float64(s.LenLayer[k])
 	})
