@@ -26,7 +26,60 @@ var models = map[string]model_t{
 	"Null":    {false, false, 0},
 }
 
-func (s *Setting) SetLayer(n int) {
+// Self-loop for hidden layers
+func (s *Setting) SetLayerSL(n int) {
+	s.NumLayers = n + 2
+	s.LenLayer = make([]int, s.NumLayers)
+	slen := s.LenFace * NumFaces
+	s.LenLayer[0] = slen
+	s.LenLayer[s.NumLayers-1] = slen
+
+	s.Topology = NewSliceOfMaps[float64](s.NumLayers)
+
+	switch n {
+	case 3:
+		s.LenLayer[1] = slen
+		s.LenLayer[2] = slen
+		s.LenLayer[3] = slen
+
+		// feedforward
+		s.Topology[1][0] = default_density
+		s.Topology[2][1] = default_density
+		s.Topology[3][2] = default_density
+		s.Topology[4][3] = default_density
+		// feedback
+		s.Topology[1][1] = default_density
+		s.Topology[2][2] = default_density
+		s.Topology[3][3] = default_density
+
+	case 2:
+		s.LenLayer[1] = slen * 3 / 2
+		s.LenLayer[2] = slen * 3 / 2
+		//feedforward
+		s.Topology[1][0] = default_density * 2.0 / 3.0
+		s.Topology[2][1] = default_density * 8.0 / 9.0
+		s.Topology[3][2] = default_density * 2.0 / 3.0
+		// feedback
+		s.Topology[1][1] = default_density * 2.0 / 3.0
+		s.Topology[2][2] = default_density * 2.0 / 3.0
+
+	case 1:
+		s.LenLayer[1] = slen * 3
+		//feedforward
+		s.Topology[1][0] = default_density * 2.0 / 3.0
+		s.Topology[2][1] = default_density * 2.0 / 3.0
+		// feedback
+		s.Topology[1][1] = default_density / 3.0
+	case 0:
+		s.Topology[1][0] = default_density * 7.0
+	default:
+		log.Printf("SetLayer: unknown number of layers: %d\n", n)
+		panic("SetLayer")
+	}
+}
+
+// Feedback loop to the previous layer
+func (s *Setting) SetLayerM1(n int) {
 	s.NumLayers = n + 2
 	s.LenLayer = make([]int, s.NumLayers)
 	slen := s.LenFace * NumFaces
@@ -49,7 +102,6 @@ func (s *Setting) SetLayer(n int) {
 		// feedback
 		s.Topology[1][2] = default_density
 		s.Topology[2][3] = default_density
-		s.Topology[3][4] = default_density
 
 	case 2:
 		s.LenLayer[1] = slen * 3 / 2
@@ -60,7 +112,6 @@ func (s *Setting) SetLayer(n int) {
 		s.Topology[3][2] = default_density * 2.0 / 3.0
 		// feedback
 		s.Topology[1][2] = default_density * 8.0 / 9.0
-		s.Topology[2][3] = default_density * 2.0 / 3.0
 
 	case 1:
 		s.LenLayer[1] = slen * 3
@@ -68,9 +119,9 @@ func (s *Setting) SetLayer(n int) {
 		s.Topology[1][0] = default_density * 2.0 / 3.0
 		s.Topology[2][1] = default_density * 2.0 / 3.0
 		// feedback
-		s.Topology[1][2] = default_density
+		s.Topology[1][1] = default_density * 2.0 / 9.0
 	case 0:
-		s.Topology[1][0] = default_density * 7.0
+		s.Topology[1][0] = default_density * 6.0
 	default:
 		log.Printf("SetLayer: unknown number of layers: %d\n", n)
 		panic("SetLayer")
@@ -106,7 +157,7 @@ func (s *Setting) SetModel(basename string) {
 	m, ok := models[basename]
 	if ok {
 		s.Basename = basename
-		s.SetLayer(m.nLayers)
+		s.SetLayerSL(m.nLayers)
 		s.SetDevelop(m.develop)
 		s.WithCue = m.cue
 		s.SetOmega()
