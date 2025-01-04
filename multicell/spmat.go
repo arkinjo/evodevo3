@@ -112,8 +112,7 @@ func (sp SpMat) Randomize(density float64) {
 	nc := sp.Ncols()
 	dist := distuv.Poisson{Lambda: density * float64(nr*nc)}
 	n := int(dist.Rand())
-	ps := sp.PickRandomElements(n)
-	ps.Do(func(i, j int, r float64) {
+	sp.PickRandomElements(n).Do(func(i, j int, r float64) {
 		if r < 0.5 {
 			sp.M[i][j] = 1
 		} else {
@@ -123,13 +122,12 @@ func (sp SpMat) Randomize(density float64) {
 }
 
 func (sp SpMat) Mutate(rate float64, density float64) {
+	d2 := density / 2.0
 	nr := sp.Nrows()
 	nc := sp.Ncols()
 	dist := distuv.Poisson{Lambda: rate * float64(nr*nc)}
 	n := int(dist.Rand())
-	ps := sp.PickRandomElements(n)
-	d2 := density / 2.0
-	ps.Do(func(i, j int, r float64) {
+	sp.PickRandomElements(n).Do(func(i, j int, r float64) {
 		if r < density {
 			if v, ok := sp.M[i][j]; ok {
 				sp.M[i][j] = -v
