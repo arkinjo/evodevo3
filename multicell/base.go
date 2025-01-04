@@ -51,7 +51,7 @@ type Setting struct {
 	NumLayers  int                  // number of middle layers
 	LenLayer   []int                // Length of each state vector
 	Topology   SliceOfMaps[float64] // densities of genome matrices
-	Omega      Vec                  // initial scaling factors of activation functions
+	Omega      Vec                  // scaling factors of activation functions
 }
 
 func GetDefaultSetting(modelname string) *Setting {
