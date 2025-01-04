@@ -94,5 +94,5 @@ func main() {
 		pop.Iepoch = iepoch
 		pop, dumpfile = pop.Evolve(sim.Setting, sim.Envs[iepoch])
 	}
-	log.Printf("Total Time: %v; Dumpifle: %s\n", time.Since(t0), dumpfile)
+	log.Printf("Total Time: %v; Dumpfile: %s\n", time.Since(t0), dumpfile)
 }
