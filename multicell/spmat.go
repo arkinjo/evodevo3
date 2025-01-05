@@ -22,10 +22,6 @@ func (sp SpMat) Ncols() int {
 	return sp.Ncol
 }
 
-//func (sp SpMat) Do(f func(i, j int, v float64)) {
-//	sp.M.Do(f)
-//}
-
 func (sp0 SpMat) Equal(sp1 SpMat) bool {
 	if sp0.Nrows() != sp1.Nrows() || sp0.Ncols() != sp1.Ncols() {
 		return false
