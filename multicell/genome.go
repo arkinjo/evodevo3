@@ -15,7 +15,7 @@ package multicell
 // doesn't work either... new methods can't be defined for Genome.
 
 type Genome struct {
-	M SliceOfMaps[SpMat]
+	SliceOfMaps[SpMat]
 }
 
 // Expected variance of a random genome.
@@ -31,8 +31,8 @@ func (s *Setting) RandomGenomeVariance() float64 {
 func (s *Setting) NewGenome() Genome {
 	G := NewSliceOfMaps[SpMat](s.NumLayers)
 	s.Topology.Do(func(l, k int, density float64) {
-		G[l][k] = NewSpMat(s.LenLayer[l], s.LenLayer[k])
-		G[l][k].Randomize(density)
+		G.M[l][k] = NewSpMat(s.LenLayer[l], s.LenLayer[k])
+		G.M[l][k].Randomize(density)
 	})
 
 	return Genome{G}
@@ -40,8 +40,8 @@ func (s *Setting) NewGenome() Genome {
 
 func (genome Genome) Clone() Genome {
 	G := NewSliceOfMaps[SpMat](len(genome.M))
-	genome.M.Do(func(l, k int, mat SpMat) {
-		G[l][k] = mat.Clone()
+	genome.Do(func(l, k int, mat SpMat) {
+		G.M[l][k] = mat.Clone()
 	})
 
 	return Genome{G}
@@ -56,8 +56,8 @@ func (genome Genome) Mutate(s *Setting) {
 func (g0 Genome) MateWith(g1 Genome) (Genome, Genome) {
 	M0 := NewSliceOfMaps[SpMat](len(g0.M))
 	M1 := NewSliceOfMaps[SpMat](len(g1.M))
-	g0.M.Do(func(l, k int, m0 SpMat) {
-		M0[l][k], M1[l][k] = m0.MateWith(g1.M[l][k])
+	g0.Do(func(l, k int, m0 SpMat) {
+		M0.M[l][k], M1.M[l][k] = m0.MateWith(g1.M[l][k])
 	})
 
 	return Genome{M0}, Genome{M1}

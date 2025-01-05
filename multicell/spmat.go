@@ -11,7 +11,7 @@ import (
 // sparse matrix
 type SpMat struct {
 	Ncol int
-	M    SliceOfMaps[float64]
+	SliceOfMaps[float64]
 }
 
 func (sp SpMat) Nrows() int {
@@ -22,9 +22,9 @@ func (sp SpMat) Ncols() int {
 	return sp.Ncol
 }
 
-func (sp SpMat) Do(f func(i, j int, v float64)) {
-	sp.M.Do(f)
-}
+//func (sp SpMat) Do(f func(i, j int, v float64)) {
+//	sp.M.Do(f)
+//}
 
 func (sp0 SpMat) Equal(sp1 SpMat) bool {
 	if sp0.Nrows() != sp1.Nrows() || sp0.Ncols() != sp1.Ncols() {
@@ -41,10 +41,7 @@ func (sp0 SpMat) Equal(sp1 SpMat) bool {
 // Create a new sparse matrix
 func NewSpMat(nrow, ncol int) SpMat {
 	mat := NewSliceOfMaps[float64](nrow)
-	return SpMat{
-		Ncol: ncol,
-		M:    mat}
-
+	return SpMat{ncol, mat}
 }
 
 // copy a sparse matrix
@@ -77,7 +74,7 @@ func (sp *SpMat) ToVec() Vec {
 
 func (sp SpMat) Density() float64 {
 	nonz := 0.0
-	sp.M.Do(func(_, _ int, _ float64) {
+	sp.Do(func(_, _ int, _ float64) {
 		nonz += 1.0
 	})
 	return nonz / float64(sp.Nrows()*sp.Ncols())
@@ -86,7 +83,7 @@ func (sp SpMat) Density() float64 {
 func (sp SpMat) PickRandomElements(n int) SliceOfMaps[float64] {
 	nr := sp.Nrows()
 	nc := sp.Ncols()
-	ps := make(SliceOfMaps[float64], nr)
+	ps := NewSliceOfMaps[float64](nr)
 	k := 0
 	for {
 		if k == n {
@@ -94,12 +91,10 @@ func (sp SpMat) PickRandomElements(n int) SliceOfMaps[float64] {
 		}
 		i := rand.IntN(nr)
 		j := rand.IntN(nc)
-		if ps[i] == nil {
-			ps[i] = make(map[int]float64)
-		} else if ps[i][j] > 0.0 {
+		if ps.M[i][j] > 0.0 {
 			continue
 		}
-		ps[i][j] = rand.Float64()
+		ps.M[i][j] = rand.Float64()
 		k += 1
 	}
 
