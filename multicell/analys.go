@@ -402,3 +402,44 @@ func (pop *Population) AnalyzeVarEnvs(s *Setting, env0 Environment, n int, selec
 		fmt.Fprintf(fout, "\n")
 	}
 }
+
+// Comparing adaptive plastic response in env0 to evolutionary adaptation to env1
+func (s *Setting) AnalyzeAPRGeno(env0, env1 Environment, pop0, pop1 Population) {
+	// Generation 1 in novel environment.
+	gvecs0 := pop0.GenomeVecs(s)
+	mg0 := MeanVecs(gvecs0)
+	vg0 := VarVecs(gvecs0, mg0)
+	pvecs0N := pop0.PhenoVecs(s, true)
+	selenv0 := env0.SelectingEnv(s)
+	pop0.Initialize(s, env0)
+	pop0.Develop(s, selenv0)
+	pvecs0A := pop0.PhenoVecs(s, true)
+	dpvecs0 := DiffMats(pvecs0N, pvecs0A)
+	mp0 := MeanVecs(dpvecs0)
+	sv, _, vs := XPCA(dpvecs0, mp0, gvecs0, mg0)
+
+	// Generation 200(?) adapted to novel environment.
+	gvecs1 := pop1.GenomeVecs(s)
+	mg1 := MeanVecs(gvecs1)
+	vg1 := VarVecs(gvecs1, mg1)
+	dg1 := make(Vec, len(mg1))
+	dg1.Diff(mg1, mg0)
+
+	if DotVecs(dg1, vs[0]) < 0 {
+		vs[0].ScaleBy(-1)
+	}
+	filename := s.TrajectoryFilename(pop0.Iepoch, pop0.Igen, "aprgeno")
+	log.Printf("AnalyzeAPRGeno output to %s\n", filename)
+	fout, err := os.Create(filename)
+	JustFail(err)
+	defer fout.Close()
+
+	fmt.Fprintf(fout, "SV\t%e\t%e\n", sv.Norm2(), sv[0])
+
+	for i, v := range vs[0] {
+		fmt.Fprintf(fout, "G\t%d\t%e\t%e", i, v, dg1[i])
+		fmt.Fprintf(fout, "\t%e\t%e", mg0[i], vg0[i])
+		fmt.Fprintf(fout, "\t%e\t%e", mg1[i], vg1[i])
+		fmt.Fprintf(fout, "\n")
+	}
+}
