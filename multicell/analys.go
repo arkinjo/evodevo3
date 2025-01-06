@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"math/rand/v2"
 	"os"
 
 	"gonum.org/v1/gonum/mat"
@@ -60,10 +61,14 @@ func GetAxis(v0, v1 Vec) Vec {
 	return dv
 }
 
-func (s *Setting) GetPhenoAxis(env0, env1 Environment) (Vec, Vec) {
-	senv0 := env0.SelectingEnv(s)
-	senv1 := env1.SelectingEnv(s)
-	return senv0, GetAxis(senv0, senv1)
+func (s *Setting) GetPhenoAxis(selected bool, env0, env1 Environment) (Vec, Vec) {
+	if selected {
+		senv0 := env0.SelectingEnv(s)
+		senv1 := env1.SelectingEnv(s)
+		return senv0, GetAxis(senv0, senv1)
+	} else {
+		return env0, GetAxis(env0, env1)
+	}
 }
 
 func (s *Setting) GetGenomeAxis(pop0, pop1 Population) (Vec, Vec) {
@@ -184,7 +189,7 @@ func (pop *Population) PrintPopStats(fout *os.File, gs, ps Vec) {
 	fmt.Fprintf(fout, "Fit\t%d\t%e\t%e\n", pop.Igen, fa, fv)
 }
 
-func (pop *Population) GenoPhenoPlot(s *Setting, p0, paxis, g0, gaxis Vec) {
+func (pop *Population) GenoPhenoPlot(s *Setting, selected bool, p0, paxis, g0, gaxis Vec) {
 	filename := s.TrajectoryFilename(pop.Iepoch, pop.Igen, "gpplot")
 	fout, err := os.Create(filename)
 	JustFail(err)
@@ -193,7 +198,7 @@ func (pop *Population) GenoPhenoPlot(s *Setting, p0, paxis, g0, gaxis Vec) {
 	gvecs := pop.GenomeVecs(s)
 	gs := ProjectOnAxis(gvecs, g0, gaxis)
 
-	pvecs := pop.PhenoVecs(s)
+	pvecs := pop.PhenoVecs(s, selected)
 	ps := ProjectOnAxis(pvecs, p0, paxis)
 
 	pop.PrintPopStats(fout, gs, ps)
@@ -213,8 +218,8 @@ func (pop *Population) GenoPhenoPlot(s *Setting, p0, paxis, g0, gaxis Vec) {
 	log.Printf("Projection saved in: %s", filename)
 }
 
-func (pop *Population) Project(s *Setting, p0, paxis, g0, gaxis, c0, caxis Vec) {
-	filename := s.TrajectoryFilename(pop.Iepoch, pop.Igen, "gpplot")
+func (pop *Population) SVDProject(s *Setting, selected bool, p0, paxis, g0, gaxis, c0, caxis Vec) {
+	filename := s.TrajectoryFilename(pop.Iepoch, pop.Igen, "xpca")
 	fout, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	JustFail(err)
 	defer fout.Close()
@@ -225,10 +230,11 @@ func (pop *Population) Project(s *Setting, p0, paxis, g0, gaxis, c0, caxis Vec) 
 
 	// Geno-Pheno Projection Plot
 	gvecs := pop.GenomeVecs(s)
-	pvecs := pop.PhenoVecs(s)
+	pvecs := pop.PhenoVecs(s, selected)
+
 	mg := MeanVecs(gvecs)
 	mp := MeanVecs(pvecs)
-	gs := ProjectOnAxis(gvecs, g0, paxis)
+	gs := ProjectOnAxis(gvecs, g0, gaxis)
 	ps := ProjectOnAxis(pvecs, p0, paxis)
 
 	//Pheno-Pheno variance-covariance
@@ -337,4 +343,57 @@ func XPCA(xs []Vec, x0 Vec, ys []Vec, y0 Vec) (Vec, []Vec, []Vec) {
 	}
 
 	return sv, u0, v0
+}
+
+// Analyze adaptive plastic responses to various environmental changes.
+func (pop *Population) AnalyzeVarEnvs(s *Setting, env0 Environment, n int, selected bool) {
+	gvecs := pop.GenomeVecs(s)
+	mg := MeanVecs(gvecs)
+	pvecs0 := pop.PhenoVecs(s, selected)
+	rng := rand.New(rand.NewPCG(s.Seed+11, s.Seed+17))
+	filename := s.TrajectoryFilename(pop.Iepoch, pop.Igen, "varenv")
+	log.Printf("AnalyzeVarEnvs output to %s\n", filename)
+	fout, err := os.Create(filename)
+	JustFail(err)
+	defer fout.Close()
+	var us, vs, envs []Vec
+	for i := range n {
+		log.Printf("Environment %d\n", i)
+		env := env0.ChangeEnv(s, rng)
+		envs = append(envs, env)
+		selenv := env.SelectingEnv(s)
+		pop.Initialize(s, env)
+		pop.Develop(s, selenv)
+		pvecs := pop.PhenoVecs(s, selected)
+		dpvecs := DiffMats(pvecs, pvecs0)
+		mp := MeanVecs(dpvecs)
+		sv, u, v := XPCA(dpvecs, mp, gvecs, mg)
+		us = append(us, u[0])
+		vs = append(vs, v[0])
+		ts := sv.Norm2()
+		fmt.Fprintf(fout, "SV\t%d\t%e\t%e\n", i, ts, sv[0])
+	}
+	for i, e := range env0 {
+		fmt.Fprintf(fout, "Env\t%d\t%f", i, e)
+		for k := range n {
+			fmt.Fprintf(fout, "\t%f", envs[k][i])
+		}
+		fmt.Fprintf(fout, "\n")
+	}
+
+	for i := range len(us[0]) {
+		fmt.Fprintf(fout, "P\t%d", i)
+		for k := range n {
+			fmt.Fprintf(fout, "\t%e", us[k][i])
+		}
+		fmt.Fprintf(fout, "\n")
+	}
+
+	for i := range len(vs[0]) {
+		fmt.Fprintf(fout, "G\t%d", i)
+		for k := range n {
+			fmt.Fprintf(fout, "\t%e", vs[k][i])
+		}
+		fmt.Fprintf(fout, "\n")
+	}
 }

@@ -140,3 +140,12 @@ func (vec Vec) Mutate(rate, scale float64) {
 		}
 	}
 }
+
+func DiffMats(vs1, vs0 []Vec) []Vec {
+	dvs := make([]Vec, len(vs0))
+	for i, v1 := range vs1 {
+		dvs[i] = make(Vec, len(v1))
+		dvs[i].Diff(v1, vs0[i])
+	}
+	return dvs
+}

@@ -93,6 +93,23 @@ func (s *Setting) NewIndividual(id int, env Environment) Individual {
 		Fitness:  0}
 }
 
+func (indiv *Individual) Phenotype(s *Setting) []Vec {
+	var p []Vec
+	for _, c := range indiv.Cells {
+		for i, facing := range c.Facing {
+			if facing < 0 {
+				p = append(p, c.Face(s, i))
+			}
+		}
+	}
+
+	return p
+}
+
+func (indiv *Individual) PhenotypeVec(s *Setting) Vec {
+	return slices.Concat(indiv.Phenotype(s)...)
+}
+
 func (indiv *Individual) SelectedPhenotype(s *Setting) []Vec {
 	var p []Vec
 	for _, c := range indiv.Cells {
