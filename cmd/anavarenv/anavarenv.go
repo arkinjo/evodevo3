@@ -1,6 +1,6 @@
 package main
 
-// Genome Analysis
+// Comparison of plastic responses to various environmental changes.
 
 import (
 	"flag"
