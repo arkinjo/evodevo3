@@ -349,7 +349,10 @@ func XPCA(xs []Vec, x0 Vec, ys []Vec, y0 Vec) (Vec, []Vec, []Vec) {
 func (pop *Population) AnalyzeVarEnvs(s *Setting, env0 Environment, n int, selected bool) {
 	gvecs := pop.GenomeVecs(s)
 	mg := MeanVecs(gvecs)
+	vg := VarVecs(gvecs, mg)
 	pvecs0 := pop.PhenoVecs(s, selected)
+	mp0 := MeanVecs(pvecs0)
+	vp0 := VarVecs(pvecs0, mp0)
 	rng := rand.New(rand.NewPCG(s.Seed+11, s.Seed+17))
 	filename := s.TrajectoryFilename(pop.Iepoch, pop.Igen, "varenv")
 	log.Printf("AnalyzeVarEnvs output to %s\n", filename)
@@ -381,16 +384,18 @@ func (pop *Population) AnalyzeVarEnvs(s *Setting, env0 Environment, n int, selec
 		fmt.Fprintf(fout, "\n")
 	}
 
+	fmt.Fprintf(fout, "#\tind\t%8s\t%8s\n", "mp0", "vp0")
 	for i := range len(us[0]) {
-		fmt.Fprintf(fout, "P\t%d", i)
+		fmt.Fprintf(fout, "P\t%d\t%e\t%e", i, mp0[i], vp0[i])
 		for k := range n {
 			fmt.Fprintf(fout, "\t%e", us[k][i])
 		}
 		fmt.Fprintf(fout, "\n")
 	}
 
+	fmt.Fprintf(fout, "#\tind\t%8s\t%8s\n", "mg", "vg")
 	for i := range len(vs[0]) {
-		fmt.Fprintf(fout, "G\t%d", i)
+		fmt.Fprintf(fout, "G\t%d\t%e\t%e", i, mg[i], vg[i])
 		for k := range n {
 			fmt.Fprintf(fout, "\t%e", vs[k][i])
 		}
