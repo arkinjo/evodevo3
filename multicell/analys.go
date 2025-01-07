@@ -403,6 +403,25 @@ func (pop *Population) AnalyzeVarEnvs(s *Setting, env0 Environment, n int, selec
 	}
 }
 
+func ConservedGenomeSites(mg1, vg1 Vec, gvecs []Vec) (map[int]int, []int) {
+	conserved := make(map[int]int)
+	for k, g := range mg1 {
+		if g != 0.0 && vg1[k] == 0.0 {
+			conserved[k] += 0
+		}
+	}
+	count := make([]int, len(gvecs))
+	for i, g := range gvecs {
+		for k := range conserved {
+			if math.Abs(mg1[k]-g[k]) < 1e-10 {
+				conserved[k] += 1
+				count[i] += 1
+			}
+		}
+	}
+	return conserved, count
+}
+
 // Comparing adaptive plastic response in env0 to evolutionary adaptation to env1
 func (s *Setting) AnalyzeAPRGeno(env0, env1 Environment, pop0, pop1 Population) {
 	// Generation 1 in novel environment.
@@ -411,12 +430,22 @@ func (s *Setting) AnalyzeAPRGeno(env0, env1 Environment, pop0, pop1 Population) 
 	vg0 := VarVecs(gvecs0, mg0)
 	pvecs0N := pop0.PhenoVecs(s, true)
 	selenv0 := env0.SelectingEnv(s)
+	selenv1 := env1.SelectingEnv(s)
+	dselenv := make(Vec, len(selenv0))
+	dselenv.Diff(selenv1, selenv0)
+	p0, paxis := s.GetPhenoAxis(true, env0, env1)
+	punit := paxis.Clone().Normalize()
+
+	pproj0 := ProjectOnAxis(pvecs0N, p0, paxis)
+
+	// develop in ancestral environment.
 	pop0.Initialize(s, env0)
 	pop0.Develop(s, selenv0)
 	pvecs0A := pop0.PhenoVecs(s, true)
+
 	dpvecs0 := DiffMats(pvecs0N, pvecs0A)
 	mp0 := MeanVecs(dpvecs0)
-	sv, _, vs := XPCA(dpvecs0, mp0, gvecs0, mg0)
+	sv, us, vs := XPCA(dpvecs0, mp0, gvecs0, mg0)
 
 	// Generation 200(?) adapted to novel environment.
 	gvecs1 := pop1.GenomeVecs(s)
@@ -424,20 +453,38 @@ func (s *Setting) AnalyzeAPRGeno(env0, env1 Environment, pop0, pop1 Population) 
 	vg1 := VarVecs(gvecs1, mg1)
 	dg1 := make(Vec, len(mg1))
 	dg1.Diff(mg1, mg0)
+	gaxis := GetAxis(mg0, mg1)
+	gunit := gaxis.Clone().Normalize()
+	gproj0 := ProjectOnAxis(gvecs0, mg0, gaxis)
+	conserved, count := ConservedGenomeSites(mg1, vg1, gvecs0)
 
-	if DotVecs(dg1, vs[0]) < 0 {
+	if DotVecs(punit, us[0]) < 0 {
 		vs[0].ScaleBy(-1)
+		us[0].ScaleBy(-1)
 	}
+
 	filename := s.TrajectoryFilename(pop0.Iepoch, pop0.Igen, "aprgeno")
 	log.Printf("AnalyzeAPRGeno output to %s\n", filename)
 	fout, err := os.Create(filename)
 	JustFail(err)
 	defer fout.Close()
 
-	fmt.Fprintf(fout, "SV\t%e\t%e\n", sv.Norm2(), sv[0])
-
+	fmt.Fprintf(fout, "SV\t%e\t%e\t%e\t%e\n",
+		sv.Norm2(), sv[0],
+		math.Abs(DotVecs(punit, us[0])),
+		math.Abs(DotVecs(gunit, vs[0])))
+	fmt.Fprintf(fout, "Cons\t%d\n", len(conserved))
+	fmt.Fprintf(fout, "#\tind\t%8s\t%8s\t%8s\n", "Gproj", "Pproj", "Ncons")
+	for i, pp := range pproj0 {
+		fmt.Fprintf(fout, "I\t%d\t%f\t%f\t%d\n", i, gproj0[i], pp, count[i])
+	}
+	fmt.Fprintf(fout, "#\tind\t%8s\t%8s\n", "U1", "dselenv")
+	for i, u := range us[0] {
+		fmt.Fprintf(fout, "P\t%d\t%e\t%e\n", i, u, dselenv[i])
+	}
 	for i, v := range vs[0] {
-		fmt.Fprintf(fout, "G\t%d\t%e\t%e", i, v, dg1[i])
+		fmt.Fprintf(fout, "G\t%d\t%e\t%e\t%d",
+			i, v, dg1[i], conserved[i])
 		fmt.Fprintf(fout, "\t%e\t%e", mg0[i], vg0[i])
 		fmt.Fprintf(fout, "\t%e\t%e", mg1[i], vg1[i])
 		fmt.Fprintf(fout, "\n")
