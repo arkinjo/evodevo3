@@ -456,8 +456,14 @@ func (s *Setting) AnalyzeAPRGeno(env0, env1 Environment, pop0, pop1 Population) 
 	gaxis := GetAxis(mg0, mg1)
 	gunit := gaxis.Clone().Normalize()
 	gproj0 := ProjectOnAxis(gvecs0, mg0, gaxis)
-	conserved, count := ConservedGenomeSites(mg1, vg1, gvecs0)
-
+	conserved1, count1 := ConservedGenomeSites(mg1, vg1, gvecs0)
+	conserved0, count0 := ConservedGenomeSites(mg0, vg0, gvecs1)
+	shared := make(map[int]bool)
+	for k := range conserved0 {
+		if _, ok := conserved1[k]; ok {
+			shared[k] = true
+		}
+	}
 	if DotVecs(punit, us[0]) < 0 {
 		vs[0].ScaleBy(-1)
 		us[0].ScaleBy(-1)
@@ -473,18 +479,20 @@ func (s *Setting) AnalyzeAPRGeno(env0, env1 Environment, pop0, pop1 Population) 
 		sv.Norm2(), sv[0],
 		math.Abs(DotVecs(punit, us[0])),
 		math.Abs(DotVecs(gunit, vs[0])))
-	fmt.Fprintf(fout, "Cons\t%d\n", len(conserved))
-	fmt.Fprintf(fout, "#\tind\t%8s\t%8s\t%8s\n", "Gproj", "Pproj", "Ncons")
+	fmt.Fprintf(fout, "Cons\t%d\t%d\t%d\n", len(conserved0), len(conserved1), len(shared))
+	fmt.Fprintf(fout, "#\tind\t%8s\t%8s\t%4s\t%4s\n",
+		"Gproj", "Pproj", "Cons0", "Cons1")
 	for i, pp := range pproj0 {
-		fmt.Fprintf(fout, "I\t%d\t%f\t%f\t%d\n", i, gproj0[i], pp, count[i])
+		fmt.Fprintf(fout, "I\t%d\t%f\t%f\t%d\t%d\n",
+			i, gproj0[i], pp, count0[i], count1[i])
 	}
 	fmt.Fprintf(fout, "#\tind\t%8s\t%8s\n", "U1", "dselenv")
 	for i, u := range us[0] {
 		fmt.Fprintf(fout, "P\t%d\t%e\t%e\n", i, u, dselenv[i])
 	}
 	for i, v := range vs[0] {
-		fmt.Fprintf(fout, "G\t%d\t%e\t%e\t%d",
-			i, v, dg1[i], conserved[i])
+		fmt.Fprintf(fout, "G\t%d\t%e\t%e\t%d\t%d",
+			i, v, dg1[i], conserved0[i], conserved1[i])
 		fmt.Fprintf(fout, "\t%e\t%e", mg0[i], vg0[i])
 		fmt.Fprintf(fout, "\t%e\t%e", mg1[i], vg1[i])
 		fmt.Fprintf(fout, "\n")
