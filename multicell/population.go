@@ -166,6 +166,16 @@ func (pop *Population) Initialize(s *Setting, env Environment) {
 	}
 }
 
+func (pop *Population) Clone(s *Setting, env Environment) Population {
+	var npop Population
+	npop.Iepoch = pop.Iepoch
+	npop.Igen = pop.Igen
+	for _, indiv := range pop.Indivs {
+		npop.Indivs = append(npop.Indivs, indiv.Clone(s, env))
+	}
+	return npop
+}
+
 func (s *Setting) TrajectoryFilename(iepoch, igen int, suffix string) string {
 	filename := fmt.Sprintf("%s/%s_%2.2d_%3.3d.%s",
 		s.Outdir, s.Basename, iepoch, igen, suffix)

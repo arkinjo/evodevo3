@@ -93,6 +93,12 @@ func (s *Setting) NewIndividual(id int, env Environment) Individual {
 		Fitness:  0}
 }
 
+func (indiv *Individual) Clone(s *Setting, env Environment) Individual {
+	kid := s.NewIndividual(indiv.Id, env)
+	kid.Genome = indiv.Genome.Clone()
+	return kid
+}
+
 func (indiv *Individual) Phenotype(s *Setting) []Vec {
 	var p []Vec
 	for _, c := range indiv.Cells {
