@@ -65,7 +65,7 @@ func main() {
 
 	g0, gaxis := sim.Setting.GetGenomeAxis(pop0, pop1)
 	p0, paxis := sim.Setting.GetPhenoAxis(sim.Selected, env0, env1)
-	log.Printf("Selected phenotype only? %b\n", sim.Selected)
+	log.Printf("Selected phenotype only? %t\n", sim.Selected)
 	c0, caxis := sim.Setting.GetCueAxis(env0, env1)
 
 	log.Printf("Plotting %s epoch %d population under env %d\n",
