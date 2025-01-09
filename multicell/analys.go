@@ -111,9 +111,6 @@ func (pop *Population) GetProjected1(s *Setting, fout *os.File, label string, xs
 		ali2 = math.Abs(DotVecs(u[1], axis))
 	}
 
-	fmt.Fprintf(fout, "%s\t%d\t%f\t%f\t%f\t%f\n",
-		label, pop.Igen, sv.Norm2(), sv[0], ali1, ali2)
-
 	px := ProjectOnAxis(xs, x0, u[0])
 	py := ProjectOnAxis(xs, x0, u[1])
 
@@ -127,13 +124,17 @@ func (pop *Population) GetProjected1(s *Setting, fout *os.File, label string, xs
 		u[1].ScaleBy(-1)
 	}
 
+	corr0, pval0 := CorrVecs(px, ps)
+	corr1, pval1 := CorrVecs(py, ps)
+	fmt.Fprintf(fout, "%s\t%d\t%f\t%f\t%f\t%f\t%f\t%e\t%f\t%e\n",
+		label, pop.Igen, sv.Norm2(), sv[0], ali1, ali2,
+		corr0, pval0, corr1, pval1)
+
 	filvec := s.TrajectoryFilename(pop.Iepoch, pop.Igen, label)
 	fvec, err := os.OpenFile(filvec, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	JustFail(err)
 	defer fvec.Close()
-	for i, x := range px {
-		fmt.Fprintf(fvec, "I\t%d\t%e\t%e\t%e\n", i, x, py[i], ps[i])
-	}
+
 	for i, ui := range u[0] {
 		fmt.Fprintf(fvec, "U\t%d\t%e\t%e\n", i, ui, u[1][i])
 	}
@@ -151,8 +152,6 @@ func (pop *Population) GetProjected2(s *Setting, fout *os.File, label string, xs
 	if vaxis != nil {
 		vali = math.Abs(DotVecs(v[0], vaxis))
 	}
-	fmt.Fprintf(fout, "%s\t%d\t%f\t%f\t%f\t%f\n",
-		label, pop.Igen, sv.Norm2(), sv[0], uali, vali)
 
 	px := ProjectOnAxis(xs, x0, u[0])
 	py := ProjectOnAxis(ys, y0, v[0])
@@ -163,15 +162,17 @@ func (pop *Population) GetProjected2(s *Setting, fout *os.File, label string, xs
 		u[0].ScaleBy(-1)
 		v[0].ScaleBy(-1)
 	}
+	corrp, pvalp := CorrVecs(ps, px)
+	corrg, pvalg := CorrVecs(gs, py)
+	fmt.Fprintf(fout, "%s\t%d\t%f\t%f\t%f\t%f\t%f\t%e\t%f\t%e\n",
+		label, pop.Igen, sv.Norm2(), sv[0], uali, vali,
+		corrp, pvalp, corrg, pvalg)
 
 	filvec := s.TrajectoryFilename(pop.Iepoch, pop.Igen, label)
 	fvec, err := os.OpenFile(filvec, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	JustFail(err)
 	defer fvec.Close()
 
-	for i, x := range px {
-		fmt.Fprintf(fvec, "I\t%d\t%e\t%e\n", i, py[i], x, gs[i], ps[i])
-	}
 	for i, ui := range u[0] {
 		fmt.Fprintf(fvec, "U\t%d\t%e\n", i, ui)
 	}
@@ -242,6 +243,8 @@ func (pop *Population) SVDProject(s *Setting, selected bool, p0, paxis, g0, gaxi
 	punit.Normalize()
 	gunit := gaxis.Clone()
 	gunit.Normalize()
+	cunit := caxis.Clone()
+	cunit.Normalize()
 
 	// Geno-Pheno Projection Plot
 	gvecs := pop.GenomeVecs(s)
@@ -258,7 +261,8 @@ func (pop *Population) SVDProject(s *Setting, selected bool, p0, paxis, g0, gaxi
 	// Pheno-Cue Cross-Covariance
 	cvecs := pop.CueVecs(s)
 	mc := c0 //MeanVecs(cvecs)
-	Ppc, Cpc := pop.GetProjected2(s, fout, "PCcov", pvecs, mp, cvecs, mc, punit, gunit, ps, gs)
+	cs := ProjectOnAxis(cvecs, c0, caxis)
+	Ppc, Cpc := pop.GetProjected2(s, fout, "PCcov", pvecs, mp, cvecs, mc, punit, cunit, ps, cs)
 
 	// Pheno-Geno Cross-Covariance
 	Ppg, Gpg := pop.GetProjected2(s, fout, "PGcov", pvecs, mp, gvecs, mg, punit, gunit, ps, gs)
