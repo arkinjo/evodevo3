@@ -1,6 +1,7 @@
 package multicell
 
 import (
+	"gonum.org/v1/gonum/stat/distuv"
 	"math"
 	"math/rand/v2"
 	"slices"
@@ -134,4 +135,28 @@ func DiffMats(vs1, vs0 []Vec) []Vec {
 		dvs[i].Diff(v1, vs0[i])
 	}
 	return dvs
+}
+
+func CorrVecs(vs0, vs1 Vec) (float64, float64) {
+	var m0, m1 float64
+	for i, v := range vs0 {
+		m0 += v
+		m1 += vs1[i]
+	}
+	f := float64(len(vs0))
+	m0 /= f
+	m1 /= f
+	var v0, v1, corr float64
+	for i, v := range vs0 {
+		d0 := v - m0
+		d1 := vs1[i] - m1
+		v0 += d0 * d0
+		v1 += d1 * d1
+		corr += d0 * d1
+	}
+	r := corr / math.Sqrt(v0*v1)
+	tstat := r * math.Sqrt((f-2)/(1-r*r))
+	dist := distuv.StudentsT{0, 1, f - 2, nil}
+	pval := 2 * dist.CDF(-math.Abs(tstat))
+	return r, pval
 }
