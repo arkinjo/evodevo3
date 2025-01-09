@@ -114,31 +114,17 @@ func (v Vec) NormInf() float64 {
 	return d
 }
 
-func (v0 Vec) MateWith(v1 Vec) (Vec, Vec) {
-	nv0 := slices.Clone(v0)
-	nv1 := slices.Clone(v1)
-
-	for i, v := range nv0 {
-		if rand.IntN(2) == 1 {
-			nv0[i] = nv1[i]
-			nv1[i] = v
-		}
-	}
-
-	return nv0, nv1
-}
-
-func (vec Vec) Mutate(rate, scale float64) {
-	for i := range vec {
-		if rand.Float64() >= rate {
-			continue
-		}
-		if rand.IntN(2) == 1 {
-			vec[i] *= scale
+func NoisyVec(n int, noise float64) Vec {
+	m := int(noise * float64(n))
+	v := make(Vec, n)
+	for _, p := range rand.Perm(n) {
+		if p < m {
+			v[p] = -1
 		} else {
-			vec[i] /= scale
+			v[p] = 1
 		}
 	}
+	return v
 }
 
 func DiffMats(vs1, vs0 []Vec) []Vec {

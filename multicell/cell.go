@@ -27,6 +27,7 @@ func (s *Setting) NewCell(id int) Cell {
 	m := make([]Vec, s.NumLayers)
 	for i, nc := range s.LenLayer {
 		m[i] = NewVec(nc, 1.0)
+		//m[i] = NoisyVec(nc, s.EnvNoise)
 	}
 
 	return Cell{
