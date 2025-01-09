@@ -21,6 +21,7 @@ type Simulation struct {
 func GetSetting() Simulation {
 	maxpopP := flag.Int("popsize", 500, "population size")
 	envsfileP := flag.String("envs", "", "saved environments JSON file")
+	cueScaleP := flag.Float64("cue_scale", 1.0, "Cue scaling factor")
 	resfileP := flag.String("restart", "", "saved restart population file")
 	settingP := flag.String("setting", "", "saved settings file")
 
@@ -44,6 +45,7 @@ func GetSetting() Simulation {
 	s.MaxGeneration = *ngenP
 	s.Outdir = *trajDirP
 	s.ProductionRun = *prodP
+	s.CueScale = *cueScaleP
 
 	var envs []multicell.Environment
 
