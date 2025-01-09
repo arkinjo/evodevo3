@@ -104,13 +104,15 @@ func MatTotVar(vecs []Vec, mv Vec) float64 {
 
 func (pop *Population) GetProjected1(s *Setting, fout *os.File, label string, xs []Vec, x0 Vec, axis, ps Vec) (Vec, Vec) {
 	sv, u, _ := XPCA(xs, x0, xs, x0)
-	ali := 0.0
+	ali1 := 0.0
+	ali2 := 0.0
 	if axis != nil {
-		ali = math.Abs(DotVecs(u[0], axis))
+		ali1 = math.Abs(DotVecs(u[0], axis))
+		ali2 = math.Abs(DotVecs(u[1], axis))
 	}
 
-	fmt.Fprintf(fout, "%s\t%d\t%f\t%f\t%f\n",
-		label, pop.Igen, sv.Norm2(), sv[0], ali)
+	fmt.Fprintf(fout, "%s\t%d\t%f\t%f\t%f\t%f\n",
+		label, pop.Igen, sv.Norm2(), sv[0], ali1, ali2)
 
 	px := ProjectOnAxis(xs, x0, u[0])
 	py := ProjectOnAxis(xs, x0, u[1])
@@ -129,21 +131,28 @@ func (pop *Population) GetProjected1(s *Setting, fout *os.File, label string, xs
 	fvec, err := os.OpenFile(filvec, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	JustFail(err)
 	defer fvec.Close()
+	for i, x := range px {
+		fmt.Fprintf(fvec, "I\t%d\t%e\t%e\t%e\n", i, x, py[i], ps[i])
+	}
 	for i, ui := range u[0] {
-		fmt.Fprintf(fvec, "%d\t%e\t%e\n", i, ui, u[1][i])
+		fmt.Fprintf(fvec, "U\t%d\t%e\t%e\n", i, ui, u[1][i])
 	}
 
 	return px, py
 }
 
-func (pop *Population) GetProjected2(s *Setting, fout *os.File, label string, xs []Vec, x0 Vec, ys []Vec, y0 Vec, axis, ps Vec) (Vec, Vec) {
+func (pop *Population) GetProjected2(s *Setting, fout *os.File, label string, xs []Vec, x0 Vec, ys []Vec, y0 Vec, uaxis, vaxis, ps, gs Vec) (Vec, Vec) {
 	sv, u, v := XPCA(xs, x0, ys, y0)
-	ali := 0.0
-	if axis != nil {
-		ali = math.Abs(DotVecs(u[0], axis))
+	uali := 0.0
+	if uaxis != nil {
+		uali = math.Abs(DotVecs(u[0], uaxis))
 	}
-	fmt.Fprintf(fout, "%s\t%d\t%f\t%f\t%f\n",
-		label, pop.Igen, sv.Norm2(), sv[0], ali)
+	vali := 0.0
+	if vaxis != nil {
+		vali = math.Abs(DotVecs(v[0], vaxis))
+	}
+	fmt.Fprintf(fout, "%s\t%d\t%f\t%f\t%f\t%f\n",
+		label, pop.Igen, sv.Norm2(), sv[0], uali, vali)
 
 	px := ProjectOnAxis(xs, x0, u[0])
 	py := ProjectOnAxis(ys, y0, v[0])
@@ -159,6 +168,10 @@ func (pop *Population) GetProjected2(s *Setting, fout *os.File, label string, xs
 	fvec, err := os.OpenFile(filvec, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	JustFail(err)
 	defer fvec.Close()
+
+	for i, x := range px {
+		fmt.Fprintf(fvec, "I\t%d\t%e\t%e\n", i, py[i], x, gs[i], ps[i])
+	}
 	for i, ui := range u[0] {
 		fmt.Fprintf(fvec, "U\t%d\t%e\n", i, ui)
 	}
@@ -227,6 +240,8 @@ func (pop *Population) SVDProject(s *Setting, selected bool, p0, paxis, g0, gaxi
 	// for alignment calculation
 	punit := paxis.Clone()
 	punit.Normalize()
+	gunit := gaxis.Clone()
+	gunit.Normalize()
 
 	// Geno-Pheno Projection Plot
 	gvecs := pop.GenomeVecs(s)
@@ -243,10 +258,10 @@ func (pop *Population) SVDProject(s *Setting, selected bool, p0, paxis, g0, gaxi
 	// Pheno-Cue Cross-Covariance
 	cvecs := pop.CueVecs(s)
 	mc := c0 //MeanVecs(cvecs)
-	Ppc, Cpc := pop.GetProjected2(s, fout, "PCcov", pvecs, mp, cvecs, mc, punit, ps)
+	Ppc, Cpc := pop.GetProjected2(s, fout, "PCcov", pvecs, mp, cvecs, mc, punit, gunit, ps, gs)
 
 	// Pheno-Geno Cross-Covariance
-	Ppg, Gpg := pop.GetProjected2(s, fout, "PGcov", pvecs, mp, gvecs, mg, punit, ps)
+	Ppg, Gpg := pop.GetProjected2(s, fout, "PGcov", pvecs, mp, gvecs, mg, punit, gunit, ps, gs)
 
 	// State variance-covariance
 	var Ss0, Ss1 Vec

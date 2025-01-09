@@ -15,15 +15,17 @@ type Simulation struct {
 	Setting  *multicell.Setting
 	Envs     []multicell.Environment
 	Iepoch   int
+	Igen     int
 	Selected bool
 	Files    []string // trajectory files
 }
 
 func GetSetting() Simulation {
 	settingP := flag.String("setting", "", "saved settings file")
-	selectedP := flag.Bool("selected", false, "saved settings file")
+	selectedP := flag.Bool("selected", true, "saved settings file")
 	envsfileP := flag.String("envs", "", "saved environments JSON file")
 	ienvP := flag.Int("ienv", 1, "index of the environment")
+	igenP := flag.Int("igen", 0, "generation to analyze")
 	flag.Parse()
 
 	if *settingP == "" {
@@ -41,6 +43,7 @@ func GetSetting() Simulation {
 		Setting:  s,
 		Envs:     envs,
 		Iepoch:   *ienvP,
+		Igen:     *igenP,
 		Selected: *selectedP,
 		Files:    flag.Args()}
 
@@ -67,7 +70,7 @@ func main() {
 
 	log.Printf("Plotting %s epoch %d population under env %d\n",
 		sim.Setting.Basename, pop0.Iepoch, iepoch)
-	traj := sim.Files[0]
+	traj := sim.Files[sim.Igen]
 	pop := sim.Setting.LoadPopulation(traj)
 	if iepoch != pop.Iepoch {
 		pop.Initialize(sim.Setting, env)
