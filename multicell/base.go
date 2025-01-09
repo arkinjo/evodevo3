@@ -42,6 +42,7 @@ type Setting struct {
 	ConvDevelop   float64 // convergence limit
 	Denv          float64 // size of an environmental change
 	SelStrength   float64 // selection strength
+	CueScale      float64 // usually 1.0, 10 for the Null model.
 
 	WithCue    bool                 // with cue or not
 	MaxDevelop int                  // maximum number of developmental steps
@@ -67,7 +68,7 @@ func GetDefaultSetting(modelname string) *Setting {
 		ConvDevelop:   1e-5,
 		Denv:          0.5,
 		SelStrength:   20.0,
-
+		CueScale:      1.0,
 		// parameters to be determined in SetModel are:
 		//WithCue
 		//MaxDevelop
