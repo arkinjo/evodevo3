@@ -35,6 +35,10 @@ func (vec Vec) Sum() float64 {
 	return s
 }
 
+func (vec Vec) Mean() float64 {
+	return vec.Sum() / float64(len(vec))
+}
+
 // Create a vector with initial values of "v".
 func NewVec(n int, v float64) Vec {
 	vec := make(Vec, n)

@@ -211,7 +211,6 @@ func (pop *Population) GenoPhenoPlot(s *Setting, selected bool, p0, paxis, g0, g
 	// Geno-Pheno Projection Plot
 	gvecs := pop.GenomeVecs(s)
 	gs := ProjectOnAxis(gvecs, g0, gaxis)
-
 	pvecs := pop.PhenoVecs(s, selected)
 	ps := ProjectOnAxis(pvecs, p0, paxis)
 

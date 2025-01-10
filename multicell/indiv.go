@@ -167,6 +167,7 @@ func (indiv *Individual) Develop(s *Setting, selenv Vec) Individual {
 			dev += indiv.Cells[i].DevStep(s, indiv.Genome, istep)
 		}
 		indiv.Ndev = istep + 1
+		dev /= float64(len(indiv.Cells))
 		if dev < s.ConvDevelop {
 			break
 		}

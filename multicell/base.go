@@ -24,6 +24,7 @@ const (
 	default_num_cell_y    = 1
 	default_density       = 0.02 // genome matrix density
 	default_mutation_rate = 0.001
+	default_conv_develop  = 5e-6
 )
 
 // various set-ups
@@ -65,7 +66,7 @@ func GetDefaultSetting(modelname string) *Setting {
 		ProductionRun: false,
 		EnvNoise:      0.05,
 		MutRate:       default_mutation_rate,
-		ConvDevelop:   1e-5,
+		ConvDevelop:   default_conv_develop,
 		Denv:          0.5,
 		SelStrength:   20.0,
 		CueScale:      1.0,
