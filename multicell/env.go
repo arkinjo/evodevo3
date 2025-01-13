@@ -73,7 +73,7 @@ func (env Environment) Face(s *Setting, iface int) Vec {
 func (env Environment) GetCue(s *Setting) Environment {
 	cue := env.Clone()
 	if !s.WithCue {
-		cue.SetAll(s.CueScale)
+		cue.SetAll(-1.0)
 	}
 
 	nflip := int(s.EnvNoise * float64(len(env)))
