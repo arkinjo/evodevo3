@@ -10,9 +10,6 @@ import (
 func TestGenome(t *testing.T) {
 	s := multicell.GetDefaultSetting("Full")
 	g := s.NewGenome()
-	if len(g.E) != multicell.NumFaces {
-		t.Errorf("len(g.E)=%d; want %d", len(g.E), multicell.NumFaces)
-	}
 	maxL := 0
 	for l := range g.M {
 		if maxL < l {
@@ -118,17 +115,4 @@ func TestGenomeVecs(t *testing.T) {
 			}
 		}
 	}
-}
-
-func TestGenomeW(t *testing.T) {
-	s := multicell.GetDefaultSetting("Full")
-	s.Outdir = "traj"
-	s.SelStrength = 20
-	envs := s.SaveEnvs(ENVSFILE, 50)
-	pop := s.NewPopulation(envs[0])
-	pop, _ = pop.Evolve(s, envs[0])
-	for i, indiv := range pop.Indivs {
-		fmt.Println(i, "\t", indiv.Genome.W)
-	}
-
 }

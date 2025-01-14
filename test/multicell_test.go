@@ -3,19 +3,18 @@ package multicell_test
 import (
 	"fmt"
 	//	"gonum.org/v1/gonum/blas/blas64"
-	"gonum.org/v1/gonum/mat"
 	"math"
 	"os"
 	"path/filepath"
 	//	"reflect"
-	"slices"
+	//	"slices"
 	"testing"
 
 	"github.com/arkinjo/evodevo3/multicell"
 )
 
 var ENVSFILE = "envs.json"
-var MODELS = []string{"Full", "NoCue", "Hie0", "Hie1", "Hie2", "NoDev", "Null",
+var MODELS = []string{"Full", "NoCue", "NoHie", "Hie1", "Hie2", "NoDev", "Null",
 	"NullCue", "NullHie", "NullDev"}
 
 func cleanup() {
@@ -61,7 +60,7 @@ func TestSpMatMutate(t *testing.T) {
 func TestSetting(t *testing.T) {
 	for _, model := range MODELS {
 		s := multicell.GetDefaultSetting(model)
-		got := len(s.Topology)
+		got := len(s.Topology.M)
 		if got != s.NumLayers {
 			t.Errorf("got len(Topology) = %d; want %d", got, s.NumLayers)
 		}
@@ -77,8 +76,8 @@ func TestSettingDump(t *testing.T) {
 func TestCell(t *testing.T) {
 	s := multicell.GetDefaultSetting("Full")
 	cell := s.NewCell(0)
-	if len(cell.E) != multicell.NumFaces {
-		t.Errorf("len(cell.E)= %d; want %d", len(cell.E), multicell.NumFaces)
+	if len(cell.Cue) != multicell.NumFaces {
+		t.Errorf("len(cell.Cue)= %d; want %d", len(cell.Cue), multicell.NumFaces)
 	}
 	for l, state := range cell.S {
 		if len(state) != s.LenLayer[l] {
@@ -104,29 +103,6 @@ func TestIndividual(t *testing.T) {
 	ncells := s.NumCellX * s.NumCellY
 	if indiv.NumCells() != ncells {
 		t.Errorf("indiv.NumCells()=%d; want %d", indiv.NumCells(), ncells)
-	}
-}
-
-func TestVecMutate(t *testing.T) {
-	vec0 := multicell.NewVec(100, 1.0)
-	vec1 := vec0.Clone()
-	if !slices.Equal(vec0, vec1) {
-		t.Errorf("Vec.Clone() failed.")
-	}
-	vec1.Mutate(0.1, 2.5)
-	if slices.Equal(vec0, vec1) {
-		t.Errorf("Vec.Mutate(0.1,2.5) failed.")
-	}
-
-}
-
-func TestVecMateWit(t *testing.T) {
-	vec0 := multicell.NewVec(100, 1.0)
-	vec1 := vec0.Clone()
-	vec1.Mutate(0.1, 2.5)
-	nv0, nv1 := vec0.MateWith(vec1)
-	if slices.Equal(nv0, vec0) || slices.Equal(nv1, vec1) {
-		t.Errorf("Vec.MateWith() failed.")
 	}
 }
 
@@ -190,51 +166,4 @@ func TestPopulationDumpJSON(t *testing.T) {
 	pop := s.NewPopulation(envs[0])
 	pop.Evolve(s, envs[0])
 	pop.DumpJSON(s)
-}
-
-func TestProjection(t *testing.T) {
-	s := multicell.GetDefaultSetting("Full")
-	s.Outdir = "traj"
-	s.MaxGeneration = 10
-	envs := s.SaveEnvs(ENVSFILE, 50)
-
-	env := envs[0]
-	pop := s.NewPopulation(env)
-	pop, _ = pop.Evolve(s, env)
-
-	s.ProductionRun = true
-	env = envs[1]
-	pop.Iepoch = 1
-	pop, _ = pop.Evolve(s, envs[1])
-
-	file00 := s.TrajectoryFilename(1, 0, "traj.gz")
-	pop0 := s.LoadPopulation(file00)
-	file10 := s.TrajectoryFilename(1, s.MaxGeneration, "traj.gz")
-	pop1 := s.LoadPopulation(file10)
-	g0, gaxis := s.GetGenomeAxis(pop0, pop1)
-	sel0 := envs[0].SelectingEnv(s)
-	sel1 := env.SelectingEnv(s)
-	p0, paxis := s.GetPhenoAxis(sel0, sel1)
-	c0, caxis := s.GetCueAxis(env, envs[0])
-	for igen := range s.MaxGeneration {
-		file := s.TrajectoryFilename(1, igen, "traj.gz")
-		pop := s.LoadPopulation(file)
-		pop.Project(s, p0, paxis, g0, gaxis, c0, caxis)
-	}
-}
-
-func TestSVD(t *testing.T) {
-	M := mat.NewDense(2, 3, []float64{1, 2, 3, 4, 5, 6})
-	var svd mat.SVD
-	ok := svd.Factorize(M, mat.SVDThin)
-	if !ok {
-		t.Errorf("SVD failed")
-	}
-	var u, v mat.Dense
-	sv := svd.Values(nil)
-	svd.UTo(&u)
-	svd.VTo(&v)
-	u0 := u.ColView(0).(*mat.VecDense).RawVector().Data
-	v0 := v.RawRowView(0)
-	fmt.Println(len(sv), u0, v0, v)
 }

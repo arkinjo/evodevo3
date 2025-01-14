@@ -24,7 +24,7 @@ go.work.sum
 # env file
 .env
 
-# */*.json
+*/*.json
 */*.gz
 */traj
 test/traj/*

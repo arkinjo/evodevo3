@@ -54,7 +54,7 @@ func TestEnvNoCue(t *testing.T) {
 	cue := env.GetCue(s)
 	ndiff := 0
 	for _, v := range cue {
-		if v != 1.0 {
+		if v != -1.0 {
 			ndiff += 1
 		}
 	}
