@@ -6,7 +6,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"sync"
 	"time"
 
 	"github.com/arkinjo/evodevo3/multicell"
@@ -67,24 +66,15 @@ func main() {
 	p0, paxis := sim.Setting.GetPhenoAxis(sim.Selected, env0, env1)
 	log.Printf("Plotting %s epoch %d population under env %d\n",
 		sim.Setting.Basename, pop0.Iepoch, iepoch)
-	ch := make(chan bool, 1)
-	var wg sync.WaitGroup
-	wg.Add(len(sim.Files))
 	for _, traj := range sim.Files {
-		ch <- true
-		go func(traj string) {
-			defer wg.Done()
-			pop := sim.Setting.LoadPopulation(traj)
-			if iepoch != pop.Iepoch {
-				pop.Initialize(sim.Setting, env)
-				pop.Develop(sim.Setting, selenv)
-			}
+		pop := sim.Setting.LoadPopulation(traj)
+		if iepoch != pop.Iepoch {
+			pop.Initialize(sim.Setting, env)
+			pop.Develop(sim.Setting, selenv)
+		}
 
-			pop.GenoPhenoPlot(sim.Setting, sim.Selected, p0, paxis, g0, gaxis)
-			<-ch
-		}(traj)
+		pop.GenoPhenoPlot(sim.Setting, sim.Selected, p0, paxis, g0, gaxis)
 	}
 
-	wg.Wait()
 	log.Println("Time: ", time.Since(t0))
 }
