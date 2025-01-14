@@ -1,3 +1,5 @@
+# Copied from: https://zenn.dev/rosylilly/articles/202105-go-makefile
+RELEASE=1
 # バージョン
 VERSION:=$(cat VERSION)
 # リビジョン
@@ -18,34 +20,34 @@ BINARIES:=$(COMMAND_PACKAGES:$(ROOT_PACKAGE)/cmd/%=$(BINDIR)/%)
 GO_FILES:=$(shell find . -type f -name '*.go' -print)
 
 # version ldflag
-GO_LDFLAGS_VERSION:=-X '${ROOT_PACKAGE}.VERSION=${VERSION}' -X '${ROOT_PACKAGE}.REVISION=${REVISION}'
+GO_LDFLAGS_VERSION:= #-X '${ROOT_PACKAGE}.VERSION=${VERSION}' -X '${ROOT_PACKAGE}.REVISION=${REVISION}'
 # symbol table and dwarf
 GO_LDFLAGS_SYMBOL:=
 ifdef RELEASE
-	GO_LDFLAGS_SYMBOL:=-w -s
+	GO_LDFLAGS_SYMBOL:= -w -s
 endif
 # static ldflag
 GO_LDFLAGS_STATIC:=
 ifdef RELEASE
-	GO_LDFLAGS_STATIC:=-extldflags '-static'
+	GO_LDFLAGS_STATIC:= #-extldflags '-static'
 endif
 # build ldflags
 GO_LDFLAGS:=$(GO_LDFLAGS_VERSION) $(GO_LDFLAGS_SYMBOL) $(GO_LDFLAGS_STATIC)
 # build tags
-GO_BUILD_TAGS:=debug
+GO_BUILD_TAGS:=
 ifdef RELEASE
-	GO_BUILD_TAGS:=release
+	GO_BUILD_TAGS:= release
 endif
-# race detector
-GO_BUILD_RACE:=-race
+# race detector (this option makes binary VERY slow!)
+GO_BUILD_RACE:= -race
 ifdef RELEASE
 	GO_BUILD_RACE:=
 endif
 # static build flag
 GO_BUILD_STATIC:=
 ifdef RELEASE
-	GO_BUILD_STATIC:=-a -installsuffix evodevo3
-	GO_BUILD_TAGS:=$(GO_BUILD_TAGS),evodevo3
+	GO_BUILD_STATIC:= #-a -installsuffix evodevo3
+	GO_BUILD_TAGS:= $(GO_BUILD_TAGS),evodevo3
 endif
 # go build
 GO_BUILD:=-pgo=auto -tags=$(GO_BUILD_TAGS) $(GO_BUILD_RACE) $(GO_BUILD_STATIC) -ldflags "$(GO_LDFLAGS)"
@@ -62,6 +64,6 @@ clean:
 
 # 実ビルドタスク
 $(BINARIES): $(GO_FILES) VERSION .git/HEAD
-	@echo Building $@
+	@echo build -o $@ $(GO_BUILD) $(@:$(BINDIR)/%=$(ROOT_PACKAGE)/cmd/%)
 	@go build -o $@ $(GO_BUILD) $(@:$(BINDIR)/%=$(ROOT_PACKAGE)/cmd/%)
 
