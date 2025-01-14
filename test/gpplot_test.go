@@ -12,23 +12,24 @@ func TestGPPlot(t *testing.T) {
 	s := multicell.GetDefaultSetting("Full")
 	s.Outdir = "traj"
 	s.MaxGeneration = 10
+	s.Dump()
 	envs := s.SaveEnvs(ENVSFILE, 50)
 
-	env := envs[0]
-	pop := s.NewPopulation(env)
-	pop, _ = pop.Evolve(s, env)
+	env0 := envs[0]
+	pop := s.NewPopulation(env0)
+	pop, _ = pop.Evolve(s, env0)
 
 	s.ProductionRun = true
-	env = envs[1]
+	env1 := envs[1]
 	pop.Iepoch = 1
-	pop, _ = pop.Evolve(s, envs[1])
+	pop, _ = pop.Evolve(s, env1)
 
 	file00 := s.TrajectoryFilename(1, 0, "traj.gz")
 	pop0 := s.LoadPopulation(file00)
 	file10 := s.TrajectoryFilename(1, s.MaxGeneration, "traj.gz")
 	pop1 := s.LoadPopulation(file10)
 	g0, gaxis := s.GetGenomeAxis(pop0, pop1)
-	p0, paxis := s.GetPhenoAxis(true, envs[0], env)
+	p0, paxis := s.GetPhenoAxis(true, env0, env1)
 	for igen := range s.MaxGeneration {
 		file := s.TrajectoryFilename(1, igen, "traj.gz")
 		t0 := time.Now()
