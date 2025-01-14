@@ -72,7 +72,6 @@ func main() {
 			pop.Initialize(sim.Setting, env)
 			pop.Develop(sim.Setting, selenv)
 		}
-
 		pop.GenoPhenoPlot(sim.Setting, sim.Selected, p0, paxis, g0, gaxis)
 	}
 
