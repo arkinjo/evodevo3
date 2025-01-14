@@ -49,8 +49,14 @@ ifdef RELEASE
 	GO_BUILD_STATIC:= #-a -installsuffix evodevo3
 	GO_BUILD_TAGS:= $(GO_BUILD_TAGS),evodevo3
 endif
+
+GO_TRIMPATH:=
+ifdef RELEASE
+	GO_TRIMPATH=-trimpath
+endif
+
 # go build
-GO_BUILD:=-pgo=auto -tags=$(GO_BUILD_TAGS) $(GO_BUILD_RACE) $(GO_BUILD_STATIC) -ldflags "$(GO_LDFLAGS)"
+GO_BUILD:=-pgo=auto -tags=$(GO_BUILD_TAGS) $(GO_BUILD_RACE) $(GO_BUILD_STATIC) -ldflags "$(GO_LDFLAGS)" $(GO_TRIMPATH)
 
 # ビルドタスク
 .PHONY: build
