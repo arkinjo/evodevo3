@@ -12,24 +12,24 @@ import (
 )
 
 type Simulation struct {
-	Setting  *multicell.Setting
-	Envs     []multicell.Environment
-	Iepoch   int
-	Selected bool
-	Files    []string // trajectory files
+	Setting *multicell.Setting
+	Envs    []multicell.Environment
+	Iepoch  int
+	Files   []string // trajectory files
 }
 
 func GetSetting() Simulation {
 	settingP := flag.String("setting", "", "saved settings file")
 	envsfileP := flag.String("envs", "", "saved environments JSON file")
 	ienvP := flag.Int("ienv", 1, "index of the environment")
-	selectedP := flag.Bool("selected", true, "selected phenotype only or not")
+
 	flag.Parse()
 
 	if *settingP == "" {
 		log.Fatal("specify a settings file with -setting")
 	}
 	s := multicell.LoadSetting(*settingP)
+	s.Outdir = "gpplot"
 	s.Basename += fmt.Sprintf("_ep%2.2d", *ienvP)
 	s.ProductionRun = true
 
@@ -39,11 +39,10 @@ func GetSetting() Simulation {
 	envs := s.LoadEnvs(*envsfileP)
 
 	return Simulation{
-		Setting:  s,
-		Envs:     envs,
-		Iepoch:   *ienvP,
-		Selected: *selectedP,
-		Files:    flag.Args()}
+		Setting: s,
+		Envs:    envs,
+		Iepoch:  *ienvP,
+		Files:   flag.Args()}
 
 }
 
@@ -62,8 +61,8 @@ func main() {
 	env1 := sim.Envs[pop0.Iepoch]
 
 	g0, gaxis := sim.Setting.GetGenomeAxis(pop0, pop1)
+	p0, paxis := sim.Setting.GetPhenoAxis(pop0, pop1, env0, env1)
 
-	p0, paxis := sim.Setting.GetPhenoAxis(sim.Selected, env0, env1)
 	log.Printf("Plotting %s epoch %d population under env %d\n",
 		sim.Setting.Basename, pop0.Iepoch, iepoch)
 	for _, traj := range sim.Files {
@@ -72,7 +71,7 @@ func main() {
 			pop.Initialize(sim.Setting, env)
 			pop.Develop(sim.Setting, selenv)
 		}
-		pop.GenoPhenoPlot(sim.Setting, sim.Selected, p0, paxis, g0, gaxis)
+		pop.GenoPhenoPlot(sim.Setting, p0, paxis, g0, gaxis)
 	}
 
 	log.Println("Time: ", time.Since(t0))

@@ -61,14 +61,14 @@ func GetAxis(v0, v1 Vec) Vec {
 	return dv
 }
 
-func (s *Setting) GetPhenoAxis(selected bool, env0, env1 Environment) (Vec, Vec) {
-	if selected {
-		senv0 := env0.SelectingEnv(s)
-		senv1 := env1.SelectingEnv(s)
-		return senv0, GetAxis(senv0, senv1)
-	} else {
-		return env0, GetAxis(env0, env1)
-	}
+func (s *Setting) GetPhenoAxis(pop0, pop1 Population, env0, env1 Environment) (Vec, Vec) {
+
+	selenv0 := env0.SelectingEnv(s)
+	pop0.Initialize(s, env0)
+	pop0.Develop(s, selenv0)
+	p0 := MeanVecs(pop0.PhenoVecs(s))
+	p1 := MeanVecs(pop1.PhenoVecs(s))
+	return p0, GetAxis(p0, p1)
 }
 
 func (s *Setting) GetGenomeAxis(pop0, pop1 Population) (Vec, Vec) {
@@ -203,7 +203,7 @@ func (pop *Population) PrintPopStats(fout *os.File, gs, ps Vec) {
 	fmt.Fprintf(fout, "Fit\t%d\t%e\t%e\n", pop.Igen, fa, fv)
 }
 
-func (pop *Population) GenoPhenoPlot(s *Setting, selected bool, p0, paxis, g0, gaxis Vec) {
+func (pop *Population) GenoPhenoPlot(s *Setting, p0, paxis, g0, gaxis Vec) {
 	filename := s.TrajectoryFilename(pop.Iepoch, pop.Igen, "gpplot")
 	fout, err := os.Create(filename)
 	JustFail(err)
@@ -211,7 +211,7 @@ func (pop *Population) GenoPhenoPlot(s *Setting, selected bool, p0, paxis, g0, g
 	// Geno-Pheno Projection Plot
 	gvecs := pop.GenomeVecs(s)
 	gs := ProjectOnAxis(gvecs, g0, gaxis)
-	pvecs := pop.PhenoVecs(s, selected)
+	pvecs := pop.PhenoVecs(s)
 	ps := ProjectOnAxis(pvecs, p0, paxis)
 
 	pop.PrintPopStats(fout, gs, ps)
@@ -231,7 +231,7 @@ func (pop *Population) GenoPhenoPlot(s *Setting, selected bool, p0, paxis, g0, g
 	log.Printf("Projection saved in: %s", filename)
 }
 
-func (pop *Population) SVDProject(s *Setting, selected bool, p0, paxis, g0, gaxis, c0, caxis Vec) {
+func (pop *Population) SVDProject(s *Setting, p0, paxis, g0, gaxis, c0, caxis Vec) {
 	filename := s.TrajectoryFilename(pop.Iepoch, pop.Igen, "xpca")
 	fout, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	JustFail(err)
@@ -247,7 +247,7 @@ func (pop *Population) SVDProject(s *Setting, selected bool, p0, paxis, g0, gaxi
 
 	// Geno-Pheno Projection Plot
 	gvecs := pop.GenomeVecs(s)
-	pvecs := pop.PhenoVecs(s, selected)
+	pvecs := pop.PhenoVecs(s)
 
 	mg := MeanVecs(gvecs)
 	mp := MeanVecs(pvecs)
@@ -364,11 +364,11 @@ func XPCA(xs []Vec, x0 Vec, ys []Vec, y0 Vec) (Vec, []Vec, []Vec) {
 }
 
 // Analyze adaptive plastic responses to various environmental changes.
-func (pop *Population) AnalyzeVarEnvs(s *Setting, env0 Environment, n int, selected bool) {
+func (pop *Population) AnalyzeVarEnvs(s *Setting, env0 Environment, n int) {
 	gvecs := pop.GenomeVecs(s)
 	mg := MeanVecs(gvecs)
 	vg := VarVecs(gvecs, mg)
-	pvecs0 := pop.PhenoVecs(s, selected)
+	pvecs0 := pop.PhenoVecs(s)
 	mp0 := MeanVecs(pvecs0)
 	vp0 := VarVecs(pvecs0, mp0)
 	rng := rand.New(rand.NewPCG(s.Seed+11, s.Seed+17))
@@ -385,7 +385,7 @@ func (pop *Population) AnalyzeVarEnvs(s *Setting, env0 Environment, n int, selec
 		selenv := env.SelectingEnv(s)
 		pop.Initialize(s, env)
 		pop.Develop(s, selenv)
-		pvecs := pop.PhenoVecs(s, selected)
+		pvecs := pop.PhenoVecs(s)
 		dpvecs := DiffMats(pvecs, pvecs0)
 		mp := MeanVecs(dpvecs)
 		sv, u, v := XPCA(dpvecs, mp, gvecs, mg)
@@ -446,12 +446,12 @@ func (s *Setting) AnalyzeAPRGeno(env0, env1 Environment, pop0, pop1 Population) 
 	gvecs0 := pop0.GenomeVecs(s)
 	mg0 := MeanVecs(gvecs0)
 	vg0 := VarVecs(gvecs0, mg0)
-	pvecs0N := pop0.PhenoVecs(s, true)
+	pvecs0N := pop0.PhenoVecs(s)
 	selenv0 := env0.SelectingEnv(s)
 	selenv1 := env1.SelectingEnv(s)
 	dselenv := make(Vec, len(selenv0))
 	dselenv.Diff(selenv1, selenv0)
-	p0, paxis := s.GetPhenoAxis(true, env0, env1)
+	p0, paxis := s.GetPhenoAxis(pop0, pop1, env0, env1)
 	punit := paxis.Clone().Normalize()
 
 	pproj0 := ProjectOnAxis(pvecs0N, p0, paxis)
@@ -459,7 +459,7 @@ func (s *Setting) AnalyzeAPRGeno(env0, env1 Environment, pop0, pop1 Population) 
 	// develop in ancestral environment.
 	pop0.Initialize(s, env0)
 	pop0.Develop(s, selenv0)
-	pvecs0A := pop0.PhenoVecs(s, true)
+	pvecs0A := pop0.PhenoVecs(s)
 
 	dpvecs0 := DiffMats(pvecs0N, pvecs0A)
 	mp0 := MeanVecs(dpvecs0)

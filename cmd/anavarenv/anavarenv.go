@@ -50,7 +50,7 @@ func main() {
 	for _, traj := range sim.Files {
 		pop := sim.Setting.LoadPopulation(traj)
 		env0 := sim.Envs[pop.Iepoch]
-		pop.AnalyzeVarEnvs(sim.Setting, env0, sim.Nenvs, true)
+		pop.AnalyzeVarEnvs(sim.Setting, env0, sim.Nenvs)
 	}
 
 	log.Println("Time: ", time.Since(t0))
