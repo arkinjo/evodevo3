@@ -23,7 +23,7 @@ const (
 	default_num_cell_x    = 1
 	default_num_cell_y    = 1
 	default_density       = 0.02 // genome matrix density
-	default_mutation_rate = 0.001
+	default_mutation_rate = 0.002
 	default_conv_develop  = 5e-6
 )
 
