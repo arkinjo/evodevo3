@@ -27,6 +27,7 @@ func GetSetting() Simulation {
 		log.Fatal("specify a settings file with -setting")
 	}
 	s := multicell.LoadSetting(*settingP)
+	s.Outdir = "varenv"
 	var envs []multicell.Environment
 	if *envsfileP != "" {
 		envs = s.LoadEnvs(*envsfileP)
