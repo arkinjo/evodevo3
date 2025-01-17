@@ -89,9 +89,6 @@ func (vout Vec) Acc(vin Vec) Vec {
 }
 
 func (vout Vec) Diff(v0, v1 Vec) Vec {
-	if len(vout) == 0 {
-		vout = make(Vec, len(v0))
-	}
 	for i, v := range v0 {
 		vout[i] = v - v1[i]
 	}
