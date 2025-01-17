@@ -52,7 +52,6 @@ func main() {
 
 	iepoch := sim.Iepoch
 	env := sim.Envs[iepoch]
-	selenv := env.SelectingEnv(sim.Setting)
 
 	pop0 := sim.Setting.LoadPopulation(sim.Files[0])
 	pop1 := sim.Setting.LoadPopulation(sim.Files[len(sim.Files)-1])
@@ -69,7 +68,7 @@ func main() {
 		pop := sim.Setting.LoadPopulation(traj)
 		if iepoch != pop.Iepoch {
 			pop.Initialize(sim.Setting, env)
-			pop.Develop(sim.Setting, selenv)
+			pop.Develop(sim.Setting, env)
 		}
 		pop.GenoPhenoPlot(sim.Setting, p0, paxis, g0, gaxis)
 	}

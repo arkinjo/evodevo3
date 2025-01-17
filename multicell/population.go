@@ -73,7 +73,8 @@ func (pop *Population) GetMaxFitness() float64 {
 	return f
 }
 
-func (pop *Population) Develop(s *Setting, selenv Vec) {
+func (pop *Population) Develop(s *Setting, env Vec) {
+	selenv := env.SelectingEnv(s)
 	ch := make(chan Individual)
 
 	for _, indiv := range pop.Indivs {
