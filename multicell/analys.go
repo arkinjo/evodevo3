@@ -63,9 +63,8 @@ func GetAxis(v0, v1 Vec) Vec {
 
 func (s *Setting) GetPhenoAxis(pop0, pop1 Population, env0, env1 Environment) (Vec, Vec) {
 
-	selenv0 := env0.SelectingEnv(s)
 	pop0.Initialize(s, env0)
-	pop0.Develop(s, selenv0)
+	pop0.Develop(s, env0)
 	p0 := MeanVecs(pop0.PhenoVecs(s))
 	p1 := MeanVecs(pop1.PhenoVecs(s))
 	return p0, GetAxis(p0, p1)
@@ -127,7 +126,7 @@ func (pop *Population) GetProjected1(s *Setting, fout *os.File, label string, xs
 	corr0, pval0 := CorrVecs(px, ps)
 	corr1, pval1 := CorrVecs(py, ps)
 	fmt.Fprintf(fout, "%s\t%d\t%f\t%f\t%f\t%f\t%f\t%e\t%f\t%e\n",
-		label, pop.Igen, sv.Norm2(), sv[0], ali1, ali2,
+		label, pop.Igen, sv[0], sv[0]/sv.Norm2(), ali1, ali2,
 		corr0, pval0, corr1, pval1)
 
 	filvec := s.TrajectoryFilename(pop.Iepoch, pop.Igen, label)
@@ -165,7 +164,7 @@ func (pop *Population) GetProjected2(s *Setting, fout *os.File, label string, xs
 	corrp, pvalp := CorrVecs(ps, px)
 	corrg, pvalg := CorrVecs(gs, py)
 	fmt.Fprintf(fout, "%s\t%d\t%f\t%f\t%f\t%f\t%f\t%e\t%f\t%e\n",
-		label, pop.Igen, sv.Norm2(), sv[0], uali, vali,
+		label, pop.Igen, sv[0], sv[0]/sv.Norm2(), uali, vali,
 		corrp, pvalp, corrg, pvalg)
 
 	filvec := s.TrajectoryFilename(pop.Iepoch, pop.Igen, label)
@@ -268,7 +267,7 @@ func (pop *Population) SVDProject(s *Setting, p0, paxis, g0, gaxis, c0, caxis Ve
 
 	// State variance-covariance
 	var Ss0, Ss1 Vec
-	if s.NumLayers > 1 {
+	if s.NumLayers > 2 {
 		svecs := pop.StateVecs()
 		ms := MeanVecs(svecs)
 		Ss0, Ss1 = pop.GetProjected1(s, fout, "SScov", svecs, ms, nil, ps)
@@ -283,7 +282,7 @@ func (pop *Population) SVDProject(s *Setting, p0, paxis, g0, gaxis, c0, caxis Ve
 	fmt.Fprintf(fout, "\t%8s\t%8s", "Ppheno0", "Ppheno1")
 	fmt.Fprintf(fout, "\t%8s\t%8s", "Ccue", "Pcue")
 	fmt.Fprintf(fout, "\t%8s\t%8s", "Ggeno", "Pgeno")
-	if s.NumLayers > 1 {
+	if s.NumLayers > 2 {
 		fmt.Fprintf(fout, "\t%8s\t%8s", "SS0", "SS1")
 		//	fmt.Fprintf(fout, "\t%8s\t%8s", "Gsc", "Ssc")
 		//	fmt.Fprintf(fout, "\t%8s\t%8s", "Gsg", "Ssg")
@@ -295,7 +294,7 @@ func (pop *Population) SVDProject(s *Setting, p0, paxis, g0, gaxis, c0, caxis Ve
 
 		fmt.Fprintf(fout, "\t%f\t%f", Cpc[i], Ppc[i])
 		fmt.Fprintf(fout, "\t%f\t%f", Gpg[i], Ppg[i])
-		if s.NumLayers > 1 {
+		if s.NumLayers > 2 {
 			fmt.Fprintf(fout, "\t%f\t%f", Ss0[i], Ss1[i])
 			//	fmt.Fprintf(fout, "\t%f\t%f", Csc[i], Ssc[i])
 			//	fmt.Fprintf(fout, "\t%f\t%f", Gsg[i], Ssg[i])
@@ -365,60 +364,138 @@ func XPCA(xs []Vec, x0 Vec, ys []Vec, y0 Vec) (Vec, []Vec, []Vec) {
 
 // Analyze adaptive plastic responses to various environmental changes.
 func (pop *Population) AnalyzeVarEnvs(s *Setting, env0 Environment, n int) {
-	gvecs := pop.GenomeVecs(s)
-	mg := MeanVecs(gvecs)
-	vg := VarVecs(gvecs, mg)
-	pvecs0 := pop.PhenoVecs(s)
-	mp0 := MeanVecs(pvecs0)
-	vp0 := VarVecs(pvecs0, mp0)
-	rng := rand.New(rand.NewPCG(s.Seed+11, s.Seed+17))
 	filename := s.TrajectoryFilename(pop.Iepoch, pop.Igen, "varenv")
 	log.Printf("AnalyzeVarEnvs output to %s\n", filename)
 	fout, err := os.Create(filename)
 	JustFail(err)
 	defer fout.Close()
+
+	gvecs := pop.GenomeVecs(s)
+	mg := MeanVecs(gvecs)
+	pvecs0 := pop.PhenoVecs(s)
+	mp0 := MeanVecs(pvecs0)
+	sv0, u0, v0 := XPCA(pvecs0, mp0, gvecs, mg)
+	fmt.Fprintf(fout, "SV\t%d\t%d\t%e\t%e\n", pop.Iepoch, 0, sv0[0], sv0[0]/sv0.Norm2())
+
+	ps0 := ProjectOnAxis(pvecs0, mp0, u0[0])
+	gs0 := ProjectOnAxis(gvecs, mg, v0[0])
+	rng := rand.New(rand.NewPCG(s.Seed+11, s.Seed+17))
+
 	var us, vs, envs []Vec
+	envs = append(envs, env0)
+	us = append(us, u0[0])
+	vs = append(vs, v0[0])
+
+	var pss0, pss, gss []Vec
+	pss0 = append(pss0, ps0)
+	pss = append(pss, ps0)
+	gss = append(gss, gs0)
 	for i := range n {
-		log.Printf("Environment %d\n", i)
+		log.Printf("Environment %d\n", i+1)
 		env := env0.ChangeEnv(s, rng)
+		var denv Vec
+		denv.Diff(env, env0)
 		envs = append(envs, env)
-		selenv := env.SelectingEnv(s)
 		pop.Initialize(s, env)
-		pop.Develop(s, selenv)
+		pop.Develop(s, env)
 		pvecs := pop.PhenoVecs(s)
-		dpvecs := DiffMats(pvecs, pvecs0)
-		mp := MeanVecs(dpvecs)
-		sv, u, v := XPCA(dpvecs, mp, gvecs, mg)
+		mp := MeanVecs(pvecs)
+		sv, u, v := XPCA(pvecs, mp, gvecs, mg)
+		if DotVecs(denv, u[0]) < 0 {
+			u[0].ScaleBy(-1)
+			v[0].ScaleBy(-1)
+		}
 		us = append(us, u[0])
 		vs = append(vs, v[0])
+		psOn0 := ProjectOnAxis(pvecs, mp0, u0[0])
+		pss0 = append(pss0, psOn0)
+
+		ps := ProjectOnAxis(pvecs, mp, u[0])
+		pss = append(pss, ps)
+
+		gs := ProjectOnAxis(gvecs, mg, v[0])
+		gss = append(gss, gs)
+
 		ts := sv.Norm2()
-		fmt.Fprintf(fout, "SV\t%d\t%e\t%e\n", i, ts, sv[0])
+		fmt.Fprintf(fout, "SV\t%d\t%d\t%e\t%e\n", pop.Iepoch, i+1, sv[0], sv[0]/ts)
 	}
-	for i, e := range env0 {
-		fmt.Fprintf(fout, "Env\t%d\t%f", i, e)
-		for k := range n {
+	for i, ps := range pss {
+		cpg, ppg := CorrVecs(ps, gss[i])
+		fmt.Fprintf(fout, "CorrPG\t%d\t%d\t%e\t%e\n", pop.Iepoch, i, cpg, ppg)
+	}
+	for i := 0; i < n; i++ {
+		for j := i + 1; j < n+1; j++ {
+			fmt.Fprintf(fout, "CorrE\t%d\t%d", i, j)
+
+			corre, pe := CorrVecs(envs[i], envs[j])
+			fmt.Fprintf(fout, "\t%f\t%e\n", corre, pe)
+		}
+	}
+	for i := 0; i < n; i++ {
+		for j := i + 1; j < n+1; j++ {
+			fmt.Fprintf(fout, "CorrU\t%d\t%d", i, j)
+			corru, pu := CorrVecs(us[i], us[j])
+			fmt.Fprintf(fout, "\t%f\t%e\n", corru, pu)
+		}
+	}
+	for i := 0; i < n; i++ {
+		for j := i + 1; j < n+1; j++ {
+			fmt.Fprintf(fout, "CorrV\t%d\t%d", i, j)
+			corrv, pv := CorrVecs(vs[i], vs[j])
+			fmt.Fprintf(fout, "\t%f\t%e\n", corrv, pv)
+		}
+	}
+
+	for i := 0; i < n; i++ {
+		for j := i + 1; j < n+1; j++ {
+			fmt.Fprintf(fout, "CorrP0\t%d\t%d", i, j)
+			corrv, pv := CorrVecs(pss0[i], pss0[j])
+			fmt.Fprintf(fout, "\t%f\t%e\n", corrv, pv)
+		}
+	}
+	for i := 0; i < n; i++ {
+		for j := i + 1; j < n+1; j++ {
+			fmt.Fprintf(fout, "CorrG\t%d\t%d", i, j)
+			corrv, pv := CorrVecs(gss[i], gss[j])
+			fmt.Fprintf(fout, "\t%f\t%e\n", corrv, pv)
+		}
+	}
+	for i := 0; i < n; i++ {
+		for j := i + 1; j < n+1; j++ {
+			fmt.Fprintf(fout, "CorrPS\t%d\t%d", i, j)
+			corrv, pv := CorrVecs(pss[i], pss[j])
+			fmt.Fprintf(fout, "\t%f\t%e\n", corrv, pv)
+		}
+	}
+
+	for i := range len(env0) {
+		fmt.Fprintf(fout, "Env\t%d", i)
+		for k := range envs {
 			fmt.Fprintf(fout, "\t%f", envs[k][i])
 		}
 		fmt.Fprintf(fout, "\n")
 	}
 
-	fmt.Fprintf(fout, "#\tind\t%8s\t%8s\n", "mp0", "vp0")
-	for i := range len(us[0]) {
-		fmt.Fprintf(fout, "P\t%d\t%e\t%e", i, mp0[i], vp0[i])
-		for k := range n {
-			fmt.Fprintf(fout, "\t%e", us[k][i])
+	fmt.Fprintf(fout, "#Ip0\tepoch\tind\t%8s\t%8s\tp1...\n",
+		"v0(g)", "u0(p)")
+	for i := range len(gs0) {
+		fmt.Fprintf(fout, "Ip0\t%d\t%d\t%e\t%e", pop.Iepoch, i,
+			gs0[i], ps0[i])
+		for k := range pss0 {
+			fmt.Fprintf(fout, "\t%e", pss0[k][i])
 		}
 		fmt.Fprintf(fout, "\n")
 	}
 
-	fmt.Fprintf(fout, "#\tind\t%8s\t%8s\n", "mg", "vg")
-	for i := range len(vs[0]) {
-		fmt.Fprintf(fout, "G\t%d\t%e\t%e", i, mg[i], vg[i])
-		for k := range n {
-			fmt.Fprintf(fout, "\t%e", vs[k][i])
+	fmt.Fprintf(fout, "#Igp\tepoch\tind\t%8s\t%8s...\n", "v(g)", "u(p)")
+	for i := range len(gs0) {
+		fmt.Fprintf(fout, "Igp\t%d\t%d", pop.Iepoch, i)
+		for k := range gss {
+			fmt.Fprintf(fout, "\t%e\t%e", gss[k][i], pss[k][i])
 		}
 		fmt.Fprintf(fout, "\n")
 	}
+
 }
 
 func ConservedGenomeSites(mg1, vg1 Vec, gvecs []Vec) (map[int]int, []int) {
@@ -447,10 +524,8 @@ func (s *Setting) AnalyzeAPRGeno(env0, env1 Environment, pop0, pop1 Population) 
 	mg0 := MeanVecs(gvecs0)
 	vg0 := VarVecs(gvecs0, mg0)
 	pvecs0N := pop0.PhenoVecs(s)
-	selenv0 := env0.SelectingEnv(s)
-	selenv1 := env1.SelectingEnv(s)
-	dselenv := make(Vec, len(selenv0))
-	dselenv.Diff(selenv1, selenv0)
+	var denv Vec
+	denv.Diff(env1, env0)
 	p0, paxis := s.GetPhenoAxis(pop0, pop1, env0, env1)
 	punit := paxis.Clone().Normalize()
 
@@ -458,7 +533,7 @@ func (s *Setting) AnalyzeAPRGeno(env0, env1 Environment, pop0, pop1 Population) 
 
 	// develop in ancestral environment.
 	pop0.Initialize(s, env0)
-	pop0.Develop(s, selenv0)
+	pop0.Develop(s, env0)
 	pvecs0A := pop0.PhenoVecs(s)
 
 	dpvecs0 := DiffMats(pvecs0N, pvecs0A)
@@ -498,7 +573,7 @@ func (s *Setting) AnalyzeAPRGeno(env0, env1 Environment, pop0, pop1 Population) 
 	defer fout.Close()
 
 	fmt.Fprintf(fout, "SV\t%e\t%e\t%e\t%e\n",
-		sv.Norm2(), sv[0],
+		sv[0], sv[0]/sv.Norm2(),
 		math.Abs(DotVecs(punit, us[0])),
 		math.Abs(DotVecs(gunit, vs[0])))
 	fmt.Fprintf(fout, "Cons\t%d\t%d\t%d\n", len(conserved0), len(conserved1), len(shared))
@@ -509,9 +584,9 @@ func (s *Setting) AnalyzeAPRGeno(env0, env1 Environment, pop0, pop1 Population) 
 		fmt.Fprintf(fout, "\t%f\t%f", vproj0[i], uproj0[i])
 		fmt.Fprintf(fout, "\t%d\t%d\n", count0[i], count1[i])
 	}
-	fmt.Fprintf(fout, "#\tind\t%8s\t%8s\n", "U1", "dselenv")
+	fmt.Fprintf(fout, "#\tind\t%8s\t%8s\n", "U1", "denv")
 	for i, u := range us[0] {
-		fmt.Fprintf(fout, "P\t%d\t%e\t%e\n", i, u, dselenv[i])
+		fmt.Fprintf(fout, "P\t%d\t%e\t%e\n", i, u, denv[i])
 	}
 	for i, v := range vs[0] {
 		fmt.Fprintf(fout, "G\t%d\t%e\t%e\t%d\t%d",
