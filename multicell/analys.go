@@ -393,15 +393,24 @@ func (pop *Population) AnalyzeVarEnvs(s *Setting, env0 Environment, n int) {
 	for i := range n {
 		log.Printf("Environment %d\n", i+1)
 		env := env0.ChangeEnv(s, rng)
-		var denv Vec
-		denv.Diff(env, env0)
+
 		envs = append(envs, env)
 		pop.Initialize(s, env)
 		pop.Develop(s, env)
 		pvecs := pop.PhenoVecs(s)
 		mp := MeanVecs(pvecs)
 		sv, u, v := XPCA(pvecs, mp, gvecs, mg)
-		if DotVecs(denv, u[0]) < 0 {
+
+		pop1, _ := pop.Evolve(s, env)
+		pvecs1 := pop1.PhenoVecs(s)
+		mp1 := MeanVecs(pvecs1)
+		dp := make(Vec, len(mp1))
+		dp.Diff(mp1, mp0)
+		dp.Normalize()
+
+		ali := DotVecs(dp, u[0])
+		if ali < 0 {
+			ali *= -1
 			u[0].ScaleBy(-1)
 			v[0].ScaleBy(-1)
 		}
@@ -417,7 +426,7 @@ func (pop *Population) AnalyzeVarEnvs(s *Setting, env0 Environment, n int) {
 		gss = append(gss, gs)
 
 		ts := sv.Norm2()
-		fmt.Fprintf(fout, "SV\t%d\t%d\t%e\t%e\n", pop.Iepoch, i+1, sv[0], sv[0]/ts)
+		fmt.Fprintf(fout, "SV\t%d\t%d\t%e\t%e\t%e\n", pop.Iepoch, i+1, sv[0], sv[0]/ts, ali)
 	}
 	for i, ps := range pss {
 		cpg, ppg := CorrVecs(ps, gss[i])
@@ -435,14 +444,16 @@ func (pop *Population) AnalyzeVarEnvs(s *Setting, env0 Environment, n int) {
 		for j := i + 1; j < n+1; j++ {
 			fmt.Fprintf(fout, "CorrU\t%d\t%d", i, j)
 			corru, pu := CorrVecs(us[i], us[j])
-			fmt.Fprintf(fout, "\t%f\t%e\n", corru, pu)
+			dot := DotVecs(us[i], us[j])
+			fmt.Fprintf(fout, "\t%f\t%e\t%f\n", corru, pu, dot)
 		}
 	}
 	for i := 0; i < n; i++ {
 		for j := i + 1; j < n+1; j++ {
 			fmt.Fprintf(fout, "CorrV\t%d\t%d", i, j)
 			corrv, pv := CorrVecs(vs[i], vs[j])
-			fmt.Fprintf(fout, "\t%f\t%e\n", corrv, pv)
+			dot := DotVecs(vs[i], vs[j])
+			fmt.Fprintf(fout, "\t%f\t%e\t%f\n", corrv, pv, dot)
 		}
 	}
 
@@ -492,6 +503,24 @@ func (pop *Population) AnalyzeVarEnvs(s *Setting, env0 Environment, n int) {
 		fmt.Fprintf(fout, "Igp\t%d\t%d", pop.Iepoch, i)
 		for k := range gss {
 			fmt.Fprintf(fout, "\t%e\t%e", gss[k][i], pss[k][i])
+		}
+		fmt.Fprintf(fout, "\n")
+	}
+
+	fmt.Fprintf(fout, "#U\tepoch\tind\t%8s...\n", "u1")
+	for i := range len(us[0]) {
+		fmt.Fprintf(fout, "U\t%d\t%d", pop.Iepoch, i)
+		for k := range us {
+			fmt.Fprintf(fout, "\t%e", us[k][i])
+		}
+		fmt.Fprintf(fout, "\n")
+	}
+
+	fmt.Fprintf(fout, "#V\tepoch\tind\t%8s...\n", "v1")
+	for i := range len(vs[0]) {
+		fmt.Fprintf(fout, "V\t%d\t%d", pop.Iepoch, i)
+		for k := range vs {
+			fmt.Fprintf(fout, "\t%e", vs[k][i])
 		}
 		fmt.Fprintf(fout, "\n")
 	}

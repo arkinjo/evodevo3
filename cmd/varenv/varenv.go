@@ -28,6 +28,7 @@ func GetSetting() Simulation {
 	}
 	s := multicell.LoadSetting(*settingP)
 	s.Outdir = "varenv"
+	s.ProductionRun = false
 	var envs []multicell.Environment
 	if *envsfileP != "" {
 		envs = s.LoadEnvs(*envsfileP)
