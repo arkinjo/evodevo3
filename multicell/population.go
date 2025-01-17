@@ -143,10 +143,9 @@ func (pop *Population) Reproduce(s *Setting, env Environment) Population {
 func (pop0 *Population) Evolve(s *Setting, env Environment) (Population, string) {
 	pop := *pop0
 	pop.Initialize(s, env)
-	selenv := env.SelectingEnv(s)
 	for igen := range s.MaxGeneration {
 		pop.Igen = igen
-		pop.Develop(s, selenv)
+		pop.Develop(s, env)
 		stats := pop.GetPopStats()
 		stats.Print(pop.Iepoch, pop.Igen)
 		if s.ProductionRun { // Dump before Selection
@@ -156,7 +155,7 @@ func (pop0 *Population) Evolve(s *Setting, env Environment) (Population, string)
 		pop = pop.Reproduce(s, env)
 	}
 	pop.Igen = s.MaxGeneration
-	pop.Develop(s, selenv)
+	pop.Develop(s, env)
 	dumpfile := pop.Dump(s)
 	return pop, dumpfile
 }
@@ -271,6 +270,14 @@ func (pop *Population) PhenoVecs(s *Setting) []Vec {
 	vecs := make([]Vec, len(pop.Indivs))
 	for i, indiv := range pop.Indivs {
 		vecs[i] = indiv.PhenotypeVec(s)
+	}
+	return vecs
+}
+
+func (pop *Population) SelectedPhenoVecs(s *Setting) []Vec {
+	vecs := make([]Vec, len(pop.Indivs))
+	for i, indiv := range pop.Indivs {
+		vecs[i] = indiv.SelectedPhenotypeVec(s)
 	}
 	return vecs
 }
