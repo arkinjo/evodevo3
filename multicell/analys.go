@@ -145,27 +145,31 @@ func (pop *Population) GetProjected2(s *Setting, fout *os.File, label string, xs
 	sv, u, v := XPCA(xs, x0, ys, y0)
 	uali := 0.0
 	if uaxis != nil {
-		uali = math.Abs(DotVecs(u[0], uaxis))
+		uali = DotVecs(u[0], uaxis)
 	}
 	vali := 0.0
 	if vaxis != nil {
-		vali = math.Abs(DotVecs(v[0], vaxis))
+		vali = DotVecs(v[0], vaxis)
 	}
 
 	px := ProjectOnAxis(xs, x0, u[0])
 	py := ProjectOnAxis(ys, y0, v[0])
 
-	if DotVecs(px, ps) < 0 {
+	if uali < 0 {
+		uali *= -1
+		vali *= -1
 		px.ScaleBy(-1)
 		py.ScaleBy(-1)
 		u[0].ScaleBy(-1)
 		v[0].ScaleBy(-1)
 	}
+	corr, pval := CorrVecs(px, py)
 	corrp, pvalp := CorrVecs(ps, px)
 	corrg, pvalg := CorrVecs(gs, py)
-	fmt.Fprintf(fout, "%s\t%d\t%f\t%f\t%f\t%f\t%f\t%e\t%f\t%e\n",
-		label, pop.Igen, sv[0], sv[0]/sv.Norm2(), uali, vali,
-		corrp, pvalp, corrg, pvalg)
+	svtot := sv.Norm2()
+	fmt.Fprintf(fout, "%s\t%d\t%f\t%f\t%f\t%f\t%f\t%e\t%f\t%e\t%f\t%e\n",
+		label, pop.Igen, svtot, sv[0]/svtot, uali, vali,
+		corrp, pvalp, corrg, pvalg, corr, pval)
 
 	filvec := s.TrajectoryFilename(pop.Iepoch, pop.Igen, label)
 	fvec, err := os.OpenFile(filvec, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
@@ -370,15 +374,15 @@ func (pop *Population) AnalyzeVarEnvs(s *Setting, env0 Environment, n int) {
 	JustFail(err)
 	defer fout.Close()
 
-	gvecs := pop.GenomeVecs(s)
-	mg := MeanVecs(gvecs)
+	gvecs0 := pop.GenomeVecs(s)
+	mg0 := MeanVecs(gvecs0)
 	pvecs0 := pop.PhenoVecs(s)
 	mp0 := MeanVecs(pvecs0)
-	sv0, u0, v0 := XPCA(pvecs0, mp0, gvecs, mg)
+	sv0, u0, v0 := XPCA(pvecs0, mp0, gvecs0, mg0)
 	fmt.Fprintf(fout, "SV\t%d\t%d\t%e\t%e\n", pop.Iepoch, 0, sv0[0], sv0[0]/sv0.Norm2())
 
 	ps0 := ProjectOnAxis(pvecs0, mp0, u0[0])
-	gs0 := ProjectOnAxis(gvecs, mg, v0[0])
+	gs0 := ProjectOnAxis(gvecs0, mg0, v0[0])
 	rng := rand.New(rand.NewPCG(s.Seed+11, s.Seed+17))
 
 	var us, vs, envs []Vec
@@ -399,8 +403,9 @@ func (pop *Population) AnalyzeVarEnvs(s *Setting, env0 Environment, n int) {
 		pop.Develop(s, env)
 		pvecs := pop.PhenoVecs(s)
 		mp := MeanVecs(pvecs)
-		sv, u, v := XPCA(pvecs, mp, gvecs, mg)
+		sv, u, v := XPCA(pvecs, mp, gvecs0, mg0)
 
+		// Evolve for 200 generations
 		pop1, _ := pop.Evolve(s, env)
 		pvecs1 := pop1.PhenoVecs(s)
 		mp1 := MeanVecs(pvecs1)
@@ -408,9 +413,17 @@ func (pop *Population) AnalyzeVarEnvs(s *Setting, env0 Environment, n int) {
 		dp.Diff(mp1, mp0)
 		dp.Normalize()
 
-		ali := DotVecs(dp, u[0])
-		if ali < 0 {
-			ali *= -1
+		gvecs1 := pop1.GenomeVecs(s)
+		mg1 := MeanVecs(gvecs1)
+		dg := make(Vec, len(mg0))
+		dg.Diff(mg1, mg0)
+		dg.Normalize()
+
+		pali := DotVecs(dp, u[0])
+		gali := DotVecs(dg, v[0])
+		if pali < 0 {
+			pali *= -1
+			gali *= -1
 			u[0].ScaleBy(-1)
 			v[0].ScaleBy(-1)
 		}
@@ -422,11 +435,11 @@ func (pop *Population) AnalyzeVarEnvs(s *Setting, env0 Environment, n int) {
 		ps := ProjectOnAxis(pvecs, mp, u[0])
 		pss = append(pss, ps)
 
-		gs := ProjectOnAxis(gvecs, mg, v[0])
+		gs := ProjectOnAxis(gvecs0, mg0, v[0])
 		gss = append(gss, gs)
 
 		ts := sv.Norm2()
-		fmt.Fprintf(fout, "SV\t%d\t%d\t%e\t%e\t%e\n", pop.Iepoch, i+1, sv[0], sv[0]/ts, ali)
+		fmt.Fprintf(fout, "SV\t%d\t%d\t%e\t%e\t%e\t%e\n", pop.Iepoch, i+1, sv[0], sv[0]/ts, pali, gali)
 	}
 	for i, ps := range pss {
 		cpg, ppg := CorrVecs(ps, gss[i])
