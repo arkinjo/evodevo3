@@ -234,6 +234,58 @@ func (pop *Population) GenoPhenoPlot(s *Setting, p0, paxis, g0, gaxis Vec) {
 	log.Printf("Projection saved in: %s", filename)
 }
 
+func (pop *Population) PGCov(s *Setting, p0, paxis, g0, gaxis Vec) {
+	filename := s.TrajectoryFilename(pop.Iepoch, pop.Igen, "pgcov")
+	fout, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	JustFail(err)
+	defer fout.Close()
+	// for alignment calculation
+	punit := paxis.Clone()
+	punit.Normalize()
+	gunit := gaxis.Clone()
+	gunit.Normalize()
+
+	gvecs := pop.GenomeVecs(s)
+	pvecs := pop.PhenoVecs(s)
+	mg := MeanVecs(gvecs)
+	mp := MeanVecs(pvecs)
+
+	// Geno-Pheno Projection Plot
+	gs := ProjectOnAxis(gvecs, g0, gaxis)
+	ps := ProjectOnAxis(pvecs, p0, paxis)
+
+	sv, u, v := XPCA(pvecs, mp, gvecs, mg)
+	svtot := sv.Norm2()
+	var pks, gks []Vec
+	for k := range u {
+		pk := ProjectOnAxis(pvecs, mp, u[k])
+		gk := ProjectOnAxis(gvecs, mg, v[k])
+		if DotVecs(pk, ps) < 0 {
+			pk.ScaleBy(-1)
+			gk.ScaleBy(-1)
+		}
+		pks = append(pks, pk)
+		gks = append(gks, gk)
+
+		corr, pval := CorrVecs(pk, gk)
+		corrp, pvalp := CorrVecs(pk, ps)
+		corrg, pvalg := CorrVecs(gk, gs)
+		fmt.Fprintf(fout, "SV\t%d\t%d\t%f\t%f", pop.Igen, k, svtot, sv[k]/svtot)
+		fmt.Fprintf(fout, "\t%f\t%e", corr, pval)
+		fmt.Fprintf(fout, "\t%f\t%e", corrp, pvalp)
+		fmt.Fprintf(fout, "\t%f\t%e", corrg, pvalg)
+		fmt.Fprintf(fout, "\n")
+	}
+
+	for i, gi := range gs {
+		fmt.Fprintf(fout, "I\t%d\t%f\t%f", i, gi, ps[i])
+		for k, gk := range gks {
+			fmt.Fprintf(fout, "\t%f\t%f", gk[i], pks[k][i])
+		}
+		fmt.Fprintf(fout, "\n")
+	}
+}
+
 func (pop *Population) SVDProject(s *Setting, p0, paxis, g0, gaxis, c0, caxis Vec) {
 	filename := s.TrajectoryFilename(pop.Iepoch, pop.Igen, "xpca")
 	fout, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
@@ -337,6 +389,7 @@ func CovarianceMatrix(xs []Vec, x0 Vec, ys []Vec, y0 Vec) *mat.Dense {
 
 // Get singular values, the first left and right singular vectors.
 func XPCA(xs []Vec, x0 Vec, ys []Vec, y0 Vec) (Vec, []Vec, []Vec) {
+	npca := 3
 	ccov := CovarianceMatrix(xs, x0, ys, y0)
 	var svd mat.SVD
 	ok := svd.Factorize(ccov, mat.SVDThin)
@@ -347,7 +400,10 @@ func XPCA(xs []Vec, x0 Vec, ys []Vec, y0 Vec) (Vec, []Vec, []Vec) {
 	sv := svd.Values(nil)
 	svd.UTo(&u)
 	svd.VTo(&v)
-	u0 := make([]Vec, 2)
+	if npca > len(sv) {
+		npca = len(sv)
+	}
+	u0 := make([]Vec, npca)
 	for j := range len(u0) {
 		u0[j] = make(Vec, len(x0))
 		for i := range len(x0) {
@@ -355,7 +411,7 @@ func XPCA(xs []Vec, x0 Vec, ys []Vec, y0 Vec) (Vec, []Vec, []Vec) {
 		}
 	}
 
-	v0 := make([]Vec, 2)
+	v0 := make([]Vec, npca)
 	for j := range len(v0) {
 		v0[j] = make(Vec, len(y0))
 		for i := range len(y0) {
