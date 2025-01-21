@@ -18,7 +18,7 @@ type Population struct {
 }
 
 type PopStats struct {
-	Mismatch float64
+	Align    float64
 	Fitness  float64
 	Ndev     float64
 	Nparents int
@@ -27,24 +27,24 @@ type PopStats struct {
 func (stats PopStats) Print(iepoch, igen int) {
 	fmt.Printf("%d\t%d\t%e\t%e\t%e\t%d\n",
 		iepoch, igen,
-		stats.Mismatch, stats.Fitness, stats.Ndev, stats.Nparents)
+		stats.Align, stats.Fitness, stats.Ndev, stats.Nparents)
 }
 
 func (pop *Population) GetPopStats() PopStats {
-	mismatch := 0.0
+	align := 0.0
 	fitness := 0.0
 	ndev := 0.0
 	npop := float64(len(pop.Indivs))
 	npar := make(map[int]bool)
 	for _, indiv := range pop.Indivs {
-		mismatch += indiv.Mismatch
+		align += indiv.Align
 		fitness += indiv.Fitness
 		ndev += float64(indiv.Ndev)
 		npar[indiv.MomId] = true
 		npar[indiv.DadId] = true
 	}
 	return PopStats{
-		Mismatch: mismatch / npop,
+		Align:    align / npop,
 		Fitness:  fitness / npop,
 		Ndev:     ndev / npop,
 		Nparents: len(npar)}

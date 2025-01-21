@@ -92,15 +92,16 @@ func (env Environment) SelectingEnv(s *Setting) Vec {
 }
 
 func (env Environment) ChangeEnv(s *Setting, rng *rand.Rand) Environment {
-	lenv := env.Len()
-	nflip := int(s.Denv * float64(lenv))
+	nflip := int(s.Denv * float64(s.LenFace))
 	nenv := env.Clone()
 
-	for i, p := range rng.Perm(lenv) {
-		if i == nflip {
-			break
+	for k := range NumFaces {
+		for i, p := range rng.Perm(s.LenFace) {
+			if i == nflip {
+				break
+			}
+			nenv[k*s.LenFace+p] *= -1
 		}
-		nenv[p] *= -1
 	}
 	return nenv
 }
