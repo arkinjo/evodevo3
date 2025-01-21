@@ -60,7 +60,7 @@ func main() {
 	env1 := sim.Envs[pop0.Iepoch]
 
 	g0, gaxis := sim.Setting.GetGenomeAxis(pop0, pop1)
-	p0, paxis := sim.Setting.GetPhenoAxis(pop0, pop1, env0, env1)
+	p0, paxis := sim.Setting.GetSelectedPhenoAxis(pop0, pop1, env0, env1)
 
 	log.Printf("Plotting %s epoch %d population under env %d\n",
 		sim.Setting.Basename, pop0.Iepoch, iepoch)

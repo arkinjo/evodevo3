@@ -70,6 +70,15 @@ func (s *Setting) GetPhenoAxis(pop0, pop1 Population, env0, env1 Environment) (V
 	return p0, GetAxis(p0, p1)
 }
 
+func (s *Setting) GetSelectedPhenoAxis(pop0, pop1 Population, env0, env1 Environment) (Vec, Vec) {
+
+	pop0.Initialize(s, env0)
+	pop0.Develop(s, env0)
+	p0 := MeanVecs(pop0.SelectedPhenoVecs(s))
+	p1 := MeanVecs(pop1.SelectedPhenoVecs(s))
+	return p0, GetAxis(p0, p1)
+}
+
 func (s *Setting) GetGenomeAxis(pop0, pop1 Population) (Vec, Vec) {
 	g0 := MeanVecs(pop0.GenomeVecs(s))
 	g1 := MeanVecs(pop1.GenomeVecs(s))
@@ -214,7 +223,7 @@ func (pop *Population) GenoPhenoPlot(s *Setting, p0, paxis, g0, gaxis Vec) {
 	// Geno-Pheno Projection Plot
 	gvecs := pop.GenomeVecs(s)
 	gs := ProjectOnAxis(gvecs, g0, gaxis)
-	pvecs := pop.PhenoVecs(s)
+	pvecs := pop.SelectedPhenoVecs(s)
 	ps := ProjectOnAxis(pvecs, p0, paxis)
 
 	pop.PrintPopStats(fout, gs, ps)
@@ -225,10 +234,11 @@ func (pop *Population) GenoPhenoPlot(s *Setting, p0, paxis, g0, gaxis Vec) {
 	pvar := MatTotVar(pvecs, mp)
 	rvar := s.RandomGenomeVariance()
 	fmt.Fprintf(fout, "GPvar\t%d\t%f\t%f\t%f\n", pop.Igen, gvar, pvar, rvar)
-	fmt.Fprintf(fout, "#\t%3s\t%8s\t%8s", "gen", "g", "p")
+	fmt.Fprintf(fout, "#\t%3s\t%8s\t%8s\t%8s", "gen", "mismatch", "g", "p")
 	fmt.Fprintf(fout, "\n")
-	for i := range pop.Indivs {
-		fmt.Fprintf(fout, "I\t%d\t%f\t%f", i, gs[i], ps[i])
+	for i, indiv := range pop.Indivs {
+		fmt.Fprintf(fout, "I\t%d\t%f\t%f\t%f",
+			i, indiv.Mismatch, gs[i], ps[i])
 		fmt.Fprintf(fout, "\n")
 	}
 	log.Printf("Projection saved in: %s", filename)
@@ -246,7 +256,7 @@ func (pop *Population) PGCov(s *Setting, p0, paxis, g0, gaxis Vec) {
 	gunit.Normalize()
 
 	gvecs := pop.GenomeVecs(s)
-	pvecs := pop.PhenoVecs(s)
+	pvecs := pop.SelectedPhenoVecs(s)
 	mg := MeanVecs(gvecs)
 	mp := MeanVecs(pvecs)
 
@@ -257,6 +267,11 @@ func (pop *Population) PGCov(s *Setting, p0, paxis, g0, gaxis Vec) {
 	sv, u, v := XPCA(pvecs, mp, gvecs, mg)
 	svtot := sv.Norm2()
 	var pks, gks []Vec
+	fmt.Fprintf(fout, "Tot\t%f\n", svtot)
+	for k, sk := range sv {
+		acc := sv[:k+1].Norm2() / svtot
+		fmt.Fprintf(fout, "SV\t%d\t%f\t%f\t%f\n", k, sk, sk/svtot, acc)
+	}
 	for k := range u {
 		pk := ProjectOnAxis(pvecs, mp, u[k])
 		gk := ProjectOnAxis(gvecs, mg, v[k])
@@ -270,11 +285,9 @@ func (pop *Population) PGCov(s *Setting, p0, paxis, g0, gaxis Vec) {
 		corr, pval := CorrVecs(pk, gk)
 		corrp, pvalp := CorrVecs(pk, ps)
 		corrg, pvalg := CorrVecs(gk, gs)
-		fmt.Fprintf(fout, "SV\t%d\t%d\t%f\t%f", pop.Igen, k, svtot, sv[k]/svtot)
-		fmt.Fprintf(fout, "\t%f\t%e", corr, pval)
-		fmt.Fprintf(fout, "\t%f\t%e", corrp, pvalp)
-		fmt.Fprintf(fout, "\t%f\t%e", corrg, pvalg)
-		fmt.Fprintf(fout, "\n")
+		fmt.Fprintf(fout, "PGcorr\t%d\t%f\t%e\n", k, corr, pval)
+		fmt.Fprintf(fout, "PUcorr\t%d\t%f\t%e\n", k, corrp, pvalp)
+		fmt.Fprintf(fout, "GVcorr\t%d\t%f\t%e\n", k, corrg, pvalg)
 	}
 
 	for i, gi := range gs {
