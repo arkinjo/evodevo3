@@ -8,14 +8,14 @@ import (
 )
 
 type Individual struct {
-	Id       int
-	MomId    int
-	DadId    int
-	Genome   Genome
-	Cells    []Cell
-	Ndev     int
-	Mismatch float64
-	Fitness  float64
+	Id      int
+	MomId   int
+	DadId   int
+	Genome  Genome
+	Cells   []Cell
+	Ndev    int
+	Align   float64
+	Fitness float64
 }
 
 func (indiv *Individual) NumCells() int {
@@ -88,10 +88,10 @@ func (s *Setting) NewIndividual(id int, env Environment) Individual {
 		MomId: -1,
 		DadId: -1,
 		//Genome:   s.NewGenome(), given later
-		Cells:    cells,
-		Ndev:     0,
-		Mismatch: 100000.0,
-		Fitness:  0}
+		Cells:   cells,
+		Ndev:    0,
+		Align:   -1,
+		Fitness: 0}
 }
 
 func (indiv *Individual) Clone(s *Setting, env Environment) Individual {
@@ -142,16 +142,16 @@ func (indiv *Individual) Initialize(s *Setting, env Environment) {
 
 func (indiv *Individual) SetFitness(s *Setting, selenv Vec, conv float64) {
 	selphen := indiv.SelectedPhenotype(s)
-	mis := 0.0
+	ali := 0.0
 	for _, p := range selphen {
-		mis += DotVecs(p, selenv)
+		ali += DotVecs(p, selenv)
 	}
-	indiv.Mismatch = mis / float64(len(selenv)*len(selphen))
+	indiv.Align = ali / float64(len(selenv)*len(selphen))
 
 	if conv >= s.ConvDevelop && s.MaxDevelop > 1 {
 		indiv.Fitness = 0.0
 	} else {
-		mm := s.SelStrength * (indiv.Mismatch - 1)
+		mm := s.SelStrength * (indiv.Align - 1)
 		nd := 0.1 * max(0.0, float64(indiv.Ndev-50))
 		indiv.Fitness = math.Exp(mm - nd)
 	}

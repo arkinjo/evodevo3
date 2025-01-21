@@ -204,14 +204,14 @@ func (pop *Population) PrintPopStats(fout *os.File, gs, ps Vec) {
 	var ns, ms, fs Vec
 	for _, indiv := range pop.Indivs {
 		ns = append(ns, float64(indiv.Ndev))
-		ms = append(ms, indiv.Mismatch)
+		ms = append(ms, indiv.Align)
 		fs = append(fs, indiv.Fitness)
 	}
 	na, nv := avesd(ns)
 	ma, mv := avesd(ms)
 	fa, fv := avesd(fs)
 	fmt.Fprintf(fout, "Ndev\t%d\t%f\t%f\n", pop.Igen, na, nv)
-	fmt.Fprintf(fout, "Mis\t%d\t%f\t%f\n", pop.Igen, ma, mv)
+	fmt.Fprintf(fout, "Ali\t%d\t%f\t%f\n", pop.Igen, ma, mv)
 	fmt.Fprintf(fout, "Fit\t%d\t%e\t%e\n", pop.Igen, fa, fv)
 }
 
@@ -238,7 +238,7 @@ func (pop *Population) GenoPhenoPlot(s *Setting, p0, paxis, g0, gaxis Vec) {
 	fmt.Fprintf(fout, "\n")
 	for i, indiv := range pop.Indivs {
 		fmt.Fprintf(fout, "I\t%d\t%f\t%f\t%f",
-			i, indiv.Mismatch, gs[i], ps[i])
+			i, indiv.Align, gs[i], ps[i])
 		fmt.Fprintf(fout, "\n")
 	}
 	log.Printf("Projection saved in: %s", filename)
