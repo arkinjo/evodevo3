@@ -195,7 +195,7 @@ func (pop *Population) GetProjected2(s *Setting, fout *os.File, label string, xs
 	return px, py
 }
 
-func (pop *Population) PrintPopStats(fout *os.File, gs, ps Vec) {
+func (pop *Population) PrintPopStats(fout *os.File, gs, ps, ali0 Vec) {
 	ga, gv := avesd(gs)
 	pa, pv := avesd(ps)
 	fmt.Fprintf(fout, "Proj\t%d\t%d\t%f\t%f\t%f\t%f\n",
@@ -209,36 +209,51 @@ func (pop *Population) PrintPopStats(fout *os.File, gs, ps Vec) {
 	}
 	na, nv := avesd(ns)
 	ma, mv := avesd(ms)
+	a0a, a0v := avesd(ali0)
 	fa, fv := avesd(fs)
 	fmt.Fprintf(fout, "Ndev\t%d\t%f\t%f\n", pop.Igen, na, nv)
-	fmt.Fprintf(fout, "Ali\t%d\t%f\t%f\n", pop.Igen, ma, mv)
+	fmt.Fprintf(fout, "AliNov\t%d\t%f\t%f\n", pop.Igen, ma, mv)
+	fmt.Fprintf(fout, "AliAnc\t%d\t%f\t%f\n", pop.Igen, a0a, a0v)
 	fmt.Fprintf(fout, "Fit\t%d\t%e\t%e\n", pop.Igen, fa, fv)
 }
 
-func (pop *Population) GenoPhenoPlot(s *Setting, p0, paxis, g0, gaxis Vec) {
+func (pop *Population) GenoPhenoPlot(s *Setting, p0, paxis, g0, gaxis, env0 Vec) {
 	filename := s.TrajectoryFilename(pop.Iepoch, pop.Igen, "gpplot")
 	fout, err := os.Create(filename)
 	JustFail(err)
 	defer fout.Close()
+
+	selenv0 := env0.SelectingEnv(s)
 	// Geno-Pheno Projection Plot
 	gvecs := pop.GenomeVecs(s)
 	gs := ProjectOnAxis(gvecs, g0, gaxis)
 	pvecs := pop.SelectedPhenoVecs(s)
 	ps := ProjectOnAxis(pvecs, p0, paxis)
 
-	pop.PrintPopStats(fout, gs, ps)
+	ali0 := make(Vec, len(pvecs))
+	for i, p := range pvecs {
+		ali0[i] = DotVecs(selenv0, p) / float64(len(selenv0))
+	}
+
+	pop.PrintPopStats(fout, gs, ps, ali0)
 
 	mg := MeanVecs(gvecs)
 	mp := MeanVecs(pvecs)
 	gvar := MatTotVar(gvecs, mg)
 	pvar := MatTotVar(pvecs, mp)
 	rvar := s.RandomGenomeVariance()
+	ali := make(Vec, len(pop.Indivs))
+	for i, indiv := range pop.Indivs {
+		ali[i] = indiv.Align
+	}
+	pacor, pvala := CorrVecs(ps, ali)
+	fmt.Fprintf(fout, "PAcorr\t%d\t%f\t%e\n", pop.Igen, pacor, pvala)
 	fmt.Fprintf(fout, "GPvar\t%d\t%f\t%f\t%f\n", pop.Igen, gvar, pvar, rvar)
-	fmt.Fprintf(fout, "#\t%3s\t%8s\t%8s\t%8s", "gen", "mismatch", "g", "p")
+	fmt.Fprintf(fout, "#\t%3s\t%8s\t%8s\t%8s\t%8s", "gen", "alignN", "alignA", "g", "p")
 	fmt.Fprintf(fout, "\n")
 	for i, indiv := range pop.Indivs {
-		fmt.Fprintf(fout, "I\t%d\t%f\t%f\t%f",
-			i, indiv.Align, gs[i], ps[i])
+		fmt.Fprintf(fout, "I\t%d\t%f\t%f\t%f\t%f",
+			i, indiv.Align, ali0[i], gs[i], ps[i])
 		fmt.Fprintf(fout, "\n")
 	}
 	log.Printf("Projection saved in: %s", filename)
@@ -249,6 +264,7 @@ func (pop *Population) PGCov(s *Setting, p0, paxis, g0, gaxis Vec) {
 	fout, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	JustFail(err)
 	defer fout.Close()
+
 	// for alignment calculation
 	punit := paxis.Clone()
 	punit.Normalize()

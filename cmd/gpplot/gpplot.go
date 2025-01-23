@@ -70,7 +70,7 @@ func main() {
 			pop.Initialize(sim.Setting, env)
 			pop.Develop(sim.Setting, env)
 		}
-		pop.GenoPhenoPlot(sim.Setting, p0, paxis, g0, gaxis)
+		pop.GenoPhenoPlot(sim.Setting, p0, paxis, g0, gaxis, env0)
 	}
 
 	log.Println("Time: ", time.Since(t0))
