@@ -249,7 +249,7 @@ func (pop *Population) GenoPhenoPlot(s *Setting, p0, paxis, g0, gaxis, env0 Vec)
 	pacor, pvala := CorrVecs(ps, ali)
 	fmt.Fprintf(fout, "PAcorr\t%d\t%f\t%e\n", pop.Igen, pacor, pvala)
 	fmt.Fprintf(fout, "GPvar\t%d\t%f\t%f\t%f\n", pop.Igen, gvar, pvar, rvar)
-	fmt.Fprintf(fout, "#\t%3s\t%8s\t%8s\t%8s\t%8s", "gen", "alignN", "alignA", "g", "p")
+	fmt.Fprintf(fout, "#\t%3s\t%8s\t%8s\t%8s\t%8s", "id", "AliNov", "AliAnc", "g", "p")
 	fmt.Fprintf(fout, "\n")
 	for i, indiv := range pop.Indivs {
 		fmt.Fprintf(fout, "I\t%d\t%f\t%f\t%f\t%f",
