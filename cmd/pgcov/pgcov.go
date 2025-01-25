@@ -72,7 +72,7 @@ func main() {
 		pop.Develop(sim.Setting, env)
 	}
 
-	pop.PGCov(sim.Setting, p0, paxis, g0, gaxis)
+	pop.PGCov(sim.Setting, p0, paxis, g0, gaxis, env0, env1)
 
 	log.Println("Time: ", time.Since(t0))
 }

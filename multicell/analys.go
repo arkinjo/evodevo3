@@ -259,11 +259,16 @@ func (pop *Population) GenoPhenoPlot(s *Setting, p0, paxis, g0, gaxis, env0 Vec)
 	log.Printf("Projection saved in: %s", filename)
 }
 
-func (pop *Population) PGCov(s *Setting, p0, paxis, g0, gaxis Vec) {
+func (pop *Population) PGCov(s *Setting, p0, paxis, g0, gaxis, env0, env1 Vec) {
 	filename := s.TrajectoryFilename(pop.Iepoch, pop.Igen, "pgcov")
 	fout, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	JustFail(err)
 	defer fout.Close()
+
+	selenv0 := env0.SelectingEnv(s)
+	selenv0.Normalize()
+	selenv1 := env1.SelectingEnv(s)
+	selenv1.Normalize()
 
 	// for alignment calculation
 	punit := paxis.Clone()
@@ -294,10 +299,16 @@ func (pop *Population) PGCov(s *Setting, p0, paxis, g0, gaxis Vec) {
 		if DotVecs(pk, ps) < 0 {
 			pk.ScaleBy(-1)
 			gk.ScaleBy(-1)
+			u[k].ScaleBy(-1)
+			v[k].ScaleBy(-1)
 		}
 		pks = append(pks, pk)
 		gks = append(gks, gk)
 
+		ali0 := DotVecs(selenv0, u[k])
+		ali1 := DotVecs(selenv1, u[k])
+		fmt.Fprintf(fout, "AliNov\t%d\t%f\n", k, ali1)
+		fmt.Fprintf(fout, "AliAnc\t%d\t%f\n", k, ali0)
 		corr, pval := CorrVecs(pk, gk)
 		corrp, pvalp := CorrVecs(pk, ps)
 		corrg, pvalg := CorrVecs(gk, gs)
