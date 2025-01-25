@@ -177,18 +177,10 @@ func (vec Vec) Mutate(rate float64) {
 			} else {
 				vec[i] = -1.0
 			}
-		} else if v > 0 {
-			if r == 0 {
-				vec[i] = 0
-			} else {
-				vec[i] = -1
-			}
+		} else if r == 0 {
+			vec[i] = 0
 		} else {
-			if r == 0 {
-				vec[i] = 0
-			} else {
-				vec[i] = 1
-			}
+			vec[i] *= -1
 		}
 	}
 }
