@@ -88,6 +88,14 @@ func (vout Vec) Acc(vin Vec) Vec {
 	return vout
 }
 
+// Scale and Accumulate
+func (vout Vec) ScaleAcc(s float64, vin Vec) Vec {
+	for i, v := range vin {
+		vout[i] += s * v
+	}
+	return vout
+}
+
 func (vout Vec) Diff(v0, v1 Vec) Vec {
 	for i, v := range v0 {
 		vout[i] = v - v1[i]
@@ -119,11 +127,10 @@ func (v Vec) NormInf() float64 {
 	return d
 }
 
-func NoisyVec(n int, noise float64) Vec {
-	m := int(noise * float64(n))
+func NoisyVec(n, nflip int) Vec {
 	v := make(Vec, n)
-	for _, p := range rand.Perm(n) {
-		if p < m {
+	for i, p := range rand.Perm(n) {
+		if i < nflip {
 			v[p] = -1
 		} else {
 			v[p] = 1

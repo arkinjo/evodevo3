@@ -25,7 +25,9 @@ const (
 	default_density       = 0.02 // genome matrix density
 	default_mutation_rate = 0.002
 	default_conv_develop  = 5e-6
-	with_bias             = true // bias in activation.
+	default_len_block     = 5     // environmental noise: elem per block
+	default_num_blocks    = 2     // environmental noise: number of blocks
+	with_bias             = false // bias in activation.
 )
 
 // various set-ups
@@ -39,7 +41,8 @@ type Setting struct {
 	NumCellY      int     // number of cells in the y-axis
 	LenFace       int     // face length
 	ProductionRun bool    // true if production run (i.e. "test" phase)
-	EnvNoise      float64 // noise level
+	NumBlocks     int     // number of noise blocks
+	LenBlock      int     // noise block length
 	MutRate       float64 // mutation rate
 	ConvDevelop   float64 // convergence limit
 	Denv          float64 // size of an environmental change
@@ -65,7 +68,8 @@ func GetDefaultSetting(modelname string) *Setting {
 		NumCellY:      default_num_cell_y,
 		LenFace:       default_len_face,
 		ProductionRun: false,
-		EnvNoise:      0.05,
+		NumBlocks:     default_num_blocks,
+		LenBlock:      default_len_block,
 		MutRate:       default_mutation_rate,
 		ConvDevelop:   default_conv_develop,
 		Denv:          0.5,
