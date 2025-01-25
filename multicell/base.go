@@ -25,6 +25,7 @@ const (
 	default_density       = 0.02 // genome matrix density
 	default_mutation_rate = 0.002
 	default_conv_develop  = 5e-6
+	with_bias             = true // bias in activation.
 )
 
 // various set-ups

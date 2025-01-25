@@ -111,7 +111,9 @@ func (c *Cell) DevStep(s *Setting, g Genome, istep int) float64 {
 		for k := range tl {
 			va.MultSpMatVec(g.M[l][k], c.S[k]) // va is accumulated.
 		}
-
+		if with_bias {
+			va.Acc(g.B[l])
+		}
 		afunc := LCatan(s.Omega[l])
 		if l == s.NumLayers-1 {
 			afunc = CStep1(s.Omega[l])

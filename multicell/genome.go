@@ -15,6 +15,7 @@ package multicell
 // doesn't work either... new methods can't be defined for Genome.
 
 type Genome struct {
+	B []Vec
 	SliceOfMaps[SpMat]
 }
 
@@ -29,38 +30,60 @@ func (s *Setting) RandomGenomeVariance() float64 {
 }
 
 func (s *Setting) NewGenome() Genome {
+	B := make([]Vec, s.NumLayers)
+	for l, nl := range s.LenLayer {
+		B[l] = NewVec(nl, 0.0)
+	}
 	G := NewSliceOfMaps[SpMat](s.NumLayers)
 	s.Topology.Do(func(l, k int, density float64) {
 		G.M[l][k] = NewSpMat(s.LenLayer[l], s.LenLayer[k])
 		G.M[l][k].Randomize(density)
 	})
 
-	return Genome{G}
+	return Genome{B, G}
 }
 
 func (genome Genome) Clone() Genome {
+	B := make([]Vec, len(genome.B))
+	if with_bias {
+		for l, bl := range genome.B {
+			B[l] = bl.Clone()
+		}
+	}
 	G := NewSliceOfMaps[SpMat](len(genome.M))
 	genome.Do(func(l, k int, mat SpMat) {
 		G.M[l][k] = mat.Clone()
 	})
 
-	return Genome{G}
+	return Genome{B, G}
 }
 
 func (genome Genome) Mutate(s *Setting) {
+	if with_bias {
+		for l := range genome.B {
+			genome.B[l].Mutate(s.MutRate)
+		}
+	}
 	s.Topology.Do(func(l, k int, density float64) {
 		genome.M[l][k].Mutate(s.MutRate, density)
 	})
 }
 
 func (g0 Genome) MateWith(g1 Genome) (Genome, Genome) {
+	B0 := make([]Vec, len(g0.B))
+	B1 := make([]Vec, len(g1.B))
+	if with_bias {
+		for l, b0 := range g0.B {
+			B0[l], B1[l] = b0.MateWith(g1.B[l])
+		}
+	}
 	M0 := NewSliceOfMaps[SpMat](len(g0.M))
 	M1 := NewSliceOfMaps[SpMat](len(g1.M))
 	g0.Do(func(l, k int, m0 SpMat) {
 		M0.M[l][k], M1.M[l][k] = m0.MateWith(g1.M[l][k])
 	})
 
-	return Genome{M0}, Genome{M1}
+	return Genome{B0, M0}, Genome{B1, M1}
 }
 
 func (g Genome) ToVec(s *Setting) Vec {
@@ -71,6 +94,9 @@ func (g Genome) ToVec(s *Setting) Vec {
 			if mat, ok := g.M[l][k]; ok {
 				vec = append(vec, mat.ToVec()...)
 			}
+		}
+		if with_bias {
+			vec = append(vec, g.B[l]...)
 		}
 	}
 

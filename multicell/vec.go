@@ -164,3 +164,43 @@ func CorrVecs(vs0, vs1 Vec) (float64, float64) {
 	pval := 2 * dist.CDF(-math.Abs(tstat))
 	return r, pval
 }
+
+func (vec Vec) Mutate(rate float64) {
+	for i, v := range vec {
+		if rand.Float64() >= rate {
+			continue
+		}
+		r := rand.IntN(2)
+		if v == 0.0 {
+			if r == 0 {
+				vec[i] = 1.0
+			} else {
+				vec[i] = -1.0
+			}
+		} else if v > 0 {
+			if r == 0 {
+				vec[i] = 0
+			} else {
+				vec[i] = -1
+			}
+		} else {
+			if r == 0 {
+				vec[i] = 0
+			} else {
+				vec[i] = 1
+			}
+		}
+	}
+}
+
+func (vec0 Vec) MateWith(vec1 Vec) (Vec, Vec) {
+	nvec0 := vec0.Clone()
+	nvec1 := vec1.Clone()
+	for i, v0 := range vec0 {
+		if rand.IntN(2) == 0 {
+			nvec0[i] = vec1[i]
+			nvec1[i] = v0
+		}
+	}
+	return nvec0, nvec1
+}
