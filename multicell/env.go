@@ -80,17 +80,7 @@ func (env Environment) GetCue(s *Setting) Environment {
 		}
 	}
 
-	nseg := len(env) / s.LenBlock
-	for i, p := range rand.Perm(nseg) {
-		if i == s.NumBlocks {
-			break
-		}
-		for j := range s.LenBlock {
-			cue[p*s.LenBlock+j] *= -1
-		}
-	}
-
-	return cue
+	return cue.AddNoise(s.NumBlocks, s.LenBlock)
 }
 
 func (env Environment) SelectingEnv(s *Setting) Vec {
