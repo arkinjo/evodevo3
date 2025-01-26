@@ -18,7 +18,7 @@ func TestSVDTrans(t *testing.T) {
 	pop.Evolve(s, envs[0])
 
 	gvecs := pop.GenomeVecs(s)
-	pvecs := pop.PhenoVecs(s, true)
+	pvecs := pop.PhenoVecs(s)
 	mg := multicell.MeanVecs(gvecs)
 	mp := multicell.MeanVecs(pvecs)
 	t0 := time.Now()

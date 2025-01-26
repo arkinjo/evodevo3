@@ -1,6 +1,7 @@
 package multicell_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/arkinjo/evodevo3/multicell"
@@ -29,8 +30,9 @@ func TestEnvCue(t *testing.T) {
 	s := multicell.GetDefaultSetting("Full")
 	s.Outdir = "traj"
 	envs := s.SaveEnvs(ENVSFILE, 50)
-	s.EnvNoise = 0.05
-	env := envs[0]
+	s.NumBlocks = 2
+	s.LenBlock = 5
+	env := envs[1]
 	cue := env.GetCue(s)
 	ndiff := 0
 	for i, v := range cue {
@@ -38,7 +40,12 @@ func TestEnvCue(t *testing.T) {
 			ndiff += 1
 		}
 	}
-	nexp := int(s.EnvNoise * float64(len(env)))
+	for i, e := range env {
+		if e != cue[i] {
+			fmt.Printf("env/cue: %d %2.0f %2.0f\n", i, e, cue[i])
+		}
+	}
+	nexp := s.NumBlocks * s.LenBlock
 	if ndiff != nexp {
 		t.Errorf("Cue difference %d; expected %d\n", ndiff, nexp)
 	}
@@ -49,8 +56,9 @@ func TestEnvNoCue(t *testing.T) {
 	s.Outdir = "traj"
 	s.WithCue = false
 	envs := s.SaveEnvs(ENVSFILE, 50)
-	s.EnvNoise = 0.05
-	env := envs[0]
+	s.NumBlocks = 2
+	s.LenBlock = 5
+	env := envs[1]
 	cue := env.GetCue(s)
 	ndiff := 0
 	for _, v := range cue {
@@ -58,7 +66,8 @@ func TestEnvNoCue(t *testing.T) {
 			ndiff += 1
 		}
 	}
-	nexp := int(s.EnvNoise * float64(len(env)))
+
+	nexp := s.NumBlocks * s.LenBlock
 	if ndiff != nexp {
 		t.Errorf("Cue difference %d; expected %d\n", ndiff, nexp)
 	}
