@@ -80,18 +80,10 @@ func (sp SpMat) PickRandomElements(n int) SliceOfMaps[float64] {
 	nr := sp.Nrows()
 	nc := sp.Ncols()
 	ps := NewSliceOfMaps[float64](nr)
-	k := 0
-	for {
-		if k == n {
-			break
-		}
-		i := rand.IntN(nr)
-		j := rand.IntN(nc)
-		if ps.M[i][j] > 0.0 {
-			continue
-		}
+	for _, p := range rand.Perm(nr * nc)[:n] {
+		i := p / nc
+		j := p % nc
 		ps.M[i][j] = rand.Float64()
-		k += 1
 	}
 
 	return ps
