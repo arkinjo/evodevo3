@@ -71,7 +71,11 @@ func (env Environment) Face(s *Setting, iface int) Vec {
 }
 
 func (env Environment) SelectingEnv(s *Setting) Vec {
-	return env.Left(s)
+	var p Vec
+	for iface := range NumFaces {
+		p = append(p, env.Face(s, iface)[:10]...)
+	}
+	return p
 }
 
 func (env Environment) ChangeEnv(s *Setting, rng *rand.Rand) Environment {

@@ -127,16 +127,13 @@ func (v Vec) NormInf() float64 {
 	return d
 }
 
-func (vec Vec) AddNoise(lenface, nflip int) Vec {
-	nseg := len(vec) / lenface
+func (vec Vec) AddNoise(nflip int) Vec {
 	nvec := vec.Clone()
-	for i := range nseg {
-		for j, p := range rand.Perm(lenface) {
-			if j == nflip {
-				break
-			}
-			nvec[i*lenface+p] *= -1
+	for j, p := range rand.Perm(len(vec)) {
+		if j == nflip {
+			break
 		}
+		nvec[p] *= -1
 	}
 
 	return nvec

@@ -1,6 +1,7 @@
 package multicell
 
 import (
+	"fmt"
 	"log"
 	"maps"
 	"math/rand/v2"
@@ -8,9 +9,10 @@ import (
 	"gonum.org/v1/gonum/stat/distuv"
 )
 
-// sparse matrix
+// BLOCK-DIAGONAL sparse matrix
 type SpMat struct {
-	Ncol int
+	Ncol int // number of columns
+	Nblk int // number of diagonal blocks
 	SliceOfMaps[float64]
 }
 
@@ -35,14 +37,14 @@ func (sp0 SpMat) Equal(sp1 SpMat) bool {
 }
 
 // Create a new sparse matrix
-func NewSpMat(nrow, ncol int) SpMat {
+func NewSpMat(nrow, ncol, nblock int) SpMat {
 	mat := NewSliceOfMaps[float64](nrow)
-	return SpMat{ncol, mat}
+	return SpMat{ncol, nblock, mat}
 }
 
 // copy a sparse matrix
 func (sp *SpMat) Clone() SpMat {
-	nsp := NewSpMat(sp.Nrows(), sp.Ncols())
+	nsp := NewSpMat(sp.Nrows(), sp.Ncols(), sp.Nblk)
 	sp.Do(func(i, j int, v float64) {
 		nsp.M[i][j] = v
 	})
@@ -77,21 +79,20 @@ func (sp SpMat) Density() float64 {
 }
 
 func (sp SpMat) PickRandomElements(n int) SliceOfMaps[float64] {
-	nr := sp.Nrows()
-	nc := sp.Ncols()
-	ps := NewSliceOfMaps[float64](nr)
-	k := 0
-	for {
-		if k == n {
-			break
+	nr := sp.Nrows() / sp.Nblk // elements per block in one row.
+	nc := sp.Ncols() / sp.Nblk // elements per block in one column
+	npb := min(n/sp.Nblk, nr*nc)
+	ps := NewSliceOfMaps[float64](sp.Nrows())
+	for ib := range sp.Nblk {
+		dist := distuv.Poisson{Lambda: float64(npb)}
+		nb := min(int(dist.Rand()), nr*nc)
+
+		for _, p := range rand.Perm(nr * nc)[:nb] {
+			i := p/nc + ib*nr
+			j := p%nc + ib*nc
+			//	log.Println("i,j", ib, p, i, j)
+			ps.M[i][j] = rand.Float64()
 		}
-		i := rand.IntN(nr)
-		j := rand.IntN(nc)
-		if ps.M[i][j] > 0.0 {
-			continue
-		}
-		ps.M[i][j] = rand.Float64()
-		k += 1
 	}
 
 	return ps
@@ -99,6 +100,10 @@ func (sp SpMat) PickRandomElements(n int) SliceOfMaps[float64] {
 
 // random matrix
 func (sp SpMat) Randomize(density float64) {
+	if density*float64(sp.Nblk) > 1.0 {
+		err := fmt.Errorf("SpMat.Randomize: density %f is too big for %d blocks", density, sp.Nblk)
+		log.Fatal(err)
+	}
 	nr := sp.Nrows()
 	nc := sp.Ncols()
 	dist := distuv.Poisson{Lambda: density * float64(nr*nc)}
@@ -138,8 +143,8 @@ func (mat0 SpMat) MateWith(mat1 SpMat) (SpMat, SpMat) {
 		log.Fatal("MateSpMats: incompatible matrices")
 	}
 
-	nmat0 := NewSpMat(mat0.Nrows(), mat0.Ncols())
-	nmat1 := NewSpMat(mat0.Nrows(), mat0.Ncols())
+	nmat0 := NewSpMat(mat0.Nrows(), mat0.Ncols(), mat0.Nblk)
+	nmat1 := NewSpMat(mat0.Nrows(), mat0.Ncols(), mat0.Nblk)
 
 	for i := range mat0.Nrows() {
 		if rand.IntN(2) == 1 {

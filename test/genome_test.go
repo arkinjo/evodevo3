@@ -2,6 +2,7 @@ package multicell_test
 
 import (
 	"fmt"
+	"log"
 	"testing"
 
 	"github.com/arkinjo/evodevo3/multicell"
@@ -25,11 +26,14 @@ func TestGenome(t *testing.T) {
 func TestGenomeClone(t *testing.T) {
 	s := multicell.GetDefaultSetting("Full")
 	g0 := s.NewGenome()
+	log.Println("TestGenomeClone: NewGenome")
 	g1 := g0.Clone()
+	log.Println("TestGenomeClone: Clone")
 	if !g0.Equal(g1) {
 		t.Errorf("Genome cloning failed.")
 	}
-	g1.M[1][0].Randomize(0.1)
+	g1.M[1][0].Randomize(0.02)
+	log.Println("TestGenomeClone: Randomize")
 	if g0.M[1][0].Equal(g1.M[1][0]) {
 		t.Errorf("Genome randomization failed (1).")
 	}
@@ -87,12 +91,10 @@ func TestGenomeVecs(t *testing.T) {
 
 	pop0 := s.NewPopulation(envs[0])
 	pop0, dumpfile := pop0.Evolve(s, envs[0])
-	pop0.Sort()
 
 	pop1 := s.LoadPopulation(dumpfile)
 	pop1.Initialize(s, envs[1])
 	pop1.Develop(s, envs[1])
-	pop1.Sort()
 
 	vecs0 := pop0.GenomeVecs(s)
 	vecs1 := pop1.GenomeVecs(s)

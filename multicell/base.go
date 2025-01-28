@@ -22,11 +22,12 @@ const (
 	default_len_face      = 50
 	default_num_cell_x    = 1
 	default_num_cell_y    = 1
-	default_density       = 0.02 // genome matrix density
 	default_mutation_rate = 0.002
 	default_conv_develop  = 5e-6
-	default_noise_face    = 3     // environmental noise
+	default_noise         = 10    // environmental noise
 	with_bias             = false // bias in activation.
+	default_density       = 0.01  // genome matrix density
+	default_num_blocks    = 1     //NumFaces // number of blocks in matrices
 )
 
 // various set-ups
@@ -46,6 +47,7 @@ type Setting struct {
 	Denv          int     // size of an environmental change
 	SelStrength   float64 // selection strength
 	CueScale      float64 // usually 1.0, 10 for the Null model.
+	NumBlocks     int     // number of blocks in matrice
 
 	WithCue    bool                 // with cue or not
 	MaxDevelop int                  // maximum number of developmental steps
@@ -66,12 +68,13 @@ func GetDefaultSetting(modelname string) *Setting {
 		NumCellY:      default_num_cell_y,
 		LenFace:       default_len_face,
 		ProductionRun: false,
-		EnvNoise:      default_noise_face,
+		EnvNoise:      default_noise,
 		MutRate:       default_mutation_rate,
 		ConvDevelop:   default_conv_develop,
 		Denv:          100,
 		SelStrength:   20.0,
 		CueScale:      1.0,
+		NumBlocks:     default_num_blocks,
 		// parameters to be determined in SetModel are:
 		//WithCue
 		//MaxDevelop

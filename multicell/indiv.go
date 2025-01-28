@@ -23,7 +23,7 @@ func (indiv *Individual) NumCells() int {
 }
 
 func (s *Setting) SetCellEnv(cells []Cell, env Environment) {
-	cue := env.AddNoise(s.LenFace, s.EnvNoise)
+	cue := env.AddNoise(s.EnvNoise)
 	for i, c := range cells {
 		for iface, iop := range c.Facing {
 			if iop < 0 {
@@ -103,9 +103,9 @@ func (indiv *Individual) Clone(s *Setting, env Environment) Individual {
 func (indiv *Individual) Phenotype(s *Setting) []Vec {
 	var p []Vec
 	for _, c := range indiv.Cells {
-		for i, facing := range c.Facing {
+		for iface, facing := range c.Facing {
 			if facing < 0 {
-				p = append(p, c.Face(s, i))
+				p = append(p, c.Face(s, iface))
 			}
 		}
 	}
@@ -117,30 +117,19 @@ func (indiv *Individual) PhenotypeVec(s *Setting) Vec {
 	return slices.Concat(indiv.Phenotype(s)...)
 }
 
-func (indiv *Individual) SelectingCue(s *Setting) []Vec {
-	var p []Vec
-	for _, c := range indiv.Cells {
-		if c.Facing[Left] < 0 {
-			p = append(p, c.Cue[Left])
-		}
-	}
-
-	return p
-}
-
-func (indiv *Individual) SelectingCueVec(s *Setting) Vec {
-	return slices.Concat(indiv.SelectingCue(s)...)
-}
-
 func (indiv *Individual) SelectedPhenotype(s *Setting) []Vec {
-	var p []Vec
+	var ps []Vec
 	for _, c := range indiv.Cells {
-		if c.Facing[Left] < 0 {
-			p = append(p, c.Left(s))
+		var p Vec
+		for iface, facing := range c.Facing {
+			if facing < 0 {
+				p = append(p, c.Face(s, iface)[:10]...)
+			}
 		}
+		ps = append(ps, p)
 	}
 
-	return p
+	return ps
 }
 
 func (indiv *Individual) SelectedPhenotypeVec(s *Setting) Vec {
@@ -157,15 +146,11 @@ func (indiv *Individual) Initialize(s *Setting, env Environment) {
 
 func (indiv *Individual) SetFitness(s *Setting, selenv Vec, conv float64) {
 	selphen := indiv.SelectedPhenotype(s)
-	selcue := indiv.SelectingCue(s)
-	dce := make(Vec, s.LenFace)
 	ali := 0.0
-	for i, p := range selphen {
-		dce.Diff(selcue[i], selenv).ScaleBy(0)
-		dce.Acc(selcue[i])
-		ali += DotVecs(p, dce)
+	for _, p := range selphen {
+		ali += DotVecs(p, selenv)
 	}
-	indiv.Align = ali / float64(s.LenFace*len(selphen)+0*s.EnvNoise)
+	indiv.Align = ali / float64(len(selenv)*len(selphen))
 	if conv >= s.ConvDevelop && s.MaxDevelop > 1 {
 		indiv.Fitness = 0.0
 	} else {

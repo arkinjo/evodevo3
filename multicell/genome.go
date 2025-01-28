@@ -36,7 +36,7 @@ func (s *Setting) NewGenome() Genome {
 	}
 	G := NewSliceOfMaps[SpMat](s.NumLayers)
 	s.Topology.Do(func(l, k int, density float64) {
-		G.M[l][k] = NewSpMat(s.LenLayer[l], s.LenLayer[k])
+		G.M[l][k] = NewSpMat(s.LenLayer[l], s.LenLayer[k], s.NumBlocks)
 		G.M[l][k].Randomize(density)
 	})
 
