@@ -14,6 +14,7 @@ import (
 type Population struct {
 	Iepoch int // epoch
 	Igen   int // generation
+	Env    Environment
 	Indivs []Individual
 }
 
@@ -60,6 +61,7 @@ func (s *Setting) NewPopulation(env Environment) Population {
 	return Population{
 		Iepoch: 0,
 		Igen:   0,
+		Env:    env.Clone(),
 		Indivs: indivs}
 }
 
@@ -109,6 +111,7 @@ func (pop *Population) Select(s *Setting) Population {
 	return Population{
 		Iepoch: pop.Iepoch,
 		Igen:   pop.Igen,
+		Env:    pop.Env,
 		Indivs: indivs}
 }
 
@@ -137,6 +140,7 @@ func (pop *Population) Reproduce(s *Setting, env Environment) Population {
 	return Population{
 		Iepoch: pop.Iepoch,
 		Igen:   pop.Igen + 1,
+		Env:    pop.Env,
 		Indivs: kids}
 }
 
@@ -145,7 +149,8 @@ func (pop0 *Population) Evolve(s *Setting, env Environment) (Population, string)
 	pop.Initialize(s, env)
 	for igen := range s.MaxGeneration {
 		pop.Igen = igen
-		pop.Develop(s, env)
+		pop.Env = pop.Env.MarkovFlip(s, env)
+		pop.Develop(s, pop.Env)
 		stats := pop.GetPopStats()
 		stats.Print(pop.Iepoch, pop.Igen)
 		if s.ProductionRun { // Dump before Selection

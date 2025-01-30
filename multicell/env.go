@@ -8,6 +8,8 @@ import (
 	"os"
 )
 
+var rng = rand.New(rand.NewPCG(13, 97))
+
 type Environment = Vec
 
 type EnvironmentS []Environment
@@ -70,24 +72,11 @@ func (env Environment) Face(s *Setting, iface int) Vec {
 	return v
 }
 
-func (env Environment) GetCue(s *Setting) Environment {
-	cue := env.Clone()
-	if !s.WithCue {
-		if with_bias {
-			cue.SetAll(1.0)
-		} else {
-			cue.SetAll(-1.0)
-		}
-	}
-
-	return cue.AddNoise(s.NumBlocks, s.LenBlock)
-}
-
 func (env Environment) SelectingEnv(s *Setting) Vec {
 	return env.Left(s)
 }
 
-func (env Environment) ChangeEnv(s *Setting, rng *rand.Rand) Environment {
+func (env Environment) ChangeEnv(s *Setting) Environment {
 	nflip := int(s.Denv * float64(s.LenFace))
 	nenv := env.Clone()
 
@@ -102,15 +91,31 @@ func (env Environment) ChangeEnv(s *Setting, rng *rand.Rand) Environment {
 	return nenv
 }
 
+func (env Environment) MarkovFlip(s *Setting, ref Environment) Environment {
+	nenv := env.Clone()
+	nblk := len(env) / s.LenBlock
+	for _, ib := range rng.Perm(nblk)[:s.NumBlocks] {
+		i := ib * s.LenBlock
+		r2v := (ref[i] == env[i] && rng.Float64() < s.Penv01)
+		v2r := (ref[i] != env[i] && rng.Float64() < s.Penv10)
+		if r2v || v2r {
+			for j := range s.LenBlock {
+				nenv[i+j] *= -1
+			}
+		}
+	}
+	return nenv
+}
+
 func (env Environment) GenerateEnvs(s *Setting, nepochs int) EnvironmentS {
-	rng := rand.New(rand.NewPCG(s.Seed, s.Seed+1397))
+
 	envs := make([]Environment, nepochs)
 	envs[0] = env
 	for n := range nepochs {
 		if n == 0 {
 			continue
 		}
-		envs[n] = envs[n-1].ChangeEnv(s, rng)
+		envs[n] = envs[n-1].ChangeEnv(s)
 
 	}
 	return envs

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"math"
-	"math/rand/v2"
 	"os"
 
 	"gonum.org/v1/gonum/mat"
@@ -479,7 +478,6 @@ func (pop *Population) AnalyzeVarEnvs(s *Setting, env0 Environment, n int) {
 
 	ps0 := ProjectOnAxis(pvecs0, mp0, u0[0])
 	gs0 := ProjectOnAxis(gvecs0, mg0, v0[0])
-	rng := rand.New(rand.NewPCG(s.Seed+11, s.Seed+17))
 
 	var us, vs, envs []Vec
 	envs = append(envs, env0)
@@ -492,7 +490,7 @@ func (pop *Population) AnalyzeVarEnvs(s *Setting, env0 Environment, n int) {
 	gss = append(gss, gs0)
 	for i := range n {
 		log.Printf("Environment %d\n", i+1)
-		env := env0.ChangeEnv(s, rng)
+		env := env0.ChangeEnv(s)
 
 		envs = append(envs, env)
 		pop.Initialize(s, env)
