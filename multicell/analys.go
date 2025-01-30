@@ -75,6 +75,8 @@ func (s *Setting) GetSelectedPhenoAxis(pop0, pop1 Population, env0, env1 Environ
 	pop0.Develop(s, env0)
 	p0 := MeanVecs(pop0.SelectedPhenoVecs(s))
 	p1 := MeanVecs(pop1.SelectedPhenoVecs(s))
+	//	fmt.Println("p0: ", p0)
+	//	fmt.Println("p1: ", p1)
 	return p0, GetAxis(p0, p1)
 }
 

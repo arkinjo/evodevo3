@@ -115,12 +115,12 @@ func (pop *Population) Select(s *Setting) Population {
 		Indivs: indivs}
 }
 
-func (pop *Population) Reproduce(s *Setting, env Environment) Population {
+func (pop *Population) Reproduce(s *Setting) Population {
 	ch := make(chan Individual, 2)
 
 	for i := 1; i < len(pop.Indivs); i += 2 {
 		go func(mom, dad Individual) {
-			kid0, kid1 := s.MateIndividuals(mom, dad, env)
+			kid0, kid1 := s.MateIndividuals(mom, dad, pop.Env)
 			ch <- kid0
 			ch <- kid1
 		}(pop.Indivs[i-1], pop.Indivs[i])
@@ -149,7 +149,6 @@ func (pop0 *Population) Evolve(s *Setting, env Environment) (Population, string)
 	pop.Initialize(s, env)
 	for igen := range s.MaxGeneration {
 		pop.Igen = igen
-		pop.Env = pop.Env.MarkovFlip(s, env)
 		pop.Develop(s, pop.Env)
 		stats := pop.GetPopStats()
 		stats.Print(pop.Iepoch, pop.Igen)
@@ -157,7 +156,8 @@ func (pop0 *Population) Evolve(s *Setting, env Environment) (Population, string)
 			pop.Dump(s)
 		}
 		pop = pop.Select(s)
-		pop = pop.Reproduce(s, env)
+		pop.Env = pop.Env.MarkovFlip(s, env)
+		pop = pop.Reproduce(s)
 	}
 	pop.Igen = s.MaxGeneration
 	pop.Develop(s, env)
@@ -166,6 +166,7 @@ func (pop0 *Population) Evolve(s *Setting, env Environment) (Population, string)
 }
 
 func (pop *Population) Initialize(s *Setting, env Environment) {
+	pop.Env = env.Clone()
 	for i := range pop.Indivs {
 		pop.Indivs[i].Initialize(s, env)
 	}

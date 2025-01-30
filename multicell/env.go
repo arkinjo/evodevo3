@@ -72,20 +72,28 @@ func (env Environment) Face(s *Setting, iface int) Vec {
 	return v
 }
 
+func (env Environment) Compare(env0 Environment) float64 {
+	denv := make(Environment, len(env))
+	d := denv.Diff(env, env0).Norm1() / 2
+	return d
+}
+
 func (env Environment) SelectingEnv(s *Setting) Vec {
 	return env.Left(s)
 }
 
 func (env Environment) ChangeEnv(s *Setting) Environment {
-	nflip := int(s.Denv * float64(s.LenFace))
+	nblk := s.LenFace / s.LenBlock
+	nflip := int(s.Denv * float64(nblk))
 	nenv := env.Clone()
 
-	for k := range NumFaces {
-		for i, p := range rng.Perm(s.LenFace) {
-			if i == nflip {
-				break
+	for iface := range NumFaces {
+		i := iface * s.LenFace
+		for _, p := range rng.Perm(nblk)[:nflip] {
+			j := i + p*nblk
+			for k := range s.LenBlock {
+				nenv[j+k] *= -1
 			}
-			nenv[k*s.LenFace+p] *= -1
 		}
 	}
 	return nenv
@@ -94,16 +102,16 @@ func (env Environment) ChangeEnv(s *Setting) Environment {
 func (env Environment) MarkovFlip(s *Setting, ref Environment) Environment {
 	nenv := env.Clone()
 	nblk := len(env) / s.LenBlock
-	for _, ib := range rng.Perm(nblk)[:s.NumBlocks] {
-		i := ib * s.LenBlock
-		r2v := (ref[i] == env[i] && rng.Float64() < s.Penv01)
-		v2r := (ref[i] != env[i] && rng.Float64() < s.Penv10)
-		if r2v || v2r {
-			for j := range s.LenBlock {
-				nenv[i+j] *= -1
-			}
+	ib := rng.IntN(nblk)
+	i := ib * s.LenBlock
+	r2v := (ref[i] == env[i] && rng.Float64() < s.Penv01)
+	v2r := (ref[i] != env[i] && rng.Float64() < s.Penv10)
+	if r2v || v2r {
+		for j := range s.LenBlock {
+			nenv[i+j] *= -1
 		}
 	}
+
 	return nenv
 }
 

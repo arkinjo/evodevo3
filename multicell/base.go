@@ -25,12 +25,12 @@ const (
 	default_density       = 0.02 // genome matrix density
 	default_mutation_rate = 0.002
 	default_conv_develop  = 5e-6
-	default_len_block     = 4 // environmental noise: elem per block
-	default_num_blocks    = 2 // environmental noise: number of blocks
 	default_env_noise     = 0.04
-	default_penv01        = 0.005 // prob of 0 -> 1 (deviation)
-	default_penv10        = 0.05  // prob of 1 -> 0 (reverse)
-	with_bias             = false // bias in activation.
+
+	default_len_block = 4     // env. change: elem per block
+	default_penv01    = 0.1   // prob of 0 -> 1 (deviation)
+	default_penv10    = 1.0   // prob of 1 -> 0 (reverse)
+	with_bias         = false // bias in activation.
 )
 
 // various set-ups
@@ -44,7 +44,6 @@ type Setting struct {
 	NumCellY      int    // number of cells in the y-axis
 	LenFace       int    // face length
 	ProductionRun bool   // true if production run (i.e. "test" phase)
-	NumBlocks     int    // number of noise blocks
 	LenBlock      int    // noise block length
 	Penv01        float64
 	Penv10        float64
@@ -74,7 +73,6 @@ func GetDefaultSetting(modelname string) *Setting {
 		NumCellY:      default_num_cell_y,
 		LenFace:       default_len_face,
 		ProductionRun: false,
-		NumBlocks:     default_num_blocks,
 		LenBlock:      default_len_block,
 		Penv01:        default_penv01,
 		Penv10:        default_penv10,
