@@ -27,10 +27,11 @@ const (
 	default_conv_develop  = 5e-6
 	default_env_noise     = 0.04
 
-	default_len_block = 4     // env. change: elem per block
-	default_penv01    = 0.1   // prob of 0 -> 1 (deviation)
-	default_penv10    = 1.0   // prob of 1 -> 0 (reverse)
-	with_bias         = false // bias in activation.
+	default_len_block = 4        // env. change: elem per block
+	default_penv01    = 4.0 / 32 // prob of 0 -> 1 (deviation)
+	default_penv10    = 1.0 / 32 // prob of 1 -> 0 (reverse)
+
+	with_bias = false // bias in activation.
 )
 
 // various set-ups
