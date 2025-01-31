@@ -83,26 +83,37 @@ func (env Environment) SelectingEnv(s *Setting) Vec {
 	return env.Left(s)
 }
 
-func (env Environment) AddNoise(p float64) Vec {
-	nvec := env.Clone()
-	for i := range nvec {
+func (env Environment) AddNoise(p float64) Environment {
+	cue := env.Clone()
+	for i := range cue {
 		if rand.Float64() < p {
-			nvec[i] *= -1
+			cue[i] *= -1
 		}
 	}
 
-	return nvec
+	return cue
+}
+
+func (env Environment) BlockNoise(s *Setting) Environment {
+	cue := env.Clone()
+	nblk := s.LenFace / s.LenBlock
+	for iface := range NumFaces {
+		ib := rand.IntN(nblk)*s.LenBlock + iface*s.LenFace
+		for i := range s.LenBlock {
+			cue[ib+i] *= -1
+		}
+	}
+	return cue
 }
 
 func (env Environment) ChangeEnv(s *Setting) Environment {
 	nblk := s.LenFace / s.LenBlock
 	nflip := int(s.Denv * float64(nblk))
 	nenv := env.Clone()
-
 	for iface := range NumFaces {
 		i := iface * s.LenFace
 		for _, p := range rng.Perm(nblk)[:nflip] {
-			j := i + p*nblk
+			j := i + p*s.LenBlock
 			for k := range s.LenBlock {
 				nenv[j+k] *= -1
 			}
