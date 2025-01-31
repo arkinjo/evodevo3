@@ -76,12 +76,11 @@ func (pop *Population) GetMaxFitness() float64 {
 }
 
 func (pop *Population) Develop(s *Setting, env Vec) {
-	selenv := env.SelectingEnv(s)
 	ch := make(chan Individual)
 
 	for _, indiv := range pop.Indivs {
 		go func(indiv Individual) {
-			ch <- indiv.Develop(s, selenv)
+			ch <- indiv.Develop(s, env)
 		}(indiv)
 	}
 
@@ -156,7 +155,8 @@ func (pop0 *Population) Evolve(s *Setting, env Environment) (Population, string)
 			pop.Dump(s)
 		}
 		pop = pop.Select(s)
-		pop.Env = pop.Env.MarkovFlip(s, env)
+		//		pop.Env = pop.Env.MarkovFlip(s, env)
+		pop.Env = pop.Env.BlockFlip(s, env)
 		pop = pop.Reproduce(s)
 	}
 	pop.Igen = s.MaxGeneration
