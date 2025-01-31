@@ -22,14 +22,22 @@ func (indiv *Individual) NumCells() int {
 	return len(indiv.Cells)
 }
 
+func (s *Setting) SetCellInt(cells []Cell) {
+	for i, c := range cells {
+		for iface, iop := range c.Facing {
+			if iop >= 0 {
+				cells[i].Cue[iface] = cells[iop].OppositeFace(s, iface)
+			}
+		}
+	}
+}
+
 func (s *Setting) SetCellEnv(cells []Cell, env Environment) {
 	cue := env.AddNoise(s.EnvNoise)
 	for i, c := range cells {
 		for iface, iop := range c.Facing {
 			if iop < 0 {
 				cells[i].Cue[iface] = cue.Face(s, iface)
-			} else {
-				cells[i].Cue[iface] = cells[iop].OppositeFace(s, iface)
 			}
 		}
 	}
@@ -137,7 +145,7 @@ func (indiv *Individual) Initialize(s *Setting, env Environment) {
 		indiv.Cells[i].Initialize(s)
 	}
 	indiv.Ndev = 0
-	s.SetCellEnv(indiv.Cells, env)
+	s.SetCellInt(indiv.Cells)
 }
 
 func (indiv *Individual) SetFitness(s *Setting, selenv Vec, conv float64) {
@@ -157,7 +165,9 @@ func (indiv *Individual) SetFitness(s *Setting, selenv Vec, conv float64) {
 	}
 }
 
-func (indiv *Individual) Develop(s *Setting, selenv Vec) Individual {
+func (indiv *Individual) Develop(s *Setting, env Environment) Individual {
+	s.SetCellEnv(indiv.Cells, env)
+	selenv := env.SelectingEnv(s)
 	dev := 0.0
 	for istep := range s.MaxDevelop {
 		dev = 0.0
