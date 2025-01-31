@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
 	"math/rand/v2"
 	"os"
 )
@@ -82,6 +83,17 @@ func (env Environment) SelectingEnv(s *Setting) Vec {
 	return env.Left(s)
 }
 
+func (env Environment) AddNoise(p float64) Vec {
+	nvec := env.Clone()
+	for i := range nvec {
+		if rand.Float64() < p {
+			nvec[i] *= -1
+		}
+	}
+
+	return nvec
+}
+
 func (env Environment) ChangeEnv(s *Setting) Environment {
 	nblk := s.LenFace / s.LenBlock
 	nflip := int(s.Denv * float64(nblk))
@@ -99,16 +111,38 @@ func (env Environment) ChangeEnv(s *Setting) Environment {
 	return nenv
 }
 
+func (env Environment) BlockFlip(s *Setting, ref Environment) Environment {
+	var nenv Environment
+	if rng.Float64() < math.Exp(-0.1) {
+		return env
+	} else {
+		nenv = ref.Clone()
+	}
+
+	nblk := len(env) / s.LenBlock
+	for ib := range nblk {
+		i := ib * s.LenBlock
+		if rng.Float64() < s.Penv01 {
+			for j := range s.LenBlock {
+				nenv[i+j] *= -1
+			}
+		}
+	}
+
+	return nenv
+}
+
 func (env Environment) MarkovFlip(s *Setting, ref Environment) Environment {
 	nenv := env.Clone()
 	nblk := len(env) / s.LenBlock
-	ib := rng.IntN(nblk)
-	i := ib * s.LenBlock
-	r2v := (ref[i] == env[i] && rng.Float64() < s.Penv01)
-	v2r := (ref[i] != env[i] && rng.Float64() < s.Penv10)
-	if r2v || v2r {
-		for j := range s.LenBlock {
-			nenv[i+j] *= -1
+	for ib := range nblk {
+		i := ib * s.LenBlock
+		r2v := (ref[i] == env[i] && rng.Float64() < s.Penv01)
+		v2r := (ref[i] != env[i] && rng.Float64() < s.Penv10)
+		if r2v || v2r {
+			for j := range s.LenBlock {
+				nenv[i+j] *= -1
+			}
 		}
 	}
 
