@@ -33,7 +33,7 @@ func (s *Setting) SetCellInt(cells []Cell) {
 }
 
 func (s *Setting) SetCellEnv(cells []Cell, env Environment) {
-	cue := env.AddNoise(s.EnvNoise)
+	cue := env.BlockNoise(s)
 	for i, c := range cells {
 		for iface, iop := range c.Facing {
 			if iop < 0 {
@@ -89,7 +89,7 @@ func (s *Setting) NewIndividual(id int, env Environment) Individual {
 		}
 	}
 
-	s.SetCellEnv(cells, env)
+	s.SetCellInt(cells)
 
 	return Individual{
 		Id:    id,
@@ -136,6 +136,17 @@ func (indiv *Individual) SelectedPhenotype(s *Setting) []Vec {
 	return p
 }
 
+func (indiv *Individual) SelectingCue() []Vec {
+	var p []Vec
+	for _, c := range indiv.Cells {
+		if c.Facing[Left] < 0 {
+			p = append(p, c.Cue[Left])
+		}
+	}
+
+	return p
+}
+
 func (indiv *Individual) SelectedPhenotypeVec(s *Setting) Vec {
 	return slices.Concat(indiv.SelectedPhenotype(s)...)
 }
@@ -150,9 +161,10 @@ func (indiv *Individual) Initialize(s *Setting, env Environment) {
 
 func (indiv *Individual) SetFitness(s *Setting, selenv Vec, conv float64) {
 	selphen := indiv.SelectedPhenotype(s)
+	selcue := indiv.SelectingCue()
 	ali := 0.0
-	for _, p := range selphen {
-		ali += DotVecs(p, selenv)
+	for i, p := range selphen {
+		ali += DotVecs(p, selcue[i])
 	}
 	indiv.Align = ali / float64(len(selenv)*len(selphen))
 

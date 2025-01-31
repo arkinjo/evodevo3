@@ -156,7 +156,7 @@ func (pop0 *Population) Evolve(s *Setting, env Environment) (Population, string)
 		}
 		pop = pop.Select(s)
 		//		pop.Env = pop.Env.MarkovFlip(s, env)
-		pop.Env = pop.Env.BlockFlip(s, env)
+		pop.Env = env //pop.Env.BlockFlip(s, env)
 		pop = pop.Reproduce(s)
 	}
 	pop.Igen = s.MaxGeneration
