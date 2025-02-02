@@ -23,6 +23,7 @@ func GetSetting() Simulation {
 	envsfileP := flag.String("envs", "", "saved environments JSON file")
 	resfileP := flag.String("restart", "", "saved restart population file")
 	settingP := flag.String("setting", "", "saved settings file")
+	envflipP := flag.Bool("envflip", false, "learn plasticity")
 
 	trajDirP := flag.String("trajdir", "traj", "Directory for trajectory files")
 	eStartP := flag.Int("env_start", 0, "starting environment (0, 1, ...)")
@@ -38,11 +39,12 @@ func GetSetting() Simulation {
 		s = multicell.LoadSetting(*settingP)
 	} else {
 		s = multicell.GetDefaultSetting(*modelP)
+		s.MaxPopulation = *maxpopP
+		s.MaxGeneration = *ngenP
+		s.Outdir = *trajDirP
+		s.EnvFlip = *envflipP
 	}
 	s.Seed = *seedP
-	s.MaxPopulation = *maxpopP
-	s.MaxGeneration = *ngenP
-	s.Outdir = *trajDirP
 	s.ProductionRun = *prodP
 
 	var envs []multicell.Environment

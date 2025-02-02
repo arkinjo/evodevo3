@@ -3,6 +3,7 @@ package multicell
 import (
 	"encoding/json"
 	"fmt"
+	"gonum.org/v1/gonum/stat/distuv"
 	"log"
 	"math"
 	"math/rand/v2"
@@ -30,7 +31,7 @@ func (s *Setting) NewEnvironment() Environment {
 	lenenv := s.LenFace * 4
 	env := make([]float64, lenenv)
 	for i := range lenenv {
-		if i%2 == 0 {
+		if i < s.LenFace*2 {
 			env[i] = 1
 		} else {
 			env[i] = -1
@@ -85,10 +86,11 @@ func (env Environment) SelectingEnv(s *Setting) Vec {
 
 func (env Environment) AddNoise(p float64) Environment {
 	cue := env.Clone()
-	for i := range cue {
-		if rand.Float64() < p {
-			cue[i] *= -1
-		}
+	dist := distuv.Poisson{Lambda: p * float64(len(cue))}
+	nflip := int(dist.Rand())
+
+	for _, i := range rand.Perm(len(cue))[:nflip] {
+		cue[i] *= -1
 	}
 
 	return cue
@@ -96,17 +98,31 @@ func (env Environment) AddNoise(p float64) Environment {
 
 func (env Environment) BlockNoise(s *Setting) Environment {
 	cue := env.Clone()
-	nblk := s.LenFace / s.LenBlock
-	for iface := range NumFaces {
-		ib := rand.IntN(nblk)*s.LenBlock + iface*s.LenFace
-		for i := range s.LenBlock {
-			cue[ib+i] *= -1
+	nblk := len(cue) / s.LenBlock
+	dist := distuv.Poisson{Lambda: s.EnvNoise * float64(nblk)}
+	nflip := int(dist.Rand())
+	for _, ib := range rand.Perm(nblk)[:nflip] {
+		i := ib * s.LenBlock
+		for j := range s.LenBlock {
+			cue[i+j] *= -1
 		}
 	}
 	return cue
 }
 
 func (env Environment) ChangeEnv(s *Setting) Environment {
+	nflip := int(s.Denv * float64(s.LenFace))
+	nenv := env.Clone()
+	for iface := range NumFaces {
+		i := iface * s.LenFace
+		for _, p := range rng.Perm(s.LenFace)[:nflip] {
+			nenv[i+p] *= -1
+		}
+	}
+	return nenv
+}
+
+func (env Environment) ChangeEnvBlock(s *Setting) Environment {
 	nblk := s.LenFace / s.LenBlock
 	nflip := int(s.Denv * float64(nblk))
 	nenv := env.Clone()
@@ -126,17 +142,46 @@ func (env Environment) BlockFlip(s *Setting, ref Environment) Environment {
 	var nenv Environment
 	if rng.Float64() < math.Exp(-0.1) {
 		return env
-	} else {
-		nenv = ref.Clone()
 	}
 
+	nenv = ref.Clone()
 	nblk := len(env) / s.LenBlock
-	for ib := range nblk {
+	dist := distuv.Poisson{Lambda: float64(nblk) * s.Penv01}
+	nflip := int(dist.Rand())
+	for _, ib := range rand.Perm(nblk)[:nflip] {
 		i := ib * s.LenBlock
-		if rng.Float64() < s.Penv01 {
-			for j := range s.LenBlock {
-				nenv[i+j] *= -1
-			}
+		for j := range s.LenBlock {
+			nenv[i+j] *= -1
+		}
+	}
+
+	return nenv
+}
+
+// less random block flip
+func (env Environment) BlockFlipNR(s *Setting, ref Environment) Environment {
+	if rng.Float64() < 0.5 {
+		return env
+	}
+
+	nflip := 1 // s.LenFace / s.LenBlock
+	var nenv Environment
+
+	if nflip > 1 {
+		nenv = ref.Clone()
+	} else {
+		nenv = env.Clone()
+	}
+
+	for iface := range NumFaces {
+		ib := 0
+		if iface > 0 {
+			ib = rand.IntN(s.LenFace/s.LenBlock) * s.LenBlock
+		}
+
+		i := iface*s.LenFace + ib
+		for j := range s.LenBlock {
+			nenv[i+j] *= -1
 		}
 	}
 
@@ -168,7 +213,7 @@ func (env Environment) GenerateEnvs(s *Setting, nepochs int) EnvironmentS {
 		if n == 0 {
 			continue
 		}
-		envs[n] = envs[n-1].ChangeEnv(s)
+		envs[n] = envs[n-1].ChangeEnvBlock(s)
 
 	}
 	return envs

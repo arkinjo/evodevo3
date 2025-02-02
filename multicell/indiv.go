@@ -33,7 +33,8 @@ func (s *Setting) SetCellInt(cells []Cell) {
 }
 
 func (s *Setting) SetCellEnv(cells []Cell, env Environment) {
-	cue := env.BlockNoise(s)
+	cue := env.AddNoise(s.EnvNoise)
+	//	cue := env.BlockNoise(s)
 	for i, c := range cells {
 		for iface, iop := range c.Facing {
 			if iop < 0 {
@@ -159,12 +160,12 @@ func (indiv *Individual) Initialize(s *Setting, env Environment) {
 	s.SetCellInt(indiv.Cells)
 }
 
-func (indiv *Individual) SetFitness(s *Setting, selenv Vec, conv float64) {
+func (indiv *Individual) SetFitness(s *Setting, env Environment, conv float64) {
+	selenv := env.SelectingEnv(s)
 	selphen := indiv.SelectedPhenotype(s)
-	selcue := indiv.SelectingCue()
 	ali := 0.0
-	for i, p := range selphen {
-		ali += DotVecs(p, selcue[i])
+	for _, p := range selphen {
+		ali += DotVecs(p, selenv)
 	}
 	indiv.Align = ali / float64(len(selenv)*len(selphen))
 
@@ -179,7 +180,6 @@ func (indiv *Individual) SetFitness(s *Setting, selenv Vec, conv float64) {
 
 func (indiv *Individual) Develop(s *Setting, env Environment) Individual {
 	s.SetCellEnv(indiv.Cells, env)
-	selenv := env.SelectingEnv(s)
 	dev := 0.0
 	for istep := range s.MaxDevelop {
 		dev = 0.0
@@ -192,8 +192,7 @@ func (indiv *Individual) Develop(s *Setting, env Environment) Individual {
 			break
 		}
 	}
-
-	indiv.SetFitness(s, selenv, dev)
+	indiv.SetFitness(s, env, dev)
 	return *indiv
 }
 

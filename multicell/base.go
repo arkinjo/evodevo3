@@ -18,18 +18,19 @@ const (
 
 const (
 	Sqrt3                 = 1.7320508075688772
-	default_num_layers    = 4
+	default_num_layers    = 4 // hidden + 1 (output)
 	default_len_face      = 32
 	default_num_cell_x    = 1
 	default_num_cell_y    = 1
 	default_density       = 0.02 // genome matrix density
 	default_mutation_rate = 0.002
 	default_conv_develop  = 5e-6
-	default_env_noise     = 0.04
 
-	default_len_block = 4        // env. change: elem per block
-	default_penv01    = 4.0 / 32 // prob of 0 -> 1 (deviation)
-	default_penv10    = 1.0 / 32 // prob of 1 -> 0 (reverse)
+	default_len_block = 8    // env. change: elem per block
+	default_penv01    = 0.05 // prob of 0 -> 1 (deviation)
+	default_penv10    = 0.2  // prob of 1 -> 0 (reverse)
+
+	default_env_noise = 0.05
 
 	with_bias = false // bias in activation.
 )
@@ -39,6 +40,7 @@ type Setting struct {
 	Basename      string // name of the model
 	Seed          uint64 // random seed
 	Outdir        string // output directory for trajectory
+	EnvFlip       bool   // learn plasticity
 	MaxPopulation int    // maximum population size
 	MaxGeneration int    // maximum number of generations per epoch
 	NumCellX      int    // number of cells in the x-axis
@@ -53,7 +55,6 @@ type Setting struct {
 	Denv          float64 // size of an environmental change
 	EnvNoise      float64
 	SelStrength   float64 // selection strength
-	CueScale      float64 // usually 1.0, 10 for the Null model.
 
 	WithCue    bool                 // with cue or not
 	MaxDevelop int                  // maximum number of developmental steps
@@ -69,6 +70,7 @@ func GetDefaultSetting(modelname string) *Setting {
 		Seed:          13,
 		Outdir:        ".",
 		MaxPopulation: 500,
+		EnvFlip:       false,
 		MaxGeneration: 200,
 		NumCellX:      default_num_cell_x,
 		NumCellY:      default_num_cell_y,
@@ -81,8 +83,7 @@ func GetDefaultSetting(modelname string) *Setting {
 		ConvDevelop:   default_conv_develop,
 		Denv:          0.5,
 		EnvNoise:      default_env_noise,
-		SelStrength:   20.0,
-		CueScale:      1.0,
+		SelStrength:   10.0,
 		// parameters to be determined in SetModel are:
 		//WithCue
 		//MaxDevelop
