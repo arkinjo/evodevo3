@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"gonum.org/v1/gonum/mat"
+	"gonum.org/v1/gonum/stat"
 )
 
 func avesd(vec Vec) (float64, float64) {
@@ -197,8 +198,8 @@ func (pop *Population) GetProjected2(s *Setting, fout *os.File, label string, xs
 }
 
 func (pop *Population) PrintPopStats(fout *os.File, gs, ps, ali0 Vec) {
-	ga, gv := avesd(gs)
-	pa, pv := avesd(ps)
+	ga, gv := stat.PopMeanStdDev(gs, nil)
+	pa, pv := stat.PopMeanStdDev(ps, nil)
 	fmt.Fprintf(fout, "Proj\t%d\t%d\t%f\t%f\t%f\t%f\n",
 		pop.Igen, len(gs), ga, pa, gv, pv)
 
@@ -208,10 +209,10 @@ func (pop *Population) PrintPopStats(fout *os.File, gs, ps, ali0 Vec) {
 		ms = append(ms, indiv.Align)
 		fs = append(fs, indiv.Fitness)
 	}
-	na, nv := avesd(ns)
-	ma, mv := avesd(ms)
-	a0a, a0v := avesd(ali0)
-	fa, fv := avesd(fs)
+	na, nv := stat.PopMeanStdDev(ns, nil)
+	ma, mv := stat.PopMeanStdDev(ms, nil)
+	a0a, a0v := stat.PopMeanStdDev(ali0, nil)
+	fa, fv := stat.PopMeanStdDev(fs, nil)
 	fmt.Fprintf(fout, "Ndev\t%d\t%f\t%f\n", pop.Igen, na, nv)
 	fmt.Fprintf(fout, "AliNov\t%d\t%f\t%f\n", pop.Igen, ma, mv)
 	fmt.Fprintf(fout, "AliAnc\t%d\t%f\t%f\n", pop.Igen, a0a, a0v)
@@ -257,6 +258,22 @@ func (pop *Population) GenoPhenoPlot(s *Setting, p0, paxis, g0, gaxis, env0 Vec)
 			i, indiv.Align, ali0[i], gs[i], ps[i])
 		fmt.Fprintf(fout, "\n")
 	}
+	log.Printf("Projection saved in: %s", filename)
+}
+
+func (pop *Population) GenoPhenoPlot2(s *Setting, gd0 GenomeDist, env1, env0 Environment) {
+	filename := s.TrajectoryFilename(pop.Iepoch, pop.Igen, "gpplot")
+	fout, err := os.Create(filename)
+	JustFail(err)
+	defer fout.Close()
+
+	//	gd1 := pop.GetGenomeDist(s)
+	//	kldiv := gd1.KLDivergenceFrom(gd0)
+	ali := make(Vec, len(pop.Indivs))
+	for i, indiv := range pop.Indivs {
+		ali[i] = indiv.Align
+	}
+
 	log.Printf("Projection saved in: %s", filename)
 }
 
