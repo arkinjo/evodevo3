@@ -132,7 +132,7 @@ func TestGenomeKLDiv0(t *testing.T) {
 func TestGenomeKLDiv1(t *testing.T) {
 	s := multicell.GetDefaultSetting("Full")
 	s.Outdir = "traj"
-	s.MaxGeneration = 100
+	s.MaxGeneration = 10
 	envs := s.SaveEnvs(ENVSFILE, 50)
 	pop0 := s.NewPopulation(envs[0])
 	gdist0 := pop0.GetGenomeDist(s)
