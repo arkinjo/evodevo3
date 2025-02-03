@@ -17,7 +17,7 @@ func main() {
 	nenvsP := flag.Int("n", 50, "number of environments")
 	envsfileP := flag.String("envs", "", "input environments JSON file")
 	outfileP := flag.String("o", "", "Output environment JSON file")
-	denvP := flag.Int("denv", 100, "degree of environmental change")
+	denvP := flag.Float64("denv", 0.5, "degree of environmental change")
 	replaceP := flag.Int("replace", 0, "replace new environments after the epoch. should be >0.")
 	seedP := flag.Uint64("seed", 13, "random seed for environments")
 	flag.Parse()
