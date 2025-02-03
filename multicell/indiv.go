@@ -152,17 +152,6 @@ func (indiv *Individual) SelectedPhenotype(s *Setting) []Vec {
 	return p
 }
 
-func (indiv *Individual) SelectingCue() []Vec {
-	var p []Vec
-	for _, c := range indiv.Cells {
-		if c.Facing[Left] < 0 {
-			p = append(p, c.Cue[Left])
-		}
-	}
-
-	return p
-}
-
 func (indiv *Individual) SelectedPhenotypeVec(s *Setting) Vec {
 	return slices.Concat(indiv.SelectedPhenotype(s)...)
 }
@@ -178,15 +167,11 @@ func (indiv *Individual) Initialize(s *Setting, env Environment) {
 func (indiv *Individual) SetFitness(s *Setting, env Environment, conv float64) {
 	selenv := env.SelectingEnv(s)
 	selphen := indiv.SelectedPhenotype(s)
-	selcue := indiv.SelectingCue(s)
-	dce := make(Vec, s.LenFace)
 	ali := 0.0
-	for i, p := range selphen {
-		dce.Diff(selcue[i], selenv).ScaleBy(0)
-		dce.Acc(selcue[i])
-		ali += DotVecs(p, dce)
+	for _, p := range selphen {
+		ali += DotVecs(p, selenv)
 	}
-	indiv.Align = ali / float64(s.LenFace*len(selphen)+0*s.EnvNoise)
+	indiv.Align = ali / float64(s.LenFace*len(selphen))
 	if conv >= s.ConvDevelop && s.MaxDevelop > 1 {
 		indiv.Fitness = 0.0
 	} else {

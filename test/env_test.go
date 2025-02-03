@@ -11,7 +11,7 @@ func TestEnvChange(t *testing.T) {
 	s := multicell.GetDefaultSetting("Full")
 	s.Denv = 100
 	envs := s.SaveEnvs(ENVSFILE, 50)
-	nexp := s.Denv
+	nexp := int(s.Denv * float64(len(envs[0])))
 
 	for n, env := range envs {
 		if n == 0 {
