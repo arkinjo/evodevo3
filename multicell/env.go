@@ -165,7 +165,7 @@ func (env Environment) BlockFlipNR(s *Setting, ref Environment) Environment {
 		return env
 	}
 
-	nflip := 1 // s.LenFace / s.LenBlock
+	nflip := s.LenFace / s.LenBlock
 	var nenv Environment
 
 	if nflip > 1 {
