@@ -25,7 +25,6 @@ const (
 	default_density       = 0.02 // genome matrix density
 	default_mutation_rate = 0.002
 	default_conv_develop  = 5e-6
-
 	default_len_block = 8    // env. change: elem per block
 	default_penv01    = 0.05 // prob of 0 -> 1 (deviation)
 	default_penv10    = 0.2  // prob of 1 -> 0 (reverse)
@@ -54,6 +53,7 @@ type Setting struct {
 	ConvDevelop   float64 // convergence limit
 	Denv          float64 // size of an environmental change
 	EnvNoise      float64
+
 	SelStrength   float64 // selection strength
 
 	WithCue    bool                 // with cue or not
@@ -76,6 +76,7 @@ func GetDefaultSetting(modelname string) *Setting {
 		NumCellY:      default_num_cell_y,
 		LenFace:       default_len_face,
 		ProductionRun: false,
+
 		LenBlock:      default_len_block,
 		Penv01:        default_penv01,
 		Penv10:        default_penv10,
@@ -84,6 +85,7 @@ func GetDefaultSetting(modelname string) *Setting {
 		Denv:          0.5,
 		EnvNoise:      default_env_noise,
 		SelStrength:   10.0,
+
 		// parameters to be determined in SetModel are:
 		//WithCue
 		//MaxDevelop

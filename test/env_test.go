@@ -9,9 +9,9 @@ import (
 
 func TestEnvChange(t *testing.T) {
 	s := multicell.GetDefaultSetting("Full")
-	s.Denv = 0.5
+	s.Denv = 100
 	envs := s.SaveEnvs(ENVSFILE, 50)
-	nexp := int(s.Denv * float64(len(envs[0])))
+	nexp := s.Denv
 
 	for n, env := range envs {
 		if n == 0 {
@@ -33,6 +33,7 @@ func TestEnvCue(t *testing.T) {
 	s.LenBlock = 5
 	env := envs[1]
 	cue := env.AddNoise(s.EnvNoise)
+
 	ndiff := 0
 	for i, v := range cue {
 		if v != env[i] {
@@ -45,6 +46,7 @@ func TestEnvCue(t *testing.T) {
 		}
 	}
 	nexp := s.LenBlock
+
 	if ndiff != nexp {
 		t.Errorf("Cue difference %d; expected %d\n", ndiff, nexp)
 	}

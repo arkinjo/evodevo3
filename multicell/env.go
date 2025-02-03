@@ -112,6 +112,7 @@ func (env Environment) BlockNoise(s *Setting) Environment {
 
 func (env Environment) ChangeEnv(s *Setting) Environment {
 	nflip := int(s.Denv * float64(s.LenFace))
+
 	nenv := env.Clone()
 	for iface := range NumFaces {
 		i := iface * s.LenFace

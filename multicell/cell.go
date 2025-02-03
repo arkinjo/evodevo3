@@ -105,8 +105,12 @@ func (c *Cell) DevStep(s *Setting, g Genome, istep int) float64 {
 	s.Topology.EachRow(func(l int, tl map[int]float64) {
 		va := make(Vec, s.LenLayer[l])
 		if l == 0 {
-			s0 := slices.Concat(c.Cue...)
-			va.Diff(s0, c.S[s.NumLayers-1])
+			if s.WithCue {
+				s0 := slices.Concat(c.Cue...)
+				va.Diff(s0, c.S[s.NumLayers-1])
+			} else {
+				copy(va, c.S[s.NumLayers-1])
+			}
 		}
 		for k := range tl {
 			va.MultSpMatVec(g.M[l][k], c.S[k]) // va is accumulated.
