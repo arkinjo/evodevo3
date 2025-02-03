@@ -127,21 +127,6 @@ func (v Vec) NormInf() float64 {
 	return d
 }
 
-func (vec Vec) AddNoise(lenface, nflip int) Vec {
-	nseg := len(vec) / lenface
-	nvec := vec.Clone()
-	for i := range nseg {
-		for j, p := range rand.Perm(lenface) {
-			if j == nflip {
-				break
-			}
-			nvec[i*lenface+p] *= -1
-		}
-	}
-
-	return nvec
-}
-
 func DiffMats(vs1, vs0 []Vec) []Vec {
 	dvs := make([]Vec, len(vs0))
 	for i, v1 := range vs1 {

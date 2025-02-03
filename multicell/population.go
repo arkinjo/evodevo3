@@ -14,6 +14,7 @@ import (
 type Population struct {
 	Iepoch int // epoch
 	Igen   int // generation
+	Env    Environment
 	Indivs []Individual
 }
 
@@ -60,6 +61,7 @@ func (s *Setting) NewPopulation(env Environment) Population {
 	return Population{
 		Iepoch: 0,
 		Igen:   0,
+		Env:    env.Clone(),
 		Indivs: indivs}
 }
 
@@ -73,13 +75,12 @@ func (pop *Population) GetMaxFitness() float64 {
 	return f
 }
 
-func (pop *Population) Develop(s *Setting, env Environment) {
-	selenv := env.SelectingEnv(s)
+func (pop *Population) Develop(s *Setting, env Vec) {
 	ch := make(chan Individual)
 
 	for _, indiv := range pop.Indivs {
 		go func(indiv Individual) {
-			ch <- indiv.Develop(s, selenv)
+			ch <- indiv.Develop(s, env)
 		}(indiv)
 	}
 
@@ -109,15 +110,16 @@ func (pop *Population) Select(s *Setting) Population {
 	return Population{
 		Iepoch: pop.Iepoch,
 		Igen:   pop.Igen,
+		Env:    pop.Env,
 		Indivs: indivs}
 }
 
-func (pop *Population) Reproduce(s *Setting, env Environment) Population {
+func (pop *Population) Reproduce(s *Setting) Population {
 	ch := make(chan Individual, 2)
 
 	for i := 1; i < len(pop.Indivs); i += 2 {
 		go func(mom, dad Individual) {
-			kid0, kid1 := s.MateIndividuals(mom, dad, env)
+			kid0, kid1 := s.MateIndividuals(mom, dad, pop.Env)
 			ch <- kid0
 			ch <- kid1
 		}(pop.Indivs[i-1], pop.Indivs[i])
@@ -137,6 +139,7 @@ func (pop *Population) Reproduce(s *Setting, env Environment) Population {
 	return Population{
 		Iepoch: pop.Iepoch,
 		Igen:   pop.Igen + 1,
+		Env:    pop.Env,
 		Indivs: kids}
 }
 
@@ -145,14 +148,21 @@ func (pop0 *Population) Evolve(s *Setting, env Environment) (Population, string)
 	pop.Initialize(s, env)
 	for igen := range s.MaxGeneration {
 		pop.Igen = igen
-		pop.Develop(s, env)
+		pop.Develop(s, pop.Env)
 		stats := pop.GetPopStats()
 		stats.Print(pop.Iepoch, pop.Igen)
 		if s.ProductionRun { // Dump before Selection
 			pop.Dump(s)
 		}
 		pop = pop.Select(s)
-		pop = pop.Reproduce(s, env)
+		//pop.Env = pop.Env.MarkovFlip(s, env)
+		//pop.Env = pop.Env.BlockFlip(s, env)
+		if s.EnvFlip {
+			pop.Env = pop.Env.BlockFlipNR(s, env)
+		} else {
+			pop.Env = env
+		}
+		pop = pop.Reproduce(s)
 	}
 	pop.Igen = s.MaxGeneration
 	pop.Develop(s, env)
@@ -161,6 +171,7 @@ func (pop0 *Population) Evolve(s *Setting, env Environment) (Population, string)
 }
 
 func (pop *Population) Initialize(s *Setting, env Environment) {
+	pop.Env = env.Clone()
 	for i := range pop.Indivs {
 		pop.Indivs[i].Initialize(s, env)
 	}

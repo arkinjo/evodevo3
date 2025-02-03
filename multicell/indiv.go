@@ -22,14 +22,23 @@ func (indiv *Individual) NumCells() int {
 	return len(indiv.Cells)
 }
 
+func (s *Setting) SetCellInt(cells []Cell) {
+	for i, c := range cells {
+		for iface, iop := range c.Facing {
+			if iop >= 0 {
+				cells[i].Cue[iface] = cells[iop].OppositeFace(s, iface)
+			}
+		}
+	}
+}
+
 func (s *Setting) SetCellEnv(cells []Cell, env Environment) {
-	cue := env.AddNoise(s.LenFace, s.EnvNoise)
+	cue := env.AddNoise(s.EnvNoise)
+	//	cue := env.BlockNoise(s)
 	for i, c := range cells {
 		for iface, iop := range c.Facing {
 			if iop < 0 {
 				cells[i].Cue[iface] = cue.Face(s, iface)
-			} else {
-				cells[i].Cue[iface] = cells[iop].OppositeFace(s, iface)
 			}
 		}
 	}
@@ -81,7 +90,7 @@ func (s *Setting) NewIndividual(id int, env Environment) Individual {
 		}
 	}
 
-	s.SetCellEnv(cells, env)
+	s.SetCellInt(cells)
 
 	return Individual{
 		Id:    id,
@@ -143,6 +152,17 @@ func (indiv *Individual) SelectedPhenotype(s *Setting) []Vec {
 	return p
 }
 
+func (indiv *Individual) SelectingCue() []Vec {
+	var p []Vec
+	for _, c := range indiv.Cells {
+		if c.Facing[Left] < 0 {
+			p = append(p, c.Cue[Left])
+		}
+	}
+
+	return p
+}
+
 func (indiv *Individual) SelectedPhenotypeVec(s *Setting) Vec {
 	return slices.Concat(indiv.SelectedPhenotype(s)...)
 }
@@ -152,10 +172,11 @@ func (indiv *Individual) Initialize(s *Setting, env Environment) {
 		indiv.Cells[i].Initialize(s)
 	}
 	indiv.Ndev = 0
-	s.SetCellEnv(indiv.Cells, env)
+	s.SetCellInt(indiv.Cells)
 }
 
-func (indiv *Individual) SetFitness(s *Setting, selenv Vec, conv float64) {
+func (indiv *Individual) SetFitness(s *Setting, env Environment, conv float64) {
+	selenv := env.SelectingEnv(s)
 	selphen := indiv.SelectedPhenotype(s)
 	selcue := indiv.SelectingCue(s)
 	dce := make(Vec, s.LenFace)
@@ -175,7 +196,8 @@ func (indiv *Individual) SetFitness(s *Setting, selenv Vec, conv float64) {
 	}
 }
 
-func (indiv *Individual) Develop(s *Setting, selenv Vec) Individual {
+func (indiv *Individual) Develop(s *Setting, env Environment) Individual {
+	s.SetCellEnv(indiv.Cells, env)
 	dev := 0.0
 	for istep := range s.MaxDevelop {
 		dev = 0.0
@@ -188,8 +210,7 @@ func (indiv *Individual) Develop(s *Setting, selenv Vec) Individual {
 			break
 		}
 	}
-
-	indiv.SetFitness(s, selenv, dev)
+	indiv.SetFitness(s, env, dev)
 	return *indiv
 }
 

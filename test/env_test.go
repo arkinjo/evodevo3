@@ -30,9 +30,10 @@ func TestEnvCue(t *testing.T) {
 	s := multicell.GetDefaultSetting("Full")
 	s.Outdir = "traj"
 	envs := s.SaveEnvs(ENVSFILE, 50)
-	s.EnvNoise = 3
+	s.LenBlock = 5
 	env := envs[1]
-	cue := env.AddNoise(s.LenFace, s.EnvNoise)
+	cue := env.AddNoise(s.EnvNoise)
+
 	ndiff := 0
 	for i, v := range cue {
 		if v != env[i] {
@@ -44,7 +45,8 @@ func TestEnvCue(t *testing.T) {
 			fmt.Printf("env/cue: %d %2.0f %2.0f\n", i, e, cue[i])
 		}
 	}
-	nexp := multicell.NumFaces * s.EnvNoise
+	nexp := s.LenBlock
+
 	if ndiff != nexp {
 		t.Errorf("Cue difference %d; expected %d\n", ndiff, nexp)
 	}

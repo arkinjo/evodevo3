@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"math"
-	"math/rand/v2"
 	"os"
 
 	"gonum.org/v1/gonum/mat"
@@ -74,9 +73,11 @@ func (s *Setting) GetSelectedPhenoAxis(pop0, pop1 Population, env0, env1 Environ
 
 	pop0.Initialize(s, env0)
 	pop0.Develop(s, env0)
-	p0 := MeanVecs(pop0.SelectedPhenoVecs(s))
-	p1 := MeanVecs(pop1.SelectedPhenoVecs(s))
-	return p0, GetAxis(p0, p1)
+	//	p0 := MeanVecs(pop0.SelectedPhenoVecs(s))
+	//	p1 := MeanVecs(pop1.SelectedPhenoVecs(s))
+	senv0 := env0.SelectingEnv(s)
+	senv1 := env1.SelectingEnv(s)
+	return senv0, GetAxis(senv0, senv1)
 }
 
 func (s *Setting) GetGenomeAxis(pop0, pop1 Population) (Vec, Vec) {
@@ -479,7 +480,6 @@ func (pop *Population) AnalyzeVarEnvs(s *Setting, env0 Environment, n int) {
 
 	ps0 := ProjectOnAxis(pvecs0, mp0, u0[0])
 	gs0 := ProjectOnAxis(gvecs0, mg0, v0[0])
-	rng := rand.New(rand.NewPCG(s.Seed+11, s.Seed+17))
 
 	var us, vs, envs []Vec
 	envs = append(envs, env0)
@@ -492,7 +492,7 @@ func (pop *Population) AnalyzeVarEnvs(s *Setting, env0 Environment, n int) {
 	gss = append(gss, gs0)
 	for i := range n {
 		log.Printf("Environment %d\n", i+1)
-		env := env0.ChangeEnv(s, rng)
+		env := env0.ChangeEnv(s)
 
 		envs = append(envs, env)
 		pop.Initialize(s, env)
