@@ -104,6 +104,13 @@ func (sp SpMat) Randomize(density float64) {
 	})
 }
 
+func (sp SpMat) ScaleBy(scale float64) SpMat {
+	sp.Do(func(i, j int, _ float64) {
+		sp.M[i][j] *= scale
+	})
+	return sp
+}
+
 func (sp SpMat) Mutate(rate float64, density float64) {
 	nr := sp.Nrows()
 	nc := sp.Ncols()

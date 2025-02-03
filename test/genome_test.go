@@ -2,6 +2,7 @@ package multicell_test
 
 import (
 	"fmt"
+	"math"
 	"testing"
 
 	"github.com/arkinjo/evodevo3/multicell"
@@ -70,8 +71,7 @@ func TestGenomeEqual(t *testing.T) {
 
 	pop1 := s.LoadPopulation(dumpfile)
 	pop1.Initialize(s, envs[1])
-	selenv := envs[1].SelectingEnv(s)
-	pop1.Develop(s, selenv)
+	pop1.Develop(s, envs[1])
 	pop1.Sort()
 	for i, indiv := range pop0.Indivs {
 		if !indiv.Genome.Equal(pop1.Indivs[i].Genome) {
@@ -92,8 +92,7 @@ func TestGenomeVecs(t *testing.T) {
 
 	pop1 := s.LoadPopulation(dumpfile)
 	pop1.Initialize(s, envs[1])
-	selenv := envs[1].SelectingEnv(s)
-	pop1.Develop(s, selenv)
+	pop1.Develop(s, envs[1])
 	pop1.Sort()
 
 	vecs0 := pop0.GenomeVecs(s)
@@ -115,4 +114,36 @@ func TestGenomeVecs(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestGenomeKLDiv0(t *testing.T) {
+	s := multicell.GetDefaultSetting("Full")
+	s.Outdir = "traj"
+	s.MaxGeneration = 10
+	envs := s.SaveEnvs(ENVSFILE, 50)
+	pop0 := s.NewPopulation(envs[0])
+	gdist := pop0.GetGenomeDist(s)
+	kldiv := gdist.KLDivergenceFrom(gdist)
+	if math.Abs(kldiv) > 0.0 {
+		t.Errorf("KLdiv should be 0 but got %e", kldiv)
+	}
+}
+
+func TestGenomeKLDiv1(t *testing.T) {
+	s := multicell.GetDefaultSetting("Full")
+	s.Outdir = "traj"
+	s.MaxGeneration = 100
+	envs := s.SaveEnvs(ENVSFILE, 50)
+	pop0 := s.NewPopulation(envs[0])
+	gdist0 := pop0.GetGenomeDist(s)
+
+	pop1, _ := pop0.Evolve(s, envs[0])
+	gdist1 := pop1.GetGenomeDist(s)
+	kldiv := gdist1.KLDivergenceFrom(gdist0)
+	fmt.Println("KLdiv= ", kldiv)
+
+	if kldiv <= 0.0 {
+		t.Errorf("KLdiv is %e, got 0", kldiv)
+	}
+
 }

@@ -172,13 +172,8 @@ func (env Environment) BlockFlipNR(s *Setting, ref Environment) Environment {
 	} else {
 		nenv = env.Clone()
 	}
-
+	ib := rand.IntN(nflip) * s.LenBlock
 	for iface := range NumFaces {
-		ib := 0
-		if iface > 0 {
-			ib = rand.IntN(s.LenFace/s.LenBlock) * s.LenBlock
-		}
-
 		i := iface*s.LenFace + ib
 		for j := range s.LenBlock {
 			nenv[i+j] *= -1
